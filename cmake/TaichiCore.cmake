@@ -42,7 +42,8 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c")
 endif()
 
 file(GLOB TAICHI_CORE_SOURCE
-        "taichi/*/*/*/*.cpp" "taichi/*/*/*.cpp" "taichi/*/*.cpp" "taichi/*.cpp"
+        "taichi/*/*/*/*.cpp" "taichi/*/*/*.cpp" "taichi/*/*.cpp" "taichi/*.cpp" 
+        "taichi/*/*/*/*/*.cu" "taichi/*/*/*/*.cu" "taichi/*/*/*.cu" "taichi/*/*.cu" "taichi/*.cu"
         "taichi/*/*/*/*.h" "taichi/*/*/*.h" "taichi/*/*.h" "taichi/*.h" "tests/cpp/task/*.cpp")
 
 file(GLOB TAICHI_BACKEND_SOURCE "taichi/backends/**/*.cpp" "taichi/backends/**/*.h")
@@ -295,3 +296,18 @@ if (WIN32)
     set_target_properties(${CORE_WITH_PYBIND_LIBRARY_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
             "${CMAKE_CURRENT_SOURCE_DIR}/runtimes")
 endif ()
+
+
+# Dear ImGui
+add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+set(IMGUI_DIR external/imgui)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
+add_library(imgui  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
+target_link_libraries(${CORE_LIBRARY_NAME} imgui)
+
+
+include_directories(external/glm)
+
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -std=c++17" )
+
+target_link_libraries(${CORE_LIBRARY_NAME} cuda)
