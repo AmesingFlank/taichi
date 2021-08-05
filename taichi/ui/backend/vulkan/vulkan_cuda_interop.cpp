@@ -64,7 +64,7 @@ CUexternalMemory import_vk_memory_object_from_handle(HANDLE handle, unsigned lon
     desc.handle.win32.handle = handle;
     desc.size = size;
     if (is_dedicated) {
-        desc.flags |= cudaExternalMemoryDedicated;
+        desc.flags |= CUDA_EXTERNAL_MEMORY_DEDICATED;
     }
 
     HANDLE_ERROR(cuImportExternalMemory(&ext_mem, &desc));
@@ -81,10 +81,9 @@ CUexternalMemory import_vk_memory_object_from_handle(int fd, unsigned long long 
     desc.handle.fd = fd;
     desc.size = size;
     if (is_dedicated) {
-        desc.flags |= cudaExternalMemoryDedicated;
+        desc.flags |= CUDA_EXTERNAL_MEMORY_DEDICATED;
     }
-    CUDADriver::get_instance().import_external_memory((CUexternalMemory_frank*)&ext_mem, (CUDA_EXTERNAL_MEMORY_HANDLE_DESC_frank*)&desc);
-    //HANDLE_ERROR(cuImportExternalMemory(&ext_mem, &desc));
+    CUDADriver::get_instance().import_external_memory( &ext_mem, &desc);
     return ext_mem;
 }
 #endif
@@ -100,8 +99,7 @@ void * map_buffer_onto_external_memory(CUexternalMemory ext_mem, unsigned long l
     desc.offset = offset;
     desc.size = size;
 
-    HANDLE_ERROR(cuExternalMemoryGetMappedBuffer((CUdeviceptr*)&ptr, ext_mem, &desc));
-    // Note: ‘ptr’ must eventually be freed using cudaFree()
+    CUDADriver::get_instance().external_memory_get_mapped_buffer((CUdeviceptr*)&ptr, ext_mem, &desc);
     return ptr;
 }
 
@@ -133,13 +131,13 @@ CUsurfObject get_image_surface_object_of_external_memory(CUexternalMemory extern
 
     CUmipmappedArray cuda_mipmapped_image_array;
 
-    HANDLE_ERROR(cuExternalMemoryGetMappedMipmappedArray(
+    CUDADriver::get_instance().external_memory_get_mapped_mipmapped_array(
         &cuda_mipmapped_image_array, external_mem,
-        &external_mem_mipmapped_array_desc));
+        &external_mem_mipmapped_array_desc);
         
 
     CUarray cuda_mip_level_array;
-    HANDLE_ERROR(cuMipmappedArrayGetLevel(&cuda_mip_level_array, cuda_mipmapped_image_array,0));
+    CUDADriver::get_instance().mipmapped_array_get_level(&cuda_mip_level_array, cuda_mipmapped_image_array,0);
         
 
     CUDA_RESOURCE_DESC resource_desc;
@@ -149,7 +147,7 @@ CUsurfObject get_image_surface_object_of_external_memory(CUexternalMemory extern
 
     CUsurfObject texture_surface_;
 
-    HANDLE_ERROR(cuSurfObjectCreate(&texture_surface_, &resource_desc));
+    CUDADriver::get_instance().surf_object_create(&texture_surface_, &resource_desc);
     return texture_surface_;
 }
 
@@ -212,8 +210,8 @@ void cuda_vk_semaphore_signal(CUexternalSemaphore ext_smaphore, CUstream stream)
 
     ext_smaphore_signal_params.params.fence.value = 0;
     ext_smaphore_signal_params.flags = 0;
-    HANDLE_ERROR(cuSignalExternalSemaphoresAsync(
-        &ext_smaphore, &ext_smaphore_signal_params, 1, stream));
+    CUDADriver::get_instance().signal_external_semaphore_async(
+        &ext_smaphore, &ext_smaphore_signal_params, 1, stream);
 }
 
 void cuda_vk_semaphore_wait(CUexternalSemaphore ext_smaphore, CUstream stream) {
@@ -224,8 +222,8 @@ void cuda_vk_semaphore_wait(CUexternalSemaphore ext_smaphore, CUstream stream) {
     ext_smaphore_wait_params.params.fence.value = 0;
     ext_smaphore_wait_params.flags = 0;
 
-    HANDLE_ERROR(cuWaitExternalSemaphoresAsync(
-        &ext_smaphore, &ext_smaphore_wait_params, 1, stream));
+    CUDADriver::get_instance().wait_external_semaphore_async(
+        &ext_smaphore, &ext_smaphore_wait_params, 1, stream);
 }
 
 CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,VkDevice device) {
@@ -243,7 +241,7 @@ CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,VkDevice devi
 
     CUexternalSemaphore result;
 
-    HANDLE_ERROR(cuImportExternalSemaphore(&result,&external_semaphore_handle_desc));
+    CUDADriver::get_instance().import_external_semaphore(&result,&external_semaphore_handle_desc);
     return result;
 }
 

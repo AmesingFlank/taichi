@@ -47,7 +47,7 @@ void SetImage::update_data(const SetImageInfo& info){
     else if(img.field_source == FIELD_SOURCE_X64){
         transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
         
-        MappedMemory mapped_buffer(app_context_->device, staging_buffer_memory_ , pixels * sizeof(uchar4));
+        MappedMemory mapped_buffer(app_context_->device, staging_buffer_memory_ , pixels * 4);
  
         if(img.dtype == DTYPE_U8){
             copy_to_texture_fuffer_x64 ((unsigned char*)img.data,(unsigned char*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
