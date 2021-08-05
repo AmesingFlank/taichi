@@ -61,16 +61,17 @@ void AppContext::init() {
     command_pool = vulkan_device->device()->command_pool();
     queue_family_indices = vulkan_device->queue_family_indices();
 
-    swap_chain->surface = vulkan_device->surface();
+    swap_chain.app_context = this;
+    swap_chain.surface = vulkan_device->surface();
 
-    swap_chain->create_swap_chain();  
-    swap_chain->create_image_views();  
-    swap_chain->create_depth_resources();  
-    swap_chain->create_sync_objects();  
+    swap_chain.create_swap_chain();  
+    swap_chain.create_image_views();  
+    swap_chain.create_depth_resources();  
+    swap_chain.create_sync_objects();  
 
     create_render_passes();
 
-    swap_chain->create_framebuffers();  
+    swap_chain.create_framebuffers();  
 }     
      
 void  AppContext::create_render_passes() { 
@@ -78,7 +79,7 @@ void  AppContext::create_render_passes() {
 }
 
 void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout final_color_layout ) {
-    VkFormat swap_chain_image_format = swap_chain->swap_chain_image_format;
+    VkFormat swap_chain_image_format = swap_chain.swap_chain_image_format;
 
     VkAttachmentDescription color_attachment{};
     color_attachment.format = swap_chain_image_format;
@@ -140,21 +141,22 @@ void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout fin
 
 
 void  AppContext::cleanup_swap_chain() {
-
     vkDestroyRenderPass(device, render_pass, nullptr);
-
+    swap_chain.cleanup_swap_chain();
 }
 
 void  AppContext::cleanup() {
-    
+    swap_chain.cleanup();
+    vulkan_device.reset();
 }
 
 void  AppContext::recreate_swap_chain() {
     create_render_passes();
+    swap_chain.recreate_swap_chain();
 }
 
 int AppContext::get_swap_chain_size(){
-    return swap_chain->swap_chain_images.size();
+    return swap_chain.swap_chain_images.size();
 }
 
 

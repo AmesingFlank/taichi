@@ -11,8 +11,8 @@ Canvas::Canvas(AppContext* app_context):app_context_(app_context){
     create_semaphores();
     import_semaphores();
 
-    cached_command_buffers_.resize(app_context_->swap_chain->swap_chain_images.size());
-    for(int i = 0;i<app_context_->swap_chain->swap_chain_images.size();++i){
+    cached_command_buffers_.resize(app_context_->swap_chain.swap_chain_images.size());
+    for(int i = 0;i<app_context_->swap_chain.swap_chain_images.size();++i){
         cached_command_buffers_[i] = VK_NULL_HANDLE;
     }
 }
@@ -98,7 +98,7 @@ void Canvas::scene(SceneBase* scene_base){
         if(scene -> point_lights_.size() == 0){
             printf("warning, there are no light sources in the scene.\n");
         }
-        float aspect_ratio = app_context_ -> swap_chain -> swap_chain_extent.width / (float) app_context_ -> swap_chain -> swap_chain_extent.height;
+        float aspect_ratio = app_context_ -> swap_chain. swap_chain_extent.width / (float) app_context_ -> swap_chain. swap_chain_extent.height;
         scene -> update_ubo(aspect_ratio);
         for(int i = 0; i < scene -> mesh_infos_.size() ;++i){
             mesh(scene->mesh_infos_[i],scene);
@@ -157,12 +157,12 @@ void Canvas::prepare_for_next_frame(){
 
 void Canvas::draw_frame(Gui* gui){
 
-    uint32_t image_index = app_context_->swap_chain->curr_image_index;
+    uint32_t image_index = app_context_->swap_chain.curr_image_index;
     
-    if (app_context_->swap_chain->images_in_flight[image_index] != VK_NULL_HANDLE) {
-        vkWaitForFences(app_context_->device, 1, &app_context_->swap_chain->images_in_flight[image_index], VK_TRUE, UINT64_MAX);
+    if (app_context_->swap_chain.images_in_flight[image_index] != VK_NULL_HANDLE) {
+        vkWaitForFences(app_context_->device, 1, &app_context_->swap_chain.images_in_flight[image_index], VK_TRUE, UINT64_MAX);
     }
-    app_context_->swap_chain->images_in_flight[image_index] = app_context_->swap_chain->in_flight_scenes[app_context_->swap_chain->current_frame];
+    app_context_->swap_chain.images_in_flight[image_index] = app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame];
 
     if(app_context_->config.ti_arch == ARCH_CUDA){
         cuda_vk_semaphore_signal((CUexternalSemaphore)this_draw_data_ready_cuda_);
@@ -194,9 +194,9 @@ void Canvas::draw_frame(Gui* gui){
         VkRenderPassBeginInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_info.renderPass = app_context_->render_pass;
-        render_pass_info.framebuffer = app_context_->swap_chain->swap_chain_framebuffers[image_index];
+        render_pass_info.framebuffer = app_context_->swap_chain.swap_chain_framebuffers[image_index];
         render_pass_info.renderArea.offset = {0, 0};
-        render_pass_info.renderArea.extent = app_context_->swap_chain->swap_chain_extent;
+        render_pass_info.renderArea.extent = app_context_->swap_chain.swap_chain_extent;
 
         std::array<VkClearValue, 2> clear_values{};
         clear_values[0].color = {background_color_.x, background_color_.y, background_color_.z, 1.0f};
@@ -218,9 +218,9 @@ void Canvas::draw_frame(Gui* gui){
         cached_command_buffers_[image_index] = command_buffer;
     }
 
-    std::vector<VkSemaphore> wait_semaphores = {app_context_->swap_chain->image_available_semaphores[app_context_->swap_chain->current_frame]};
+    std::vector<VkSemaphore> wait_semaphores = {app_context_->swap_chain.image_available_semaphores[app_context_->swap_chain.current_frame]};
     std::vector<VkPipelineStageFlags> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    std::vector<VkSemaphore> signal_semaphores = {app_context_->swap_chain->render_finished_semaphores[app_context_->swap_chain->current_frame]};
+    std::vector<VkSemaphore> signal_semaphores = {app_context_->swap_chain.render_finished_semaphores[app_context_->swap_chain.current_frame]};
 
     if(app_context_->config.ti_arch == ARCH_CUDA){
         wait_semaphores.push_back(this_draw_data_ready_vk_);
@@ -243,9 +243,9 @@ void Canvas::draw_frame(Gui* gui){
     submit_info.signalSemaphoreCount = signal_semaphores.size();
     submit_info.pSignalSemaphores = signal_semaphores.data();
 
-    vkResetFences(app_context_->device, 1, &app_context_->swap_chain->in_flight_scenes[app_context_->swap_chain->current_frame]);
+    vkResetFences(app_context_->device, 1, &app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]);
 
-    if (vkQueueSubmit(app_context_->graphics_queue, 1, &submit_info, app_context_->swap_chain->in_flight_scenes[app_context_->swap_chain->current_frame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(app_context_->graphics_queue, 1, &submit_info, app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
     

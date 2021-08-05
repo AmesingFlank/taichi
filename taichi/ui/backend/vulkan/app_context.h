@@ -4,7 +4,7 @@
 #include <memory>
 #include "taichi/backends/vulkan/vulkan_api.h"
 #include "taichi/backends/vulkan/loader.h"
-
+#include "swap_chain.h"
 
 namespace vulkan{
 
@@ -30,16 +30,12 @@ struct AppContext{
 
     GLFWwindow* glfw_window;
 
-
-
-    struct SwapChain* swap_chain;
+    SwapChain swap_chain;
 
     void init();
  
     void create_render_pass(VkRenderPass& render_pass,VkImageLayout final_color_layout );
     void create_render_passes();
-
- 
      
     void cleanup_swap_chain();
 

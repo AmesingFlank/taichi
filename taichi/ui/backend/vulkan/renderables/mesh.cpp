@@ -19,7 +19,7 @@ void Mesh::update_ubo(const MeshInfo& info,const Scene& scene) {
     ubo.shininess = info.shininess;
     ubo.need_normal_generation = !info.renderable_info.normals.valid;
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain->curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 

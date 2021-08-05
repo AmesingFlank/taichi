@@ -22,7 +22,7 @@ void Window::show()  {
 }
 
 void Window::prepare_for_next_frame(){
-    update_image_index();
+    app_context_.swap_chain.update_image_index();
     canvas_ -> prepare_for_next_frame();
     gui_.prepare_for_next_frame();
 }
@@ -45,18 +45,12 @@ void Window::framebuffer_resize_callback(GLFWwindow* glfw_window_, int width, in
 }
 
 void Window::init_vulkan() {
-    swap_chain_.app_context = &app_context_;
-    app_context_.swap_chain = &swap_chain_;
     app_context_.glfw_window = glfw_window_;
-
     app_context_.init();
-
     canvas_ = std::make_unique<Canvas>(&app_context_); 
 }
 
 void Window::cleanup_swap_chain() {
-    swap_chain_.cleanup_swap_chain();
-
     canvas_ -> cleanup_swap_chain();
     app_context_.cleanup_swap_chain();
 }
@@ -65,10 +59,8 @@ void Window::cleanup() {
     gui_.cleanup();
     cleanup_swap_chain();
 
-
     canvas_ -> cleanup();
 
-    swap_chain_.cleanup();
     app_context_ . cleanup();
 
     glfwTerminate();
@@ -90,8 +82,6 @@ void Window::recreate_swap_chain() {
     cleanup_swap_chain();
 
     app_context_.recreate_swap_chain();
-
-    swap_chain_.recreate_swap_chain();
     
     canvas_ -> recreate_swap_chain();
 
@@ -105,19 +95,11 @@ void Window::draw_frame() {
 
 
 void Window::present_frame(){
-    swap_chain_.present_frame();
-    if(swap_chain_.requires_recreate){
+    app_context_.swap_chain.present_frame();
+    if(app_context_.swap_chain.requires_recreate){
         recreate_swap_chain();
     }
 }
-
-void Window::update_image_index(){
-    swap_chain_.update_image_index();
-}
-
-
-
-
 
 
 Window::~Window(){

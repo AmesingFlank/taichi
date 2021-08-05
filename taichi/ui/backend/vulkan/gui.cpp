@@ -37,8 +37,8 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = descriptor_pool_;
     init_info.Allocator = VK_NULL_HANDLE;;
-    init_info.MinImageCount = app_context_ -> swap_chain -> swap_chain_images.size();
-    init_info.ImageCount = app_context_ -> swap_chain -> swap_chain_images.size();
+    init_info.MinImageCount = app_context_ -> swap_chain. swap_chain_images.size();
+    init_info.ImageCount = app_context_ -> swap_chain. swap_chain_images.size();
     init_info.CheckVkResultFn = check_vulkan_result;
     ImGui_ImplVulkan_Init(&init_info,  app_context_ -> render_pass);  
 
@@ -114,10 +114,10 @@ void Gui::prepare_for_next_frame(){
 }
 
 float Gui::abs_x(float x){
-    return x * app_context_->swap_chain->swap_chain_extent.width;
+    return x * app_context_->swap_chain.swap_chain_extent.width;
 }
 float Gui::abs_y(float y){
-    return y * app_context_->swap_chain->swap_chain_extent.height;
+    return y * app_context_->swap_chain.swap_chain_extent.height;
 }
 
 

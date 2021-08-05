@@ -124,7 +124,7 @@ void Renderable::update_data(const RenderableInfo& info){
 }
 
 void Renderable::create_descriptor_pool(){
-    int swap_chain_size = app_context_->swap_chain->swap_chain_images.size();
+    int swap_chain_size = app_context_->swap_chain.swap_chain_images.size();
     std::array<VkDescriptorPoolSize, 2> pool_sizes{};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = static_cast<uint32_t>(swap_chain_size)  ;
@@ -209,8 +209,8 @@ void Renderable::create_graphics_pipeline() {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = app_context_ -> swap_chain -> swap_chain_extent.width ;
-    viewport.height = app_context_ -> swap_chain -> swap_chain_extent.height;
+    viewport.width = app_context_ -> swap_chain. swap_chain_extent.width ;
+    viewport.height = app_context_ -> swap_chain. swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -387,7 +387,7 @@ void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer){
 
     vkCmdBindIndexBuffer(command_buffer, index_buffer_, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1, &descriptor_sets_[app_context_->swap_chain->curr_image_index], 0, nullptr);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1, &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
 
     vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
 }

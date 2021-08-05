@@ -15,13 +15,13 @@ void Particles::update_ubo(glm::vec3 color,bool use_per_vertex_color,float radiu
     ubo.scene = scene.current_ubo_;
     ubo.color = glm::vec4(color,1);
     ubo.radius = radius;
-    ubo.window_width = app_context_ -> swap_chain -> swap_chain_extent.width;
-    ubo.window_height = app_context_ -> swap_chain -> swap_chain_extent.height;
+    ubo.window_width = app_context_ -> swap_chain. swap_chain_extent.width;
+    ubo.window_height = app_context_ -> swap_chain. swap_chain_extent.height;
     ubo.tan_half_fov = tan(glm::radians(scene.camera_.fov) / 2);
     ubo.use_per_vertex_color = use_per_vertex_color;
     ubo.shininess = shininess;
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain->curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 

@@ -28,7 +28,7 @@ void Lines::update_data(const LinesInfo& info){
 
     update_ubo(info.color, info.renderable_info.per_vertex_color.valid);
 
-    float aspect_ratio = app_context_->swap_chain -> swap_chain_extent.width / (float)app_context_->swap_chain -> swap_chain_extent.height;
+    float aspect_ratio = app_context_->swap_chain. swap_chain_extent.width / (float)app_context_->swap_chain. swap_chain_extent.height;
 
     bool use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
 
@@ -77,7 +77,7 @@ Lines::Lines(AppContext* app_context){
 void Lines::update_ubo(glm::vec3 color,bool use_per_vertex_color) {
     UniformBufferObject ubo{color,(int) use_per_vertex_color};
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain->curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 

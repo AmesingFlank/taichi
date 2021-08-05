@@ -41,7 +41,6 @@ private:
     
     std::unique_ptr<Canvas> canvas_;
     AppContext app_context_;
-    SwapChain swap_chain_;
     Gui gui_;
 
 private:
@@ -51,8 +50,7 @@ private:
     void init_window();
 
     void init_vulkan() ;
-
-    void create_surface() ;
+ 
 
     void prepare_for_next_frame();
 
