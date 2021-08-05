@@ -3,66 +3,12 @@
 #include "../vulkan_cuda_interop.h"
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
+#include "kernels.h"
+
 
 namespace vulkan {
 
 
-template<typename T>
-__device__ __host__
-inline unsigned char get_color_value(T x);
-
-template<>
-__device__ __host__
-inline unsigned char get_color_value<unsigned char>(unsigned char x){
-    return x;
-}
-
-template<>
-__device__ __host__
-inline unsigned char get_color_value<float>(float x){
-    x = max(0.f,min(1.f,x));
-    return (unsigned char)(x * 255);
-}
-
-
-template<typename T>
-__global__
-void copy_to_texture_fuffer_cuda(T* src, CUsurfObject surface, int width, int height, int actual_width, int actual_height, int channels){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= width * height) return;
-
-    int y = i / width;
-    int x = i % width;
-
-    T* src_base_addr = src + (x*actual_height + y) * channels;
-    uchar4 data = make_uchar4(0,0,0,0);
-    
-    data.x = get_color_value<T>(src_base_addr[0]);
-    data.y = get_color_value<T>(src_base_addr[1]);
-    data.z  = get_color_value<T>(src_base_addr[2]);
-    data.w = 255;
-    
-    surf2Dwrite(data, surface, x* sizeof(uchar4), y);
-}
-
-template<typename T>
-void copy_to_texture_fuffer_x64(T* src, uchar4* dest, int width, int height, int actual_width, int actual_height, int channels){
-    for(int i = 0;i<width * height;++i){
-        int y = i / width;
-        int x = i % width;
-
-        T* src_base_addr = src + (x*actual_height + y) * channels;
-        uchar4 data = make_uchar4(0,0,0,0);
-        
-        data.x = get_color_value<T>(src_base_addr[0]);
-        data.y = get_color_value<T>(src_base_addr[1]);
-        data.z  = get_color_value<T>(src_base_addr[2]);
-        data.w = 255;
-
-        dest[y * width + x] = data;
-    }
-    
-}
 
 void SetImage::update_data(const SetImageInfo& info){
     const FieldInfo& img = info.img;
@@ -84,16 +30,14 @@ void SetImage::update_data(const SetImageInfo& info){
     int actual_width = next_power_of_2(width);
     int actual_height = next_power_of_2(height);
 
-    int pixels = width * height;
-    int num_blocks,num_threads;
-    set_num_blocks_threads(pixels,num_blocks,num_threads);
+    int pixels = width * height; 
 
     if(img.field_source == FIELD_SOURCE_CUDA){
         if(img.dtype == DTYPE_U8){
-            copy_to_texture_fuffer_cuda<<<num_blocks,num_threads>>>((unsigned char*)img.data,(CUsurfObject)texture_surface_,width,height,actual_width,actual_height,img.matrix_rows);
+            copy_to_texture_fuffer_cuda((unsigned char*)img.data,(void*)texture_surface_,width,height,actual_width,actual_height,img.matrix_rows);
         }
         else if (img.dtype == DTYPE_F32){
-            copy_to_texture_fuffer_cuda<<<num_blocks,num_threads>>>((float*)img.data,(CUsurfObject)texture_surface_,width,height,actual_width,actual_height,img.matrix_rows);
+            copy_to_texture_fuffer_cuda((float*)img.data,(void*)texture_surface_,width,height,actual_width,actual_height,img.matrix_rows);
         }
         else{
             throw std::runtime_error("for set image, dtype must be u8 or f32");
@@ -106,10 +50,10 @@ void SetImage::update_data(const SetImageInfo& info){
         MappedMemory mapped_buffer(app_context_->device, staging_buffer_memory_ , pixels * sizeof(uchar4));
  
         if(img.dtype == DTYPE_U8){
-            copy_to_texture_fuffer_x64 ((unsigned char*)img.data,(uchar4*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
+            copy_to_texture_fuffer_x64 ((unsigned char*)img.data,(unsigned char*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
         }
         else if (img.dtype == DTYPE_F32){
-            copy_to_texture_fuffer_x64((float*)img.data,(uchar4*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
+            copy_to_texture_fuffer_x64((float*)img.data,(unsigned char*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
         }
         else{
             throw std::runtime_error("for set image, dtype must be u8 or f32");

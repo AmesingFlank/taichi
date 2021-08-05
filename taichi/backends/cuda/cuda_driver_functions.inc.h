@@ -48,4 +48,8 @@ PER_CUDA_FUNCTION(event_record, cuEventRecord, void *, void *)
 PER_CUDA_FUNCTION(event_synchronize, cuEventSynchronize, void *);
 PER_CUDA_FUNCTION(event_elapsed_time, cuEventElapsedTime, float *, void *, void *);
 
+// Vulkan interop
+//PER_CUDA_FUNCTION(import_external_memory, cuImportExternalMemory, CUexternalMemory_frank*, CUDA_EXTERNAL_MEMORY_HANDLE_DESC_frank*)
+
+
 // clang-format on

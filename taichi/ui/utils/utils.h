@@ -158,15 +158,6 @@ inline int next_power_of_2(int n)
 }
 
 
-inline int div_up(int a, int b) {
-	if (b == 0) {
-		return 1;
-	}
-	int result = (a % b != 0) ? (a / b + 1) : (a / b);
-	return result;
-}
-
-
 
 #define DEFINE_PROPERTY(Type,name)      \
 Type name;                              \

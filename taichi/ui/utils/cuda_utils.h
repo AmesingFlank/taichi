@@ -5,6 +5,7 @@
 #include <cuda.h>
 #include <vector>
 #include "../common/constants.h"
+//#include "taichi/backends/cuda/cuda_driver.h"
 
 
 inline static void handle_error(CUresult err, const char* file, int line) {
@@ -48,8 +49,3 @@ inline void get_last_cuda_error(const char *errorMessage, const char *file, cons
 #endif //GGUI_DEBUG
 
 
-#define MAX_THREADS_PER_BLOCK 1024
-inline void set_num_blocks_threads(int N,int& num_blocks, int& num_threads) {
-    num_threads = min(N, MAX_THREADS_PER_BLOCK);
-    num_blocks = div_up(N, num_threads);
-}

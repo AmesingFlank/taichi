@@ -3,7 +3,7 @@
 #include "../../common/constants.h"
 #include "vulkan_cuda_interop.h"
 #include "vulkan_cuda_interop.h"
-
+#include "renderables/kernels.h"
 
 namespace vulkan {
 
@@ -30,93 +30,6 @@ void Renderable::init_render_resources(){
     }
 }
 
-
-__global__
-void update_renderables_vertices_cuda(Vertex* vbo, float* vertices, int num_vertices,int num_components){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_vertices) return;
-
-    vbo[i].pos.x = vertices[i*num_components];
-    vbo[i].pos.y = vertices[i*num_components+1];
-    if(num_components == 3){
-        vbo[i].pos.z = vertices[i*num_components+2];
-    }
-
-}
-
-void update_renderables_vertices_x64(Vertex* vbo, float* vertices, int num_vertices,int num_components){
-    for(int i = 0;i<num_vertices;++i){
-        vbo[i].pos.x = vertices[i*num_components];
-        vbo[i].pos.y = vertices[i*num_components+1];
-        if(num_components == 3){
-            vbo[i].pos.z = vertices[i*num_components+2];
-        }
-    }
-}
-
-
-__global__
-void update_renderables_indices_cuda(int* ibo, int* indices, int num_indices){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_indices) return;
-
-    ibo[i] = indices[i];
-}
-
-void update_renderables_indices_x64(int* ibo, int* indices, int num_indices){
-    for(int i = 0;i<num_indices;++i){
-        ibo[i] = indices[i];
-    }
-}
-
-__global__
-void update_renderables_indices_unindexed_cuda(int* ibo, int num_indices){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_indices) return;
-    ibo[i] = i;
-}
-
-void update_renderables_indices_unindexed_x64(int* ibo, int num_indices){
-    for(int i = 0;i<num_indices;++i){
-        ibo[i] = i;
-    }
-}
-
-__global__
-void update_renderables_colors_cuda(Vertex* vbo, float3* colors, int num_vertices){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_vertices) return;
-
-    vbo[i].color.x = colors[i].x;
-    vbo[i].color.y = colors[i].y;
-    vbo[i].color.z = colors[i].z;
-}
- 
-void update_renderables_colors_x64(Vertex* vbo, float3* colors, int num_vertices){
-    for(int i = 0;i<num_vertices;++i){
-        vbo[i].color.x = colors[i].x;
-        vbo[i].color.y = colors[i].y;
-        vbo[i].color.z = colors[i].z;
-    }
-}
-
-__global__
-void update_renderables_normals_cuda(Vertex* vbo, float3* normals, int num_vertices){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_vertices) return;
-
-    vbo[i].normal.x = normals[i].x;
-    vbo[i].normal.y = normals[i].y;
-    vbo[i].normal.z = normals[i].z;
-}
- 
-void update_renderables_normals_x64(Vertex* vbo, float3* normals, int num_vertices){
-    for(int i = 0;i<num_vertices;++i){
-        vbo[i].normal.x = normals[i].x;
-        vbo[i].normal.y = normals[i].y;
-        vbo[i].normal.z = normals[i].z;
-    }
-}
 
 
 void Renderable::update_data(const RenderableInfo& info){
@@ -145,32 +58,29 @@ void Renderable::update_data(const RenderableInfo& info){
 
     int num_components = info.vertices.matrix_rows;
 
-    if(info.vertices.field_source == FIELD_SOURCE_CUDA){
-        int num_blocks,num_threads;
-        set_num_blocks_threads(num_vertices,num_blocks,num_threads);
+    if(info.vertices.field_source == FIELD_SOURCE_CUDA){ 
 
-        update_renderables_vertices_cuda<<<num_blocks,num_threads>>>(vertex_buffer_device_ptr_, (float*)info.vertices.data, num_vertices,num_components);
+        update_renderables_vertices_cuda (vertex_buffer_device_ptr_, (float*)info.vertices.data, num_vertices,num_components);
 
         if(info.per_vertex_color.valid){
             if(info.per_vertex_color.shape[0]!=num_vertices){
                 throw std::runtime_error("shape of per_vertex_color should be the same as vertices");
             }
-            update_renderables_colors_cuda<<<num_blocks,num_threads>>>(vertex_buffer_device_ptr_, (float3*)info.per_vertex_color.data, num_vertices);
+            update_renderables_colors_cuda(vertex_buffer_device_ptr_, (float*)info.per_vertex_color.data, num_vertices);
         }
 
         if(info.normals.valid){
             if(info.normals.shape[0]!=num_vertices){
                 throw std::runtime_error("shape of normals should be the same as vertices");
             }
-            update_renderables_normals_cuda<<<num_blocks,num_threads>>>(vertex_buffer_device_ptr_, (float3*)info.normals.data, num_vertices);
+            update_renderables_normals_cuda(vertex_buffer_device_ptr_, (float*)info.normals.data, num_vertices);
         }
 
-        set_num_blocks_threads(num_indices,num_blocks,num_threads);
         if(info.indices.valid){
-            update_renderables_indices_cuda<<<num_blocks,num_threads>>>(index_buffer_device_ptr_, (int*)info.indices.data, num_indices);
+            update_renderables_indices_cuda(index_buffer_device_ptr_, (int*)info.indices.data, num_indices);
         }
         else{
-            update_renderables_indices_unindexed_cuda<<<num_blocks,num_threads>>>(index_buffer_device_ptr_, num_indices);
+            update_renderables_indices_unindexed_cuda(index_buffer_device_ptr_, num_indices);
         }
         
         
@@ -188,13 +98,13 @@ void Renderable::update_data(const RenderableInfo& info){
                 if(info.per_vertex_color.shape[0]!=num_vertices){
                     throw std::runtime_error("shape of per_vertex_color should be the same as vertices");
                 }
-                update_renderables_colors_x64((Vertex* )mapped_vbo.data, (float3*)info.per_vertex_color.data, num_vertices);
+                update_renderables_colors_x64((Vertex* )mapped_vbo.data, (float*)info.per_vertex_color.data, num_vertices);
             }
             if(info.normals.valid){
                 if(info.normals.shape[0]!=num_vertices){
                     throw std::runtime_error("shape of normals should be the same as vertices");
                 }
-                update_renderables_normals_x64((Vertex* )mapped_vbo.data, (float3*)info.normals.data, num_vertices);
+                update_renderables_normals_x64((Vertex* )mapped_vbo.data, (float*)info.normals.data, num_vertices);
             }
             if(info.indices.valid){
                 update_renderables_indices_x64((int*)mapped_ibo.data, (int*)info.indices.data, num_indices);

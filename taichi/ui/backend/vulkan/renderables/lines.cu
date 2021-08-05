@@ -2,117 +2,10 @@
 #include "../vulkan_cuda_interop.h"
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
+#include "kernels.h"
 
 namespace vulkan{
 
-// We implement lines by generating rectangles. Note there this requires careful treatment of aspect ratios.
-
-__global__
-void update_lines_vbo_cuda(Vertex* vbo, int* ibo, float2* vertices,  int N,float width,float aspect_ratio,float3* colors, bool use_per_vertex_color){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= N) return;
-    float2 a = vertices[i*2];
-    float2 b = vertices[i*2+1];
-    float distance =  sqrt((a.x-b.x)*(a.x-b.x)*aspect_ratio*aspect_ratio + (a.y-b.y)*(a.y-b.y)) ;
-    float factor = (width / 2.f) / distance;
-    float dx = (b.y-a.y)* factor / aspect_ratio;
-    float dy = (b.x-a.x)* aspect_ratio * factor;
-
-    vbo[i*4].pos.x = a.x + dx;
-    vbo[i*4].pos.y = a.y - dy;
-    vbo[i*4].pos.z = 0;
-
-    vbo[i*4+1].pos.x = a.x - dx;
-    vbo[i*4+1].pos.y = a.y + dy;
-    vbo[i*4+1].pos.z = 0;
-
-    vbo[i*4+2].pos.x = b.x + dx;
-    vbo[i*4+2].pos.y = b.y - dy;
-    vbo[i*4+2].pos.z = 0;
-
-    vbo[i*4+3].pos.x = b.x - dx;
-    vbo[i*4+3].pos.y = b.y + dy;
-    vbo[i*4+3].pos.z = 0;
-
-    if(use_per_vertex_color){
-        vbo[i*4].color.x = colors[i*2].x;
-        vbo[i*4].color.y = colors[i*2].y;
-        vbo[i*4].color.z = colors[i*2].z;
-
-        vbo[i*4+1].color.x = colors[i*2].x;
-        vbo[i*4+1].color.y = colors[i*2].y;
-        vbo[i*4+1].color.z = colors[i*2].z;
-
-        vbo[i*4+2].color.x = colors[i*2+1].x;
-        vbo[i*4+2].color.y = colors[i*2+1].y;
-        vbo[i*4+2].color.z = colors[i*2+1].z;
-
-        vbo[i*4+3].color.x = colors[i*2+1].x;
-        vbo[i*4+3].color.y = colors[i*2+1].y;
-        vbo[i*4+3].color.z = colors[i*2+1].z;
-    }
-
-    ibo[i*6] = i*4;
-    ibo[i*6+1] = i*4+1;
-    ibo[i*6+2] = i*4+2;
-
-    ibo[i*6+3] = i*4+1;
-    ibo[i*6+4] = i*4+2;
-    ibo[i*6+5] = i*4+3;
-
-}
-void update_lines_vbo_x64(Vertex* vbo, int* ibo, float2* vertices,  int N,float width,float aspect_ratio,float3* colors, bool use_per_vertex_color){
-    for(int i = 0;i<N;++i){
-        float2 a = vertices[i*2];
-        float2 b = vertices[i*2+1];
-        float distance =  sqrt((a.x-b.x)*(a.x-b.x)*aspect_ratio*aspect_ratio + (a.y-b.y)*(a.y-b.y)) ;
-        float factor = (width / 2.f) / distance;
-        float dx = (b.y-a.y)* factor / aspect_ratio;
-        float dy = (b.x-a.x)* aspect_ratio * factor;
-
-        vbo[i*4].pos.x = a.x + dx;
-        vbo[i*4].pos.y = a.y - dy;
-        vbo[i*4].pos.z = 0;
-
-        vbo[i*4+1].pos.x = a.x - dx;
-        vbo[i*4+1].pos.y = a.y + dy;
-        vbo[i*4+1].pos.z = 0;
-
-        vbo[i*4+2].pos.x = b.x + dx;
-        vbo[i*4+2].pos.y = b.y - dy;
-        vbo[i*4+2].pos.z = 0;
-
-        vbo[i*4+3].pos.x = b.x - dx;
-        vbo[i*4+3].pos.y = b.y + dy;
-        vbo[i*4+3].pos.z = 0;
-
-        if(use_per_vertex_color){
-            vbo[i*4].color.x = colors[i*2].x;
-            vbo[i*4].color.y = colors[i*2].y;
-            vbo[i*4].color.z = colors[i*2].z;
-
-            vbo[i*4+1].color.x = colors[i*2].x;
-            vbo[i*4+1].color.y = colors[i*2].y;
-            vbo[i*4+1].color.z = colors[i*2].z;
-
-            vbo[i*4+2].color.x = colors[i*2+1].x;
-            vbo[i*4+2].color.y = colors[i*2+1].y;
-            vbo[i*4+2].color.z = colors[i*2+1].z;
-
-            vbo[i*4+3].color.x = colors[i*2+1].x;
-            vbo[i*4+3].color.y = colors[i*2+1].y;
-            vbo[i*4+3].color.z = colors[i*2+1].z;
-        }
-
-        ibo[i*6] = i*4;
-        ibo[i*6+1] = i*4+1;
-        ibo[i*6+2] = i*4+2;
-
-        ibo[i*6+3] = i*4+1;
-        ibo[i*6+4] = i*4+2;
-        ibo[i*6+5] = i*4+3;
-    }
-}
 
 void Lines::update_data(const LinesInfo& info){
 
@@ -140,9 +33,8 @@ void Lines::update_data(const LinesInfo& info){
     bool use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
 
     if(info.renderable_info.vertices.field_source == FIELD_SOURCE_CUDA){
-        int num_blocks,num_threads;
-        set_num_blocks_threads(N,num_blocks,num_threads);
-        update_lines_vbo_cuda<<<num_blocks,num_threads>>>(vertex_buffer_device_ptr_,index_buffer_device_ptr_,(float2*)info.renderable_info.vertices.data,N,info.width,aspect_ratio,(float3*)info.renderable_info.per_vertex_color.data,use_per_vertex_color);
+
+        update_lines_vbo_cuda(vertex_buffer_device_ptr_,index_buffer_device_ptr_,(float*)info.renderable_info.vertices.data,N,info.width,aspect_ratio,(float*)info.renderable_info.per_vertex_color.data,use_per_vertex_color);
         CHECK_CUDA_ERROR("update lines data");
     }
     else if(info.renderable_info.vertices.field_source == FIELD_SOURCE_X64)
@@ -150,7 +42,7 @@ void Lines::update_data(const LinesInfo& info){
         {
             MappedMemory mapped_vbo(app_context_->device, staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
             MappedMemory mapped_ibo(app_context_->device, staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
-            update_lines_vbo_x64((Vertex*) mapped_vbo.data, (int*)mapped_ibo.data,(float2*)info.renderable_info.vertices.data,N,info.width,aspect_ratio,(float3*)info.renderable_info.per_vertex_color.data,use_per_vertex_color);
+            update_lines_vbo_x64((Vertex*) mapped_vbo.data, (int*)mapped_ibo.data,(float*)info.renderable_info.vertices.data,N,info.width,aspect_ratio,(float*)info.renderable_info.per_vertex_color.data,use_per_vertex_color);
         }
         copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
         copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
