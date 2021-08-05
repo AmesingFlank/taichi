@@ -25,8 +25,8 @@ void Renderable::init_render_resources(){
     create_descriptor_sets();
 
     if(app_context_->config.ti_arch == ARCH_CUDA){
-        vertex_buffer_device_ptr_ = (Vertex*) get_memory_pointer(vertex_buffer_memory_,config_.vertices_count * sizeof(Vertex), app_context_->device);
-        index_buffer_device_ptr_ = (int*) get_memory_pointer(index_buffer_memory_,config_.indices_count * sizeof(int), app_context_->device);
+        vertex_buffer_device_ptr_ = (Vertex*) get_memory_pointer(vertex_buffer_memory_,config_.vertices_count * sizeof(Vertex), app_context_->device());
+        index_buffer_device_ptr_ = (int*) get_memory_pointer(index_buffer_memory_,config_.indices_count * sizeof(int), app_context_->device());
     }
 }
 
@@ -90,8 +90,8 @@ void Renderable::update_data(const RenderableInfo& info){
     else if(info.vertices.field_source == FIELD_SOURCE_X64)
     {
         {
-            MappedMemory mapped_vbo(app_context_->device, staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
-            MappedMemory mapped_ibo(app_context_->device, staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
+            MappedMemory mapped_vbo(app_context_->device(), staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
+            MappedMemory mapped_ibo(app_context_->device(), staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
 
             update_renderables_vertices_x64((Vertex* )mapped_vbo.data, (float*)info.vertices.data, num_vertices,num_components);
             if(info.per_vertex_color.valid){
@@ -114,8 +114,8 @@ void Renderable::update_data(const RenderableInfo& info){
             }
         }
         
-        copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
-        copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
+        copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
+        copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
     }
     else{
         throw std::runtime_error("unsupported field source");
@@ -137,7 +137,7 @@ void Renderable::create_descriptor_pool(){
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = static_cast<uint32_t>(swap_chain_size) ;
 
-    if (vkCreateDescriptorPool(app_context_->device, &pool_info, nullptr, &descriptor_pool_) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(app_context_->device(), &pool_info, nullptr, &descriptor_pool_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
 }
@@ -146,8 +146,8 @@ void Renderable::create_graphics_pipeline() {
     auto vert_code = read_file(config_.vertex_shader_path);
     auto frag_code = read_file(config_.fragment_shader_path);
 
-    VkShaderModule vert_shader_module = create_shader_module(vert_code,app_context_->device);
-    VkShaderModule frag_shader_module = create_shader_module(frag_code,app_context_->device);
+    VkShaderModule vert_shader_module = create_shader_module(vert_code,app_context_->device());
+    VkShaderModule frag_shader_module = create_shader_module(frag_code,app_context_->device());
 
     VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
     vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -170,7 +170,7 @@ void Renderable::create_graphics_pipeline() {
     if(has_geom_shader){
         auto geom_code = read_file(config_.geometry_shader_path);
 
-        geom_shader_module = create_shader_module(geom_code,app_context_->device);
+        geom_shader_module = create_shader_module(geom_code,app_context_->device());
 
         VkPipelineShaderStageCreateInfo geom_shader_stage_info{};
         geom_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -209,8 +209,8 @@ void Renderable::create_graphics_pipeline() {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = app_context_ -> swap_chain. swap_chain_extent.width ;
-    viewport.height = app_context_ -> swap_chain. swap_chain_extent.height;
+    viewport.width = app_context_ ->swap_chain. swap_chain_extent.width ;
+    viewport.height = app_context_ ->swap_chain. swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -268,7 +268,7 @@ void Renderable::create_graphics_pipeline() {
     pipeline_layout__info.setLayoutCount = 1;
     pipeline_layout__info.pSetLayouts = &descriptor_set_layout_;
 
-    if (vkCreatePipelineLayout(app_context_->device, &pipeline_layout__info, nullptr, &pipeline_layout_) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(app_context_->device(), &pipeline_layout__info, nullptr, &pipeline_layout_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -298,14 +298,14 @@ void Renderable::create_graphics_pipeline() {
     pipeline_info.subpass = 0;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(app_context_->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline_) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(app_context_->device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(app_context_->device, frag_shader_module, nullptr);
-    vkDestroyShaderModule(app_context_->device, vert_shader_module, nullptr);
+    vkDestroyShaderModule(app_context_->device(), frag_shader_module, nullptr);
+    vkDestroyShaderModule(app_context_->device(), vert_shader_module, nullptr);
     if(has_geom_shader){
-        vkDestroyShaderModule(app_context_->device, geom_shader_module, nullptr);
+        vkDestroyShaderModule(app_context_->device(), geom_shader_module, nullptr);
     }
 }
 
@@ -313,16 +313,16 @@ void Renderable::create_graphics_pipeline() {
 
 void Renderable::create_vertex_buffer() {
     VkDeviceSize buffer_size = sizeof(Vertex) * config_.vertices_count;
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer_, vertex_buffer_memory_,app_context_->device,app_context_->physical_device);
+    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer_, vertex_buffer_memory_,app_context_->device(),app_context_->physical_device());
 
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_vertex_buffer_, staging_vertex_buffer_memory_,app_context_->device,app_context_->physical_device);
+    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_vertex_buffer_, staging_vertex_buffer_memory_,app_context_->device(),app_context_->physical_device());
 }
 
 void Renderable::create_index_buffer() {
     VkDeviceSize buffer_size = sizeof(int) * config_.indices_count;
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT , index_buffer_, index_buffer_memory_,app_context_->device,app_context_->physical_device);
+    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT , index_buffer_, index_buffer_memory_,app_context_->device(),app_context_->physical_device());
 
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , staging_index_buffer_, staging_index_buffer_memory_,app_context_->device,app_context_->physical_device);
+    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , staging_index_buffer_, staging_index_buffer_memory_,app_context_->device(),app_context_->physical_device());
 }
 
 void Renderable::create_uniform_buffers() {
@@ -332,7 +332,7 @@ void Renderable::create_uniform_buffers() {
     uniform_buffer_memories_.resize(app_context_->get_swap_chain_size());
 
     for (size_t i = 0; i < app_context_->get_swap_chain_size(); i++) {
-        create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers_[i] , uniform_buffer_memories_[i] ,app_context_->device,app_context_->physical_device);
+        create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers_[i] , uniform_buffer_memories_[i] ,app_context_->device(),app_context_->physical_device());
     }
 }
 
@@ -348,33 +348,33 @@ void Renderable::recreate_swap_chain() {
 
 void Renderable::cleanup_swap_chain(){
 
-    vkDestroyPipeline(app_context_->device, graphics_pipeline_, nullptr);
-    vkDestroyPipelineLayout(app_context_->device, pipeline_layout_, nullptr);
+    vkDestroyPipeline(app_context_->device(), graphics_pipeline_, nullptr);
+    vkDestroyPipelineLayout(app_context_->device(), pipeline_layout_, nullptr);
 
     for (int i = 0;i<uniform_buffers_.size();++i){
-        vkDestroyBuffer(app_context_->device, uniform_buffers_[i] , nullptr);
-        vkFreeMemory(app_context_->device, uniform_buffer_memories_[i] , nullptr);
+        vkDestroyBuffer(app_context_->device(), uniform_buffers_[i] , nullptr);
+        vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i] , nullptr);
     }
 
-    vkDestroyDescriptorPool(app_context_->device, descriptor_pool_, nullptr);
+    vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
     
 }
 
 void Renderable::cleanup(){
 
-    vkDestroyDescriptorSetLayout(app_context_->device, descriptor_set_layout_, nullptr);
+    vkDestroyDescriptorSetLayout(app_context_->device(), descriptor_set_layout_, nullptr);
 
-    vkDestroyBuffer(app_context_->device, index_buffer_, nullptr);
-    vkFreeMemory(app_context_->device, index_buffer_memory_, nullptr);
+    vkDestroyBuffer(app_context_->device(), index_buffer_, nullptr);
+    vkFreeMemory(app_context_->device(), index_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device, vertex_buffer_, nullptr);
-    vkFreeMemory(app_context_->device, vertex_buffer_memory_, nullptr);
+    vkDestroyBuffer(app_context_->device(), vertex_buffer_, nullptr);
+    vkFreeMemory(app_context_->device(), vertex_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device, staging_index_buffer_, nullptr);
-    vkFreeMemory(app_context_->device, staging_index_buffer_memory_, nullptr);
+    vkDestroyBuffer(app_context_->device(), staging_index_buffer_, nullptr);
+    vkFreeMemory(app_context_->device(), staging_index_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device, staging_vertex_buffer_, nullptr);
-    vkFreeMemory(app_context_->device, staging_vertex_buffer_memory_, nullptr);
+    vkDestroyBuffer(app_context_->device(), staging_vertex_buffer_, nullptr);
+    vkFreeMemory(app_context_->device(), staging_vertex_buffer_memory_, nullptr);
 }
 
 void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer){

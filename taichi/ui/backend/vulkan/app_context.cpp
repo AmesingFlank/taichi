@@ -53,14 +53,6 @@ void AppContext::init() {
     };
     vulkan_device = std::make_unique<EmbeddedVulkanDevice>(evd_params);
 
-    instance =  vulkan_device->instance();
-    device = vulkan_device->device()->device();
-    physical_device = vulkan_device->physical_device();
-    graphics_queue = vulkan_device->device()->graphics_queue();
-    present_queue = vulkan_device->device()->present_queue();
-    command_pool = vulkan_device->device()->command_pool();
-    queue_family_indices = vulkan_device->queue_family_indices();
-
     swap_chain.app_context = this;
     swap_chain.surface = vulkan_device->surface();
 
@@ -92,7 +84,7 @@ void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout fin
     color_attachment.finalLayout = final_color_layout ;
 
     VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = find_depth_format(physical_device);
+    depth_attachment.format = find_depth_format(physical_device());
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -133,7 +125,7 @@ void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout fin
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device(), &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
@@ -141,7 +133,7 @@ void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout fin
 
 
 void  AppContext::cleanup_swap_chain() {
-    vkDestroyRenderPass(device, render_pass, nullptr);
+    vkDestroyRenderPass(device(), render_pass, nullptr);
     swap_chain.cleanup_swap_chain();
 }
 

@@ -10,7 +10,7 @@ void check_vulkan_result(VkResult err){
         abort();
 }
 
-QueueFamilyIndices find_queue_families(VkPhysicalDevice& device,VkSurfaceKHR& surface) {
+QueueFamilyIndices find_queue_families(VkPhysicalDevice device,VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     uint32_t queue_family_count = 0;
@@ -42,7 +42,7 @@ QueueFamilyIndices find_queue_families(VkPhysicalDevice& device,VkSurfaceKHR& su
     return indices;
 }
 
-SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice& physical_device, VkSurfaceKHR& surface) {
+SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
@@ -66,7 +66,7 @@ SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice& physical_devi
     return details;
 }
 
-VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features,VkPhysicalDevice& physical_device) {
+VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features,VkPhysicalDevice physical_device) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(physical_device, format, &props);
@@ -81,7 +81,7 @@ VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageT
     throw std::runtime_error("failed to find supported format!");
 }
 
-VkFormat find_depth_format(VkPhysicalDevice& physical_device) {
+VkFormat find_depth_format(VkPhysicalDevice physical_device) {
     return find_supported_format(
     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
         VK_IMAGE_TILING_OPTIMAL,
@@ -90,7 +90,7 @@ VkFormat find_depth_format(VkPhysicalDevice& physical_device) {
     );
 }
 
- VkCommandBuffer create_new_command_buffer( VkCommandPool& command_pool, VkDevice& device) {
+ VkCommandBuffer create_new_command_buffer( VkCommandPool command_pool, VkDevice device) {
     VkCommandBufferAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -102,7 +102,7 @@ VkFormat find_depth_format(VkPhysicalDevice& physical_device) {
     return command_buffer;
 }
 
-VkCommandBuffer begin_single_time_commands( VkCommandPool& command_pool, VkDevice& device) {
+VkCommandBuffer begin_single_time_commands( VkCommandPool command_pool, VkDevice device) {
 
     VkCommandBuffer command_buffer = create_new_command_buffer(command_pool,device);
 
@@ -115,7 +115,7 @@ VkCommandBuffer begin_single_time_commands( VkCommandPool& command_pool, VkDevic
     return command_buffer;
 }
 
-void end_single_time_commands(VkCommandBuffer command_buffer,VkCommandPool& command_pool, VkDevice& device, VkQueue& graphics_queue) {
+void end_single_time_commands(VkCommandBuffer command_buffer,VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) {
     vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submit_info{};
@@ -129,7 +129,7 @@ void end_single_time_commands(VkCommandBuffer command_buffer,VkCommandPool& comm
     vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
-void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkCommandPool& command_pool, VkDevice& device, VkQueue& graphics_queue) {
+void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) {
     VkCommandBuffer command_buffer = begin_single_time_commands(command_pool,device);
 
     VkBufferCopy copy_region{};
@@ -140,7 +140,7 @@ void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, Vk
 }
 
 
-void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool& command_pool, VkDevice& device, VkQueue& graphics_queue) {
+void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) {
     VkCommandBuffer command_buffer = begin_single_time_commands(command_pool,device);
 
     VkBufferImageCopy region{};
@@ -163,7 +163,7 @@ void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32
     end_single_time_commands(command_buffer,command_pool,device,graphics_queue);
 }
 
-uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties,VkPhysicalDevice& physical_device) {
+uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties,VkPhysicalDevice physical_device) {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
 
@@ -176,7 +176,7 @@ uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void alloc_device_memory(VkMemoryRequirements mem_requirements, VkMemoryPropertyFlags properties,VkDevice& device,VkPhysicalDevice& physical_device,VkDeviceMemory& mem){
+void alloc_device_memory(VkMemoryRequirements mem_requirements, VkMemoryPropertyFlags properties,VkDevice device,VkPhysicalDevice physical_device,VkDeviceMemory& mem){
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = mem_requirements.size;
@@ -251,7 +251,7 @@ void create_semaphore(VkSemaphore& result, VkDevice device){
     }
 }
 
-void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_mem,VkDevice& device,VkPhysicalDevice& physical_device) {
+void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_mem,VkDevice device,VkPhysicalDevice physical_device) {
     VkBufferCreateInfo buffer_info{};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_info.size = size;
@@ -284,7 +284,7 @@ void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryProperty
 }
 
 
-VkShaderModule create_shader_module(const std::vector<char>& code, VkDevice& device) {
+VkShaderModule create_shader_module(const std::vector<char>& code, VkDevice device) {
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code.size();
@@ -299,7 +299,7 @@ VkShaderModule create_shader_module(const std::vector<char>& code, VkDevice& dev
 }
 
 
-void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_mem,VkDevice& device,VkPhysicalDevice& physical_device) {
+void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_mem,VkDevice device,VkPhysicalDevice physical_device) {
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -340,7 +340,7 @@ void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTilin
     vkBindImageMemory(device, image, image_mem, 0);
 }
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags,VkDevice& device) {
+VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags,VkDevice device) {
     VkImageViewCreateInfo view_info{};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
@@ -362,7 +362,7 @@ VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags
 
 
 
-void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout,VkCommandPool& command_pool, VkDevice& device, VkQueue& graphics_queue) {
+void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout,VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) {
     VkCommandBuffer command_buffer = begin_single_time_commands(command_pool,device);
 
     VkImageMemoryBarrier barrier{};

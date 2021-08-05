@@ -40,12 +40,12 @@ void Lines::update_data(const LinesInfo& info){
     else if(info.renderable_info.vertices.field_source == FIELD_SOURCE_X64)
     {
         {
-            MappedMemory mapped_vbo(app_context_->device, staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
-            MappedMemory mapped_ibo(app_context_->device, staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
+            MappedMemory mapped_vbo(app_context_->device(), staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
+            MappedMemory mapped_ibo(app_context_->device(), staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
             update_lines_vbo_x64((Vertex*) mapped_vbo.data, (int*)mapped_ibo.data,(float*)info.renderable_info.vertices.data,N,info.width,aspect_ratio,(float*)info.renderable_info.per_vertex_color.data,use_per_vertex_color);
         }
-        copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
-        copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
+        copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
+        copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
     }
     else{
         throw std::runtime_error("unsupported field source");
@@ -77,7 +77,7 @@ Lines::Lines(AppContext* app_context){
 void Lines::update_ubo(glm::vec3 color,bool use_per_vertex_color) {
     UniformBufferObject ubo{color,(int) use_per_vertex_color};
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device(), uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 
@@ -97,7 +97,7 @@ void Lines::create_descriptor_set_layout() {
     layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
     layout_info.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(app_context_->device, &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(app_context_->device(), &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
@@ -113,7 +113,7 @@ void Lines::create_descriptor_sets() {
 
     descriptor_sets_.resize(app_context_->get_swap_chain_size());
 
-    if (vkAllocateDescriptorSets(app_context_->device, &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(app_context_->device(), &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -134,7 +134,7 @@ void Lines::create_descriptor_sets() {
         descriptor_writes[0].descriptorCount = 1;
         descriptor_writes[0].pBufferInfo = &buffer_info;
 
-        vkUpdateDescriptorSets(app_context_->device, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(app_context_->device(), static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
     }
 }
 

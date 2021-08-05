@@ -45,9 +45,9 @@ void SetImage::update_data(const SetImageInfo& info){
         CHECK_CUDA_ERROR("copy to texture\n");
     }
     else if(img.field_source == FIELD_SOURCE_X64){
-        transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
+        transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,app_context_->command_pool(),app_context_->device(),app_context_->graphics_queue());
         
-        MappedMemory mapped_buffer(app_context_->device, staging_buffer_memory_ , pixels * 4);
+        MappedMemory mapped_buffer(app_context_->device(), staging_buffer_memory_ , pixels * 4);
  
         if(img.dtype == DTYPE_U8){
             copy_to_texture_fuffer_x64 ((unsigned char*)img.data,(unsigned char*)mapped_buffer.data,width,height,actual_width,actual_height,img.matrix_rows);
@@ -59,9 +59,9 @@ void SetImage::update_data(const SetImageInfo& info){
             throw std::runtime_error("for set image, dtype must be u8 or f32");
         } 
 
-        copy_buffer_to_image(staging_buffer_, texture_image_, width,height,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
+        copy_buffer_to_image(staging_buffer_, texture_image_, width,height,app_context_->command_pool(),app_context_->device(),app_context_->graphics_queue());
 
-        transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
+        transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,app_context_->command_pool(),app_context_->device(),app_context_->graphics_queue());
     }
     else{
         throw std::runtime_error("unsupported field source");
@@ -108,33 +108,33 @@ void SetImage::create_texture_image_(int width, int height) {
         
     VkDeviceSize image_size = (int)(width * height * 4);
 
-    create_image(width,height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image_, texture_image_memory_,app_context_->device,app_context_->physical_device);
+    create_image(width,height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image_, texture_image_memory_,app_context_->device(),app_context_->physical_device());
 
-    transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
-    transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,app_context_->command_pool,app_context_->device,app_context_->graphics_queue);
+    transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,app_context_->command_pool(),app_context_->device(),app_context_->graphics_queue());
+    transition_image_layout(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,app_context_->command_pool(),app_context_->device(),app_context_->graphics_queue());
 
     if(app_context_->config.ti_arch == ARCH_CUDA){
         VkMemoryRequirements mem_requirements;
-        vkGetImageMemoryRequirements(app_context_->device, texture_image_, &mem_requirements);
+        vkGetImageMemoryRequirements(app_context_->device(), texture_image_, &mem_requirements);
 
-        auto handle = get_device_mem_handle(texture_image_memory_,app_context_->device);
+        auto handle = get_device_mem_handle(texture_image_memory_,app_context_->device());
         CUexternalMemory external_mem = import_vk_memory_object_from_handle(handle,mem_requirements.size,true);
 
         texture_surface_ = (uint64_t)get_image_surface_object_of_external_memory(external_mem,width,height);
     }
-    create_buffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer_, staging_buffer_memory_,app_context_->device,app_context_->physical_device);
+    create_buffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer_, staging_buffer_memory_,app_context_->device(),app_context_->physical_device());
     
 }
 
 
 
 void SetImage::create_texture_image_view_() {
-    texture_image_view_ = create_image_view(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT,app_context_->device);
+    texture_image_view_ = create_image_view(texture_image_, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT,app_context_->device());
 }
 
 void SetImage::create_texture_sampler_() {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(app_context_->physical_device, &properties);
+    vkGetPhysicalDeviceProperties(app_context_->physical_device(), &properties);
 
     VkSamplerCreateInfo sampler_info{};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -151,7 +151,7 @@ void SetImage::create_texture_sampler_() {
     sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
     sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(app_context_->device, &sampler_info, nullptr, &texture_sampler_) != VK_SUCCESS) {
+    if (vkCreateSampler(app_context_->device(), &sampler_info, nullptr, &texture_sampler_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -168,11 +168,11 @@ void SetImage::update_vertex_buffer_(){
     };
 
     {
-        MappedMemory mapped_vbo(app_context_->device, staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
+        MappedMemory mapped_vbo(app_context_->device(), staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
         memcpy(mapped_vbo.data, vertices.data(), (size_t) config_.vertices_count * sizeof(Vertex));
     }
 
-    copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
+    copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
 
 }
 
@@ -181,11 +181,11 @@ void SetImage::update_index_buffer_() {
         0, 1, 2, 3,4,5,
     };
     {
-        MappedMemory mapped_ibo(app_context_->device, staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
+        MappedMemory mapped_ibo(app_context_->device(), staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
         memcpy(mapped_ibo.data, indices.data(), (size_t) config_.indices_count * sizeof(int));
     }
     
-    copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ -> command_pool, app_context_ -> device, app_context_ -> graphics_queue) ;
+    copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
 
 }
 
@@ -211,7 +211,7 @@ void SetImage::create_descriptor_set_layout()  {
     layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
     layout_info.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(app_context_->device, &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(app_context_->device(), &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
@@ -227,7 +227,7 @@ void SetImage::create_descriptor_sets()  {
 
     descriptor_sets_.resize(app_context_->get_swap_chain_size());
 
-    if (vkAllocateDescriptorSets(app_context_->device, &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(app_context_->device(), &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -260,7 +260,7 @@ void SetImage::create_descriptor_sets()  {
         descriptor_writes[1].descriptorCount = 1;
         descriptor_writes[1].pImageInfo = &image_info;
 
-        vkUpdateDescriptorSets(app_context_->device, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(app_context_->device(), static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
     }
 
     
@@ -269,14 +269,14 @@ void SetImage::create_descriptor_sets()  {
 void SetImage::cleanup() {
     Renderable::cleanup();
 
-    vkDestroySampler(app_context_->device, texture_sampler_, nullptr);
-    vkDestroyImageView(app_context_->device, texture_image_view_, nullptr);
+    vkDestroySampler(app_context_->device(), texture_sampler_, nullptr);
+    vkDestroyImageView(app_context_->device(), texture_image_view_, nullptr);
 
-    vkDestroyImage(app_context_->device, texture_image_, nullptr);
-    vkFreeMemory(app_context_->device, texture_image_memory_, nullptr);
+    vkDestroyImage(app_context_->device(), texture_image_, nullptr);
+    vkFreeMemory(app_context_->device(), texture_image_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device, staging_buffer_, nullptr);
-    vkFreeMemory(app_context_->device, staging_buffer_memory_, nullptr);
+    vkDestroyBuffer(app_context_->device(), staging_buffer_, nullptr);
+    vkFreeMemory(app_context_->device(), staging_buffer_memory_, nullptr);
 }
 
 

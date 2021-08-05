@@ -15,13 +15,13 @@ void Particles::update_ubo(glm::vec3 color,bool use_per_vertex_color,float radiu
     ubo.scene = scene.current_ubo_;
     ubo.color = glm::vec4(color,1);
     ubo.radius = radius;
-    ubo.window_width = app_context_ -> swap_chain. swap_chain_extent.width;
-    ubo.window_height = app_context_ -> swap_chain. swap_chain_extent.height;
+    ubo.window_width = app_context_ ->swap_chain. swap_chain_extent.width;
+    ubo.window_height = app_context_ ->swap_chain. swap_chain_extent.height;
     ubo.tan_half_fov = tan(glm::radians(scene.camera_.fov) / 2);
     ubo.use_per_vertex_color = use_per_vertex_color;
     ubo.shininess = shininess;
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device(), uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 
@@ -68,7 +68,7 @@ void  Particles::create_descriptor_set_layout()  {
     layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
     layout_info.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(app_context_->device, &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(app_context_->device(), &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
@@ -84,7 +84,7 @@ void  Particles::create_descriptor_sets() {
 
     descriptor_sets_.resize(app_context_->get_swap_chain_size());
 
-    if (vkAllocateDescriptorSets(app_context_->device, &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(app_context_->device(), &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -105,7 +105,7 @@ void  Particles::create_descriptor_sets() {
         descriptor_writes[0].descriptorCount = 1;
         descriptor_writes[0].pBufferInfo = &buffer_info;
 
-        vkUpdateDescriptorSets(app_context_->device, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(app_context_->device(), static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
     }
 }
 

@@ -11,11 +11,11 @@ namespace vulkan{
 
 
 #ifdef _WIN64  // For windows
-HANDLE get_device_mem_handle(VkDeviceMemory& mem,VkDevice& device);
+HANDLE get_device_mem_handle(VkDeviceMemory& mem,VkDevice device);
 CUexternalMemory import_vk_memory_object_from_handle(HANDLE handle, unsigned long long size, bool is_dedicated) ;
 HANDLE get_vk_semaphore_handle(VkExternalSemaphoreHandleTypeFlagBitsKHR external_semaphore_handle_type,VkSemaphore& semaphore,VkDevice device) ;
 #else
-int get_device_mem_handle(VkDeviceMemory& mem,VkDevice& device);
+int get_device_mem_handle(VkDeviceMemory& mem,VkDevice device);
 CUexternalMemory import_vk_memory_object_from_handle(int fd, unsigned long long size, bool is_dedicated);
 int get_vk_semaphore_handle(VkExternalSemaphoreHandleTypeFlagBitsKHR external_semaphore_handle_type,VkSemaphore& semaphore,VkDevice device);
 #endif

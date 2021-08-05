@@ -5,7 +5,7 @@ using namespace taichi::lang;
 namespace vulkan{
 
 #ifdef _WIN64  // For windows
-HANDLE get_device_mem_handle(VkDeviceMemory& mem,VkDevice& device) {
+HANDLE get_device_mem_handle(VkDeviceMemory& mem,VkDevice device) {
     HANDLE handle = (HANDLE) 999;
 
     VkMemoryGetWin32HandleInfoKHR memory_get_win32_handle_info = {};
@@ -32,7 +32,7 @@ HANDLE get_device_mem_handle(VkDeviceMemory& mem,VkDevice& device) {
     return handle;
 }
 #else
-int get_device_mem_handle(VkDeviceMemory& mem,VkDevice& device) {
+int get_device_mem_handle(VkDeviceMemory& mem,VkDevice device) {
     int fd;
 
     VkMemoryGetFdInfoKHR memory_get_fd_info = {};

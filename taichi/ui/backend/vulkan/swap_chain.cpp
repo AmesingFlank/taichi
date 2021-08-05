@@ -4,7 +4,7 @@
 #include "swap_chain.h"
 
 namespace vulkan{
-    
+
     using namespace taichi::lang::vulkan;
 
     void SwapChain::update_image_index(){
@@ -12,30 +12,30 @@ namespace vulkan{
     }
 
     void SwapChain::cleanup_swap_chain() {
-        vkDestroyImageView(app_context->device, depth_image_view, nullptr);
-        vkDestroyImage(app_context->device, depth_image, nullptr);
-        vkFreeMemory(app_context->device, depth_image_memory, nullptr);
+        vkDestroyImageView(app_context->device(), depth_image_view, nullptr);
+        vkDestroyImage(app_context->device(), depth_image, nullptr);
+        vkFreeMemory(app_context->device(), depth_image_memory, nullptr);
 
         for (auto framebuffer : swap_chain_framebuffers) {
-            vkDestroyFramebuffer(app_context->device, framebuffer, nullptr);
+            vkDestroyFramebuffer(app_context->device(), framebuffer, nullptr);
         }
 
  
         for (auto image_view : swap_chain_image_views) {
-            vkDestroyImageView(app_context->device, image_view, nullptr);
+            vkDestroyImageView(app_context->device(), image_view, nullptr);
         }
 
-        vkDestroySwapchainKHR(app_context->device, swap_chain, nullptr);
+        vkDestroySwapchainKHR(app_context->device(), swap_chain, nullptr);
     }
 
     void SwapChain::cleanup(){
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroySemaphore(app_context->device, render_finished_semaphores[i], nullptr);
-            vkDestroySemaphore(app_context->device, image_available_semaphores[i], nullptr);
-            vkDestroyFence(app_context->device, in_flight_scenes[i], nullptr);
+            vkDestroySemaphore(app_context->device(), render_finished_semaphores[i], nullptr);
+            vkDestroySemaphore(app_context->device(), image_available_semaphores[i], nullptr);
+            vkDestroyFence(app_context->device(), in_flight_scenes[i], nullptr);
         }
         
-        vkDestroySurfaceKHR(app_context->instance, surface, nullptr);
+        vkDestroySurfaceKHR(app_context->instance(), surface, nullptr);
     }
 
     void SwapChain::recreate_swap_chain() {
@@ -53,7 +53,7 @@ namespace vulkan{
 
     
     void SwapChain::create_swap_chain() {
-        SwapChainSupportDetails swap_chain_support = query_swap_chain_support(app_context->physical_device,surface);
+        SwapChainSupportDetails swap_chain_support = query_swap_chain_support(app_context->physical_device(),surface);
 
         VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
         VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
@@ -75,7 +75,7 @@ namespace vulkan{
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        VulkanQueueFamilyIndices indices = app_context->queue_family_indices;
+        VulkanQueueFamilyIndices indices = app_context->queue_family_indices();
         uint32_t queue_family_indices[] = {indices.graphics_family.value(), indices.present_family.value()};
 
         if (indices.graphics_family != indices.present_family) {
@@ -91,13 +91,13 @@ namespace vulkan{
         create_info.presentMode = present_mode;
         create_info.clipped = VK_TRUE;
 
-        if (vkCreateSwapchainKHR(app_context->device, &create_info, nullptr, &swap_chain) != VK_SUCCESS) {
+        if (vkCreateSwapchainKHR(app_context->device(), &create_info, nullptr, &swap_chain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(app_context->device, swap_chain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(app_context->device(), swap_chain, &image_count, nullptr);
         swap_chain_images.resize(image_count);
-        vkGetSwapchainImagesKHR(app_context->device, swap_chain, &image_count, swap_chain_images.data());
+        vkGetSwapchainImagesKHR(app_context->device(), swap_chain, &image_count, swap_chain_images.data());
 
         swap_chain_image_format = surface_format.format;
         swap_chain_extent = extent;
@@ -107,7 +107,7 @@ namespace vulkan{
         swap_chain_image_views.resize(swap_chain_images.size());
 
         for (uint32_t i = 0; i < swap_chain_images.size(); i++) {
-            swap_chain_image_views[i] = create_image_view(swap_chain_images[i], swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT,app_context->device);
+            swap_chain_image_views[i] = create_image_view(swap_chain_images[i], swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT,app_context->device());
         }
     }
 
@@ -135,7 +135,7 @@ namespace vulkan{
             framebuffer_info.height = swap_chain_extent.height;
             framebuffer_info.layers = 1;
 
-            if (vkCreateFramebuffer(app_context->device, &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) != VK_SUCCESS) {
+            if (vkCreateFramebuffer(app_context->device(), &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
@@ -144,10 +144,10 @@ namespace vulkan{
     
 
     void SwapChain::create_depth_resources() {
-        VkFormat depth_format = find_depth_format(app_context->physical_device);
+        VkFormat depth_format = find_depth_format(app_context->physical_device());
         
-        create_image(swap_chain_extent.width, swap_chain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory,app_context->device,app_context->physical_device);
-        depth_image_view = create_image_view(depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT,app_context->device);
+        create_image(swap_chain_extent.width, swap_chain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory,app_context->device(),app_context->physical_device());
+        depth_image_view = create_image_view(depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT,app_context->device());
     }
 
     void SwapChain::create_sync_objects() {
@@ -164,18 +164,18 @@ namespace vulkan{
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(app_context->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(app_context->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(app_context->device, &fenceInfo, nullptr, &in_flight_scenes[i]) != VK_SUCCESS) {
+            if (vkCreateSemaphore(app_context->device(), &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(app_context->device(), &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(app_context->device(), &fenceInfo, nullptr, &in_flight_scenes[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
     }
 
     uint32_t SwapChain::get_image_index(){
-        vkWaitForFences(app_context->device, 1, &in_flight_scenes[current_frame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(app_context->device(), 1, &in_flight_scenes[current_frame], VK_TRUE, UINT64_MAX);
         uint32_t image_index;
-        VkResult result = vkAcquireNextImageKHR(app_context->device, swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+        VkResult result = vkAcquireNextImageKHR(app_context->device(), swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
         return image_index;
     }
 
@@ -200,7 +200,7 @@ namespace vulkan{
 
         present_info.pImageIndices = &image_index;
 
-        VkResult result = vkQueuePresentKHR(app_context->present_queue, &present_info);
+        VkResult result = vkQueuePresentKHR(app_context->present_queue(), &present_info);
 
         if ( result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ) {
             requires_recreate = true;
@@ -210,7 +210,7 @@ namespace vulkan{
 
         current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-        vkDeviceWaitIdle(app_context->device);
+        vkDeviceWaitIdle(app_context->device());
     }
 
      VkSurfaceFormatKHR SwapChain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) {

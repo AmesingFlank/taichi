@@ -19,7 +19,7 @@ void Mesh::update_ubo(const MeshInfo& info,const Scene& scene) {
     ubo.shininess = info.shininess;
     ubo.need_normal_generation = !info.renderable_info.normals.valid;
 
-    MappedMemory mapped(app_context_->device, uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
+    MappedMemory mapped(app_context_->device(), uniform_buffer_memories_[app_context_->swap_chain.curr_image_index] ,  sizeof(ubo));
     memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 
@@ -65,7 +65,7 @@ void  Mesh::create_descriptor_set_layout()  {
     layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
     layout_info.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(app_context_->device, &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(app_context_->device(), &layout_info, nullptr, &descriptor_set_layout_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
@@ -81,7 +81,7 @@ void  Mesh::create_descriptor_sets() {
 
     descriptor_sets_.resize(app_context_->get_swap_chain_size());
 
-    if (vkAllocateDescriptorSets(app_context_->device, &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(app_context_->device(), &alloc_info, descriptor_sets_.data() ) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -102,7 +102,7 @@ void  Mesh::create_descriptor_sets() {
         descriptor_writes[0].descriptorCount = 1;
         descriptor_writes[0].pBufferInfo = &buffer_info;
 
-        vkUpdateDescriptorSets(app_context_->device, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(app_context_->device(), static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
     }
 }
 

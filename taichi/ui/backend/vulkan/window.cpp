@@ -77,7 +77,7 @@ void Window::recreate_swap_chain() {
     app_context_.config.width = width;
     app_context_.config.height = height;
 
-    vkDeviceWaitIdle(app_context_.device);
+    vkDeviceWaitIdle(app_context_.device());
 
     cleanup_swap_chain();
 

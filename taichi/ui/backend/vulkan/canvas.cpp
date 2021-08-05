@@ -20,15 +20,15 @@ Canvas::Canvas(AppContext* app_context):app_context_(app_context){
 void Canvas::clear_command_buffer_cache(){
     for(int i = 0;i<cached_command_buffers_.size();++i){
         if(cached_command_buffers_[i]!=VK_NULL_HANDLE){
-            vkFreeCommandBuffers(app_context_->device, app_context_->command_pool, 1, &cached_command_buffers_[i]);
+            vkFreeCommandBuffers(app_context_->device(), app_context_->command_pool(), 1, &cached_command_buffers_[i]);
         }
         cached_command_buffers_[i]=VK_NULL_HANDLE;
     }
 }
 
 void Canvas::create_semaphores(){
-    create_semaphore(prev_draw_finished_vk_,app_context_->device);
-    create_semaphore(this_draw_data_ready_vk_,app_context_->device);
+    create_semaphore(prev_draw_finished_vk_,app_context_->device());
+    create_semaphore(this_draw_data_ready_vk_,app_context_->device());
 }
 
  
@@ -98,7 +98,7 @@ void Canvas::scene(SceneBase* scene_base){
         if(scene -> point_lights_.size() == 0){
             printf("warning, there are no light sources in the scene.\n");
         }
-        float aspect_ratio = app_context_ -> swap_chain. swap_chain_extent.width / (float) app_context_ -> swap_chain. swap_chain_extent.height;
+        float aspect_ratio = app_context_ ->swap_chain. swap_chain_extent.width / (float) app_context_ ->swap_chain. swap_chain_extent.height;
         scene -> update_ubo(aspect_ratio);
         for(int i = 0; i < scene -> mesh_infos_.size() ;++i){
             mesh(scene->mesh_infos_[i],scene);
@@ -121,8 +121,8 @@ void Canvas::cleanup(){
     for(auto& renderable: renderables_){
         renderable -> cleanup();
     }
-    vkDestroySemaphore(app_context_->device,prev_draw_finished_vk_,nullptr);
-    vkDestroySemaphore(app_context_->device,this_draw_data_ready_vk_,nullptr);
+    vkDestroySemaphore(app_context_->device(),prev_draw_finished_vk_,nullptr);
+    vkDestroySemaphore(app_context_->device(),this_draw_data_ready_vk_,nullptr);
 
 }
 
@@ -141,8 +141,8 @@ void Canvas::recreate_swap_chain(){
 
 void Canvas::import_semaphores(){
     if(app_context_->config.ti_arch == ARCH_CUDA){
-        prev_draw_finished_cuda_ = (uint64_t)cuda_vk_import_semaphore(prev_draw_finished_vk_,app_context_->device);
-        this_draw_data_ready_cuda_ = (uint64_t)cuda_vk_import_semaphore(this_draw_data_ready_vk_,app_context_->device);
+        prev_draw_finished_cuda_ = (uint64_t)cuda_vk_import_semaphore(prev_draw_finished_vk_,app_context_->device());
+        this_draw_data_ready_cuda_ = (uint64_t)cuda_vk_import_semaphore(this_draw_data_ready_vk_,app_context_->device());
 
         cuda_vk_semaphore_signal((CUexternalSemaphore)prev_draw_finished_cuda_);
     }
@@ -160,7 +160,7 @@ void Canvas::draw_frame(Gui* gui){
     uint32_t image_index = app_context_->swap_chain.curr_image_index;
     
     if (app_context_->swap_chain.images_in_flight[image_index] != VK_NULL_HANDLE) {
-        vkWaitForFences(app_context_->device, 1, &app_context_->swap_chain.images_in_flight[image_index], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(app_context_->device(), 1, &app_context_->swap_chain.images_in_flight[image_index], VK_TRUE, UINT64_MAX);
     }
     app_context_->swap_chain.images_in_flight[image_index] = app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame];
 
@@ -181,7 +181,7 @@ void Canvas::draw_frame(Gui* gui){
     else{
         //printf("recording new commandBuffer %d %ld\n",image_index,renderables_.size());
 
-        command_buffer = create_new_command_buffer(app_context_->command_pool,app_context_->device);
+        command_buffer = create_new_command_buffer(app_context_->command_pool(),app_context_->device());
 
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -243,9 +243,9 @@ void Canvas::draw_frame(Gui* gui){
     submit_info.signalSemaphoreCount = signal_semaphores.size();
     submit_info.pSignalSemaphores = signal_semaphores.data();
 
-    vkResetFences(app_context_->device, 1, &app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]);
+    vkResetFences(app_context_->device(), 1, &app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]);
 
-    if (vkQueueSubmit(app_context_->graphics_queue, 1, &submit_info, app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(app_context_->graphics_queue(), 1, &submit_info, app_context_->swap_chain.in_flight_scenes[app_context_->swap_chain.current_frame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
     

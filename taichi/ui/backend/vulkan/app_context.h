@@ -11,20 +11,11 @@ namespace vulkan{
 
 struct AppContext{
 
-    VkInstance instance;
-    VkDevice device;
-    VkPhysicalDevice physical_device;
-    taichi::lang::vulkan::VulkanQueueFamilyIndices queue_family_indices;
-    VkQueue graphics_queue;
-    VkQueue present_queue;
-    
-    VkCommandPool command_pool;
-    
+
     std::unique_ptr<taichi::lang::vulkan::EmbeddedVulkanDevice> vulkan_device;
 
     VkRenderPass render_pass;
-
-    VkDebugUtilsMessengerEXT debug_messenger;
+ 
 
     AppConfig config;
 
@@ -44,6 +35,36 @@ struct AppContext{
     void recreate_swap_chain();
 
     int get_swap_chain_size();
+
+
+
+    VkInstance instance() const{
+        return vulkan_device->instance();
+    }
+
+    VkDevice device()const{
+        return vulkan_device->device()->device();
+    }
+
+    VkPhysicalDevice physical_device()const{
+        return vulkan_device->physical_device();
+    }
+
+    taichi::lang::vulkan::VulkanQueueFamilyIndices queue_family_indices()const{
+        return vulkan_device->queue_family_indices();
+    }
+
+    VkQueue graphics_queue()const{
+        return vulkan_device->device()->graphics_queue();
+    }
+
+    VkQueue present_queue() const{
+        return vulkan_device->device()->present_queue();
+    }
+    
+    VkCommandPool command_pool() const{
+        return vulkan_device->device()->command_pool();
+    }
 };
 
 

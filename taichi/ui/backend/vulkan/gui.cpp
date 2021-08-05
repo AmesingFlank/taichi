@@ -26,21 +26,21 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForVulkan(window, true); 
-    VkInstance instance = app_context_ -> instance;
+    VkInstance instance = app_context_ ->instance();
     ImGui_ImplVulkan_LoadFunctions( load_vk_function_for_gui );// this is becaus we're using volk. 
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = app_context_ -> instance;
-    init_info.PhysicalDevice = app_context_ -> physical_device;
-    init_info.Device = app_context_ ->  device;
-    init_info.QueueFamily = app_context_ ->  queue_family_indices.graphics_family.value();
-    init_info.Queue = app_context_ -> graphics_queue;
+    init_info.Instance = app_context_ ->instance();
+    init_info.PhysicalDevice = app_context_ ->physical_device();
+    init_info.Device = app_context_->device();
+    init_info.QueueFamily = app_context_ ->queue_family_indices().graphics_family.value();
+    init_info.Queue = app_context_->graphics_queue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = descriptor_pool_;
     init_info.Allocator = VK_NULL_HANDLE;;
-    init_info.MinImageCount = app_context_ -> swap_chain. swap_chain_images.size();
-    init_info.ImageCount = app_context_ -> swap_chain. swap_chain_images.size();
+    init_info.MinImageCount = app_context_ ->swap_chain. swap_chain_images.size();
+    init_info.ImageCount = app_context_ ->swap_chain. swap_chain_images.size();
     init_info.CheckVkResultFn = check_vulkan_result;
-    ImGui_ImplVulkan_Init(&init_info,  app_context_ -> render_pass);  
+    ImGui_ImplVulkan_Init(&init_info,  app_context_ ->render_pass);  
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -61,7 +61,7 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
     {
         // Use any command queue
         VkResult err;
-        VkCommandBuffer command_buffer = begin_single_time_commands(app_context->command_pool,app_context->device);
+        VkCommandBuffer command_buffer = begin_single_time_commands(app_context->command_pool(),app_context->device());
 
         ImGui_ImplVulkan_CreateFontsTexture(command_buffer); 
 
@@ -71,12 +71,12 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
         end_info.pCommandBuffers = &command_buffer;
         err = vkEndCommandBuffer(command_buffer);
         check_vulkan_result(err);
-        err = vkQueueSubmit(app_context->graphics_queue, 1, &end_info, VK_NULL_HANDLE);
+        err = vkQueueSubmit(app_context->graphics_queue(), 1, &end_info, VK_NULL_HANDLE);
         check_vulkan_result(err);
 
-        err = vkDeviceWaitIdle(app_context->device);
+        err = vkDeviceWaitIdle(app_context->device());
         check_vulkan_result(err);
-        vkFreeCommandBuffers(app_context->device, app_context->command_pool, 1, &command_buffer);
+        vkFreeCommandBuffers(app_context->device(), app_context->command_pool(), 1, &command_buffer);
         ImGui_ImplVulkan_DestroyFontUploadObjects(); 
     }
 }
@@ -102,7 +102,7 @@ void Gui::create_descriptor_pool(){
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
     pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
-    VkResult err = vkCreateDescriptorPool(app_context_->device, &pool_info, VK_NULL_HANDLE, &descriptor_pool_);
+    VkResult err = vkCreateDescriptorPool(app_context_->device(), &pool_info, VK_NULL_HANDLE, &descriptor_pool_);
     check_vulkan_result(err);
 }
 
@@ -160,7 +160,7 @@ void Gui::draw(VkCommandBuffer& command_buffer){
 
 
 void Gui::cleanup(){
-    vkDestroyDescriptorPool(app_context_->device, descriptor_pool_, nullptr);
+    vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
 
     ImGui_ImplVulkan_Shutdown(); 
     ImGui_ImplGlfw_Shutdown();
