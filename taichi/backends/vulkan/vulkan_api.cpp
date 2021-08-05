@@ -197,6 +197,7 @@ EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params):params_(params)
   dparams.compute_queue = compute_queue_;
   dparams.graphics_queue = graphics_queue_;
   dparams.present_queue = present_queue_;
+  dparams.surface = surface_;
   dparams.command_pool = command_pool_;
   owned_device_ = std::make_unique<VulkanDevice>(dparams);
 #ifdef TI_VULKAN_DEBUG
@@ -312,6 +313,11 @@ void EmbeddedVulkanDevice::setup_debug_messenger() {
       "failed to set up debug messenger");
 }
 
+void EmbeddedVulkanDevice::create_surface(){
+  surface_ = params_.surface_creator(instance_);
+}
+
+
 void EmbeddedVulkanDevice::pick_physical_device() {
   uint32_t device_count = 0;
   vkEnumeratePhysicalDevices(instance_, &device_count, nullptr);
@@ -321,7 +327,7 @@ void EmbeddedVulkanDevice::pick_physical_device() {
   vkEnumeratePhysicalDevices(instance_, &device_count, devices.data());
   physical_device_ = VK_NULL_HANDLE;
   for (const auto &device : devices) {
-    if (is_device_suitable(device,params_.surface)) {
+    if (is_device_suitable(device,surface_)) {
       physical_device_ = device;
       break;
     }
@@ -329,7 +335,7 @@ void EmbeddedVulkanDevice::pick_physical_device() {
   TI_ASSERT_INFO(physical_device_ != VK_NULL_HANDLE,
                  "failed to find a suitable GPU");
 
-  queue_family_indices_ = find_queue_families(physical_device_,params_.surface);
+  queue_family_indices_ = find_queue_families(physical_device_,surface_);
 }
 
 void EmbeddedVulkanDevice::create_logical_device() {

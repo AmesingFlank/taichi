@@ -9,6 +9,7 @@
 #include <optional>
 #include <vector>
 #include <string>
+#include <functional>
 
 // #define TI_VULKAN_DEBUG
 
@@ -78,6 +79,7 @@ class VulkanDevice {
     VkQueue compute_queue{VK_NULL_HANDLE};
     VkQueue graphics_queue{VK_NULL_HANDLE};
     VkQueue present_queue{VK_NULL_HANDLE};
+    VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkCommandPool command_pool{VK_NULL_HANDLE};
   };
 
@@ -97,6 +99,10 @@ class VulkanDevice {
 
   VkQueue present_queue() const {
     return rep_.present_queue;
+  }
+
+  VkSurfaceKHR surface() const {
+    return rep_.surface;
   }
 
   VkCommandPool command_pool() const {
@@ -145,7 +151,9 @@ class EmbeddedVulkanDevice {
     bool is_for_ui{false};
     std::vector<const char*> additional_instance_extensions;
     std::vector<const char*> additional_device_extensions;
-    VkSurfaceKHR surface{VK_NULL_HANDLE};
+    // the VkSurfaceKHR needs to be created after creating the VkInstance, but before creating the VkPhysicalDevice
+    // thus, we allow the user to pass in a custom surface creator
+    std::function<VkSurfaceKHR(VkInstance)> surface_creator;
   };
 
   explicit EmbeddedVulkanDevice(const Params &params);
@@ -178,6 +186,7 @@ class EmbeddedVulkanDevice {
  private:
   void create_instance();
   void setup_debug_messenger();
+  void create_surface();
   void pick_physical_device();
   void create_logical_device();
   void create_command_pool();
@@ -198,6 +207,9 @@ class EmbeddedVulkanDevice {
   VkQueue compute_queue_{VK_NULL_HANDLE};
   VkQueue graphics_queue_{VK_NULL_HANDLE};
   VkQueue present_queue_{VK_NULL_HANDLE};
+
+  VkSurfaceKHR surface_{VK_NULL_HANDLE};
+
   // TODO: Shall we have dedicated command pools for COMPUTE and TRANSFER
   // commands, respectively?
   VkCommandPool command_pool_{VK_NULL_HANDLE};
