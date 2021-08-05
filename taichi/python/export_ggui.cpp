@@ -1,3 +1,15 @@
+
+#include <vector>
+#include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
+
+#include "taichi/common/interface.h"
+#include "taichi/common/core.h"
+
+namespace py = pybind11;
+
+#ifdef TI_WITH_GGUI
+
 #include "taichi/ui/utils/utils.h"
 #include "taichi/ui/common/window_base.h"
 #include "taichi/ui/backend/vulkan/window.h"
@@ -5,18 +17,8 @@
 #include "taichi/ui/common/camera.h"
 #include "taichi/ui/backend/vulkan/canvas.h"
 #include "taichi/ui/backend/vulkan/scene.h"
-#include <vector>
-#include "pybind11/pybind11.h"
-#include "pybind11/stl.h"
 #include "taichi/ui/common/field_info.h"
 #include "taichi/ui/common/gui_base.h"
-#include "taichi/common/interface.h"
-#include "taichi/common/core.h"
-
-#define STRINGIFY(x) #x
-#define MACRO_STRINGIFY(x) STRINGIFY(x)
-
-namespace py = pybind11;
 
 TI_NAMESPACE_BEGIN
 
@@ -295,6 +297,8 @@ struct PyWindow {
 };
 
 void export_ggui(py::module &m) {
+  m.attr("GGUI_AVAILABLE") = py::bool_(true);
+
   py::class_<PyWindow>(m, "PyWindow")
       .def(py::init<std::string, py::tuple, bool, std::string, int>())
       .def("get_canvas", &PyWindow::get_canvas)
@@ -393,3 +397,15 @@ void export_ggui(py::module &m) {
 }
 
 TI_NAMESPACE_END
+
+#else
+
+TI_NAMESPACE_BEGIN
+
+void export_ggui(py::module &m) {
+  m.attr("GGUI_AVAILABLE") = py::bool_(false);
+}
+
+TI_NAMESPACE_END
+
+#endif
