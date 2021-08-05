@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../../utils/utils.h"
-#include "../../utils/cuda_utils.h"
-#include "../../utils/cuda_utils.h"
 #include "vulkan_utils.h"
 #include "taichi/backends/cuda/cuda_driver.h"
 

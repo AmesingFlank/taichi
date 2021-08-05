@@ -186,9 +186,9 @@ uint32_t SwapChain::get_image_index() {
   vkWaitForFences(app_context->device(), 1, &in_flight_scenes[current_frame],
                   VK_TRUE, UINT64_MAX);
   uint32_t image_index;
-  VkResult result = vkAcquireNextImageKHR(
-      app_context->device(), swap_chain, UINT64_MAX,
-      image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+  vkAcquireNextImageKHR(app_context->device(), swap_chain, UINT64_MAX,
+                        image_available_semaphores[current_frame],
+                        VK_NULL_HANDLE, &image_index);
   return image_index;
 }
 

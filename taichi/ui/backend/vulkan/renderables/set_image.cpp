@@ -45,7 +45,6 @@ void SetImage::update_data(const SetImageInfo &info) {
     } else {
       throw std::runtime_error("for set image, dtype must be u8 or f32");
     }
-    CHECK_CUDA_ERROR("copy to texture\n");
   } else if (img.field_source == FIELD_SOURCE_X64) {
     transition_image_layout(
         texture_image_, VK_FORMAT_R8G8B8A8_SRGB,

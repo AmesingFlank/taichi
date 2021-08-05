@@ -3,7 +3,7 @@
 
 namespace vulkan {
 
-class Scene : public SceneBase {
+class Scene final : public SceneBase {
  public:
   friend class Canvas;
   friend class Particles;

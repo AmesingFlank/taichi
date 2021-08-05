@@ -36,9 +36,6 @@ class InputHandler {
       first_mouse_ = false;
     }
 
-    GLfloat dx = xpos - last_x;
-    GLfloat dy = last_y - ypos;
-
     last_x = xpos;
     last_y = ypos;
 

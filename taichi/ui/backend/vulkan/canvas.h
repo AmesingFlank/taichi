@@ -32,7 +32,7 @@
 
 namespace vulkan {
 
-class Canvas : public CanvasBase {
+class Canvas final : public CanvasBase {
  public:
   Canvas(AppContext *app_context);
 

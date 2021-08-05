@@ -1,6 +1,5 @@
 #include "window_base.h"
-#include "../utils/cuda_utils.h"
-#include "../utils/cuda_utils.h"
+
 
 WindowBase ::WindowBase(AppConfig config) : config_(config) {
   glfw_window_ = create_glfw_window_(config_.name, config_.width,

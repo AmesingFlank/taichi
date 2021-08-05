@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Circles : public Renderable {
+class Circles final : public Renderable {
  public:
   Circles(AppContext *app_context);
   void update_data(const CirclesInfo &info);

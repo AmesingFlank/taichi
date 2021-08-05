@@ -91,8 +91,6 @@ void Renderable::update_data(const RenderableInfo &info) {
                                                 num_indices);
     }
 
-    CHECK_CUDA_ERROR("update Renderables data");
-
   } else if (info.vertices.field_source == FIELD_SOURCE_X64) {
     {
       MappedMemory mapped_vbo(app_context_->device(),
@@ -457,6 +455,10 @@ void Renderable::create_descriptor_set_layout() {
 }
 
 void Renderable::create_descriptor_sets() {
+}
+
+Renderable::~Renderable(){
+  
 }
 
 }  // namespace vulkan

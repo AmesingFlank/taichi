@@ -2,7 +2,10 @@
 
 #include "../../utils/utils.h"
 
+#ifndef IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+#endif
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
@@ -11,7 +14,7 @@
 
 namespace vulkan {
 
-class Gui : public GuiBase {
+class Gui final : public GuiBase {
  public:
   void init(AppContext *app_context_, GLFWwindow *window);
 

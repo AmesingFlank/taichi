@@ -35,14 +35,14 @@ void Canvas::create_semaphores() {
 template <typename T>
 T *Canvas::get_renderable_of_type() {
   if (next_renderable_ >= renderables_.size()) {
-    renderables_.push_back(std::move(std::unique_ptr<Renderable>{
-        std::make_unique<T>(app_context_).release()}));
+    renderables_.push_back(std::unique_ptr<Renderable>{
+        std::make_unique<T>(app_context_).release()});
     clear_command_buffer_cache();
   } else if (dynamic_cast<T *>(renderables_[next_renderable_].get()) ==
              nullptr) {
     renderables_.insert(renderables_.begin() + next_renderable_,
-                        std::move(std::unique_ptr<Renderable>{
-                            std::make_unique<T>(app_context_).release()}));
+                        std::unique_ptr<Renderable>{
+                            std::make_unique<T>(app_context_).release()});
     clear_command_buffer_cache();
   }
 
@@ -208,8 +208,8 @@ void Canvas::draw_frame(Gui *gui) {
         app_context_->swap_chain.swap_chain_extent;
 
     std::array<VkClearValue, 2> clear_values{};
-    clear_values[0].color = {background_color_.x, background_color_.y,
-                             background_color_.z, 1.0f};
+    clear_values[0].color = {{background_color_.x, background_color_.y,
+                             background_color_.z, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
     render_pass_info.clearValueCount =

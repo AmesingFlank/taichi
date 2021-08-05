@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class SetImage : public Renderable {
+class SetImage final : public Renderable {
  public:
   int width, height;
 

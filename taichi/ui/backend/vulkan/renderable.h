@@ -45,6 +45,8 @@ class Renderable {
 
   virtual void cleanup();
 
+  virtual ~Renderable();
+
  protected:
   RenderableConfig config_;
 

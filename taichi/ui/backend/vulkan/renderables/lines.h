@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Lines : public Renderable {
+class Lines final : public Renderable {
  public:
   Lines(AppContext *app_context);
 

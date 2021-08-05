@@ -28,7 +28,6 @@ void Gui::init(AppContext *app_context, GLFWwindow *window) {
   ImGui::StyleColorsDark();
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
-  VkInstance instance = app_context_->instance();
   ImGui_ImplVulkan_LoadFunctions(
       load_vk_function_for_gui);  // this is becaus we're using volk.
   ImGui_ImplVulkan_InitInfo init_info = {};

@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Triangles : public Renderable {
+class Triangles final : public Renderable {
  public:
   Triangles(AppContext *app_context);
 

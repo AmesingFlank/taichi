@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Window : public WindowBase {
+class Window final : public WindowBase {
  public:
   Window(AppConfig config);
 

@@ -37,7 +37,6 @@ void Lines::update_data(const LinesInfo &info) {
                           info.width, aspect_ratio,
                           (float *)info.renderable_info.per_vertex_color.data,
                           use_per_vertex_color);
-    CHECK_CUDA_ERROR("update lines data");
   } else if (info.renderable_info.vertices.field_source == FIELD_SOURCE_X64) {
     {
       MappedMemory mapped_vbo(app_context_->device(),

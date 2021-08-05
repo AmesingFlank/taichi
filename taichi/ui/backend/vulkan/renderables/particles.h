@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Particles : public Renderable {
+class Particles final : public Renderable {
  public:
   Particles(AppContext *app_context);
 

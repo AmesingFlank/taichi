@@ -23,7 +23,7 @@
 
 namespace vulkan {
 
-class Mesh : public Renderable {
+class Mesh final : public Renderable {
  public:
   Mesh(AppContext *app_context);
 
