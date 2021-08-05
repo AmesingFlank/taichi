@@ -1,3 +1,4 @@
+#include <device_launch_parameters.h>
 #include "taichi/ui/backend/vulkan/vertex.h"
 
 int div_up(int a, int b) {

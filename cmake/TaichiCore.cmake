@@ -42,7 +42,7 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c")
 endif()
 
 file(GLOB TAICHI_CORE_SOURCE
-        "taichi/*/*/*/*.cpp" "taichi/*/*/*.cpp" "taichi/*/*.cpp" "taichi/*.cpp" 
+        "taichi/*/*/*/*/*.cpp" "taichi/*/*/*/*.cpp" "taichi/*/*/*.cpp" "taichi/*/*.cpp" "taichi/*.cpp" 
         "taichi/*/*/*/*/*.cu" "taichi/*/*/*/*.cu" "taichi/*/*/*.cu" "taichi/*/*.cu" "taichi/*.cu"
         "taichi/*/*/*/*.h" "taichi/*/*/*.h" "taichi/*/*.h" "taichi/*.h" "tests/cpp/task/*.cpp")
 
@@ -311,3 +311,5 @@ include_directories(external/glm)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -std=c++17" )
 
 target_link_libraries(${CORE_LIBRARY_NAME} cuda)
+
+include_directories(/usr/local/cuda/include)
