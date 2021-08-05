@@ -8,8 +8,7 @@
 #include <imgui_impl_vulkan.h>
 #include "app_context.h"
 #include "../../common/gui_base.h"
-#include "vulkan_loader.h"
-
+ 
 namespace vulkan{
 
 class Gui: public GuiBase { 

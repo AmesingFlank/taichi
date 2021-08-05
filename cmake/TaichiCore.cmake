@@ -41,6 +41,8 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c")
     message(WARNING "external/glad submodule not detected. Settings TI_WITH_OPENGL to OFF.")
 endif()
 
+enable_language(CUDA)
+
 file(GLOB TAICHI_CORE_SOURCE
         "taichi/*/*/*/*/*.cpp" "taichi/*/*/*/*.cpp" "taichi/*/*/*.cpp" "taichi/*/*.cpp" "taichi/*.cpp" 
         "taichi/*/*/*/*/*.cu" "taichi/*/*/*/*.cu" "taichi/*/*/*.cu" "taichi/*/*.cu" "taichi/*.cu"
@@ -309,3 +311,4 @@ target_link_libraries(${CORE_LIBRARY_NAME} imgui)
 include_directories(external/glm)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -std=c++17" )
+

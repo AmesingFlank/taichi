@@ -2,10 +2,10 @@
 #include "vulkan_utils.h"
 #include "app_context.h"
 #include "swap_chain.h"
-#include "vulkan_loader.h"
-
 
 namespace vulkan{
+
+using namespace taichi::lang::vulkan;
 
 const std::vector<const char*> validation_layers = {
     "VK_LAYER_KHRONOS_validation"
@@ -46,6 +46,10 @@ void AppContext::init(QueueFamilyIndices queue_family_indices_) {
 }
 
 void  AppContext::create_instance(std::vector<const char*> extensions) {
+    if (!VulkanLoader::instance().init()) {
+        throw std::runtime_error("Error loading vulkan");
+    }
+
     if (enable_validation_layers && !check_validation_layer_support()) {
         throw std::runtime_error("validation layers requested, but not available!");
     }

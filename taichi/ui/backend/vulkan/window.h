@@ -22,8 +22,7 @@
 #include "canvas.h"
 #include "../../common/window_base.h"
 #include "gui.h"
-#include "vulkan_loader.h"
-
+ 
 namespace vulkan{
 
 

@@ -1,7 +1,15 @@
 #include "gui.h"
 #include "swap_chain.h"
 
+using namespace taichi::lang::vulkan;
+
 namespace vulkan{
+
+PFN_vkVoidFunction load_vk_function_for_gui(const char * name, void * userData){
+    auto result = VulkanLoader::instance().load_function(name);
+
+    return result;
+}
 
 void Gui::init(AppContext* app_context,GLFWwindow* window){
     app_context_ = app_context;
@@ -19,7 +27,7 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
 
     ImGui_ImplGlfw_InitForVulkan(window, true); 
     VkInstance instance = app_context_ -> instance;
-    ImGui_ImplVulkan_LoadFunctions( VulkanLoader::load_function );// this is becaus we're using volk. 
+    ImGui_ImplVulkan_LoadFunctions( load_vk_function_for_gui );// this is becaus we're using volk. 
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = app_context_ -> instance;
     init_info.PhysicalDevice = app_context_ -> physical_device;

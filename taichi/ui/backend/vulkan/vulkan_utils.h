@@ -3,6 +3,8 @@
 #include "platform_specific/platform.h"
 #include <unordered_map>
 #include <optional>
+#include "taichi/backends/vulkan/vulkan_api.h"
+#include "taichi/backends/vulkan/loader.h"
 
 namespace vulkan{
 

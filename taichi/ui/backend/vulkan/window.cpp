@@ -3,9 +3,6 @@
 namespace vulkan{
 
 Window::Window(AppConfig config): WindowBase(config){
-    if(!VulkanLoader::instance().init()){
-        throw std::runtime_error("Error initializing vulkan");
-    }
     app_context_.config = config;
     init();
 }

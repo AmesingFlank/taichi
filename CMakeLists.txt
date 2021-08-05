@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-project(taichi LANGUAGES CXX CUDA C)
+project(taichi)
 
 SET(TI_VERSION_MAJOR ${TI_VERSION_MAJOR})
 SET(TI_VERSION_MINOR ${TI_VERSION_MINOR})
