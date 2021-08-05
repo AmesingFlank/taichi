@@ -26,7 +26,7 @@
 namespace vulkan{
 
 
-struct Mesh:public Renderable{
+class Mesh:public Renderable{
 public:
     Mesh(AppContext* app_context);
 

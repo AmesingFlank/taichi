@@ -128,7 +128,7 @@ namespace vulkan{
 
             VkFramebufferCreateInfo framebuffer_info{};
             framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebuffer_info.renderPass = app_context->render_pass;
+            framebuffer_info.renderPass = app_context->render_pass();
             framebuffer_info.attachmentCount = static_cast<uint32_t>(attachments.size());
             framebuffer_info.pAttachments = attachments.data();
             framebuffer_info.width = swap_chain_extent.width;

@@ -51,10 +51,10 @@ void AppContext::init() {
         }
         return surface;
     };
-    vulkan_device = std::make_unique<EmbeddedVulkanDevice>(evd_params);
+    vulkan_device_ = std::make_unique<EmbeddedVulkanDevice>(evd_params);
 
     swap_chain.app_context = this;
-    swap_chain.surface = vulkan_device->surface();
+    swap_chain.surface = vulkan_device_->surface();
 
     swap_chain.create_swap_chain();  
     swap_chain.create_image_views();  
@@ -67,7 +67,7 @@ void AppContext::init() {
 }     
      
 void  AppContext::create_render_passes() { 
-    create_render_pass(render_pass,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    create_render_pass(render_pass_,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 }
 
 void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout final_color_layout ) {
@@ -133,13 +133,13 @@ void  AppContext::create_render_pass(VkRenderPass& render_pass,VkImageLayout fin
 
 
 void  AppContext::cleanup_swap_chain() {
-    vkDestroyRenderPass(device(), render_pass, nullptr);
+    vkDestroyRenderPass(device(), render_pass_, nullptr);
     swap_chain.cleanup_swap_chain();
 }
 
 void  AppContext::cleanup() {
     swap_chain.cleanup();
-    vulkan_device.reset();
+    vulkan_device_.reset();
 }
 
 void  AppContext::recreate_swap_chain() {
@@ -151,5 +151,37 @@ int AppContext::get_swap_chain_size(){
     return swap_chain.swap_chain_images.size();
 }
 
+
+VkInstance AppContext::instance() const{
+    return vulkan_device_->instance();
+}
+
+VkDevice AppContext::device()const{
+    return vulkan_device_->device()->device();
+}
+
+VkPhysicalDevice AppContext::physical_device()const{
+    return vulkan_device_->physical_device();
+}
+
+VulkanQueueFamilyIndices AppContext::queue_family_indices()const{
+    return vulkan_device_->queue_family_indices();
+}
+
+VkQueue AppContext::graphics_queue()const{
+    return vulkan_device_->device()->graphics_queue();
+}
+
+VkQueue AppContext::present_queue() const{
+    return vulkan_device_->device()->present_queue();
+}
+
+VkCommandPool AppContext::command_pool() const{
+    return vulkan_device_->device()->command_pool();
+}
+
+VkRenderPass AppContext::render_pass() const{
+    return render_pass_;
+}
 
 }

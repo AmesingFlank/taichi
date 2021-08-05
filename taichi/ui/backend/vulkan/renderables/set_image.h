@@ -26,7 +26,7 @@
 namespace vulkan{
 
 
-struct SetImage:public Renderable{
+class SetImage:public Renderable{
 
 public:
     int width, height;

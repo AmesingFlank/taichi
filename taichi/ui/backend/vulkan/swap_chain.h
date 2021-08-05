@@ -28,7 +28,7 @@ struct SwapChain{
  
     bool requires_recreate = false;
     
-    struct AppContext* app_context;
+    class AppContext* app_context;
 
     void update_image_index();
 

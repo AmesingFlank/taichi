@@ -27,7 +27,7 @@
 namespace vulkan{
 
 
-struct Circles:public Renderable{
+class Circles:public Renderable{
 
 public:
     Circles(AppContext* app_context);

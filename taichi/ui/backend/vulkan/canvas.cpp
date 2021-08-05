@@ -193,7 +193,7 @@ void Canvas::draw_frame(Gui* gui){
 
         VkRenderPassBeginInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.renderPass = app_context_->render_pass;
+        render_pass_info.renderPass = app_context_->render_pass();
         render_pass_info.framebuffer = app_context_->swap_chain.swap_chain_framebuffers[image_index];
         render_pass_info.renderArea.offset = {0, 0};
         render_pass_info.renderArea.extent = app_context_->swap_chain.swap_chain_extent;

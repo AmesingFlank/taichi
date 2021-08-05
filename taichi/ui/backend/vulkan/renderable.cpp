@@ -292,7 +292,7 @@ void Renderable::create_graphics_pipeline() {
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = &dynamic_state;
     pipeline_info.layout = pipeline_layout_;
-    pipeline_info.renderPass = app_context_->render_pass;
+    pipeline_info.renderPass = app_context_->render_pass();
     
     
     pipeline_info.subpass = 0;

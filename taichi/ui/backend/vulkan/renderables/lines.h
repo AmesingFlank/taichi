@@ -27,7 +27,7 @@
 namespace vulkan{
 
 
-struct Lines:public Renderable{
+class Lines:public Renderable{
 
 public:
     Lines(AppContext* app_context);

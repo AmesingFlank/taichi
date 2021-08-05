@@ -40,7 +40,7 @@ void Gui::init(AppContext* app_context,GLFWwindow* window){
     init_info.MinImageCount = app_context_ ->swap_chain. swap_chain_images.size();
     init_info.ImageCount = app_context_ ->swap_chain. swap_chain_images.size();
     init_info.CheckVkResultFn = check_vulkan_result;
-    ImGui_ImplVulkan_Init(&init_info,  app_context_ ->render_pass);  
+    ImGui_ImplVulkan_Init(&init_info,  app_context_->render_pass());  
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.

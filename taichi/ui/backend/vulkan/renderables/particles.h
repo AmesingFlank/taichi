@@ -26,7 +26,7 @@
 namespace vulkan{
 
 
-struct Particles:public Renderable{
+class Particles:public Renderable{
 
 public:
 
