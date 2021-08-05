@@ -1,5 +1,7 @@
 #include "vulkan_cuda_interop.h"
 
+using namespace taichi::lang;
+
 namespace vulkan{
 
 #ifdef _WIN64  // For windows
@@ -81,8 +83,8 @@ CUexternalMemory import_vk_memory_object_from_handle(int fd, unsigned long long 
     if (is_dedicated) {
         desc.flags |= cudaExternalMemoryDedicated;
     }
-
-    HANDLE_ERROR(cuImportExternalMemory(&ext_mem, &desc));
+    CUDADriver::get_instance().import_external_memory((CUexternalMemory_frank*)&ext_mem, (CUDA_EXTERNAL_MEMORY_HANDLE_DESC_frank*)&desc);
+    //HANDLE_ERROR(cuImportExternalMemory(&ext_mem, &desc));
     return ext_mem;
 }
 #endif
@@ -119,8 +121,6 @@ CUsurfObject get_image_surface_object_of_external_memory(CUexternalMemory extern
 
     memset(&external_mem_mipmapped_array_desc, 0,
            sizeof(external_mem_mipmapped_array_desc));
-
-    CUarray_format format_desc = CU_AD_FORMAT_UNSIGNED_INT8; 
 
     external_mem_mipmapped_array_desc.offset = 0;
     external_mem_mipmapped_array_desc.numLevels = 1;

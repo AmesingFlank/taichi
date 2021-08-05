@@ -4,7 +4,6 @@
 #include <cuda.h>
 #include <vector>
 #include "../common/constants.h"
-//#include "taichi/backends/cuda/cuda_driver.h"
 
 
 inline static void handle_error(CUresult err, const char* file, int line) {
