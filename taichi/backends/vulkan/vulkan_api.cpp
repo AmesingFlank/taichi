@@ -187,6 +187,7 @@ EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params):params_(params)
   }
   create_instance();
   setup_debug_messenger();
+  create_surface();
   pick_physical_device();
   create_logical_device();
   create_command_pool();
@@ -197,7 +198,6 @@ EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params):params_(params)
   dparams.compute_queue = compute_queue_;
   dparams.graphics_queue = graphics_queue_;
   dparams.present_queue = present_queue_;
-  dparams.surface = surface_;
   dparams.command_pool = command_pool_;
   owned_device_ = std::make_unique<VulkanDevice>(dparams);
 #ifdef TI_VULKAN_DEBUG
@@ -340,7 +340,8 @@ void EmbeddedVulkanDevice::pick_physical_device() {
 
 void EmbeddedVulkanDevice::create_logical_device() {
   std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-  std::vector<uint32_t> unique_families;
+  std::unordered_set<uint32_t> unique_families;
+
   if(params_.is_for_ui){
     unique_families = {queue_family_indices_.graphics_family.value(), queue_family_indices_.present_family.value()};
   } 
@@ -445,6 +446,10 @@ void EmbeddedVulkanDevice::create_logical_device() {
   capability_.has_int16 = false;
   capability_.has_int64 = true;
   capability_.has_float64 = true;
+  if(params_.is_for_ui){
+    device_features.samplerAnisotropy = VK_TRUE;
+    device_features.geometryShader = VK_TRUE;
+  }
 
   create_info.pEnabledFeatures = &device_features;
   create_info.enabledExtensionCount = enabled_extensions.size();
@@ -506,6 +511,7 @@ void EmbeddedVulkanDevice::create_logical_device() {
   else{
     vkGetDeviceQueue(device_, queue_family_indices_.compute_family.value(), 0, &compute_queue_);
   }
+
 }
 
 void EmbeddedVulkanDevice::create_command_pool() {

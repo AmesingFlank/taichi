@@ -4,6 +4,9 @@
 #include "swap_chain.h"
 
 namespace vulkan{
+    
+    using namespace taichi::lang::vulkan;
+
     void SwapChain::update_image_index(){
         curr_image_index = get_image_index();
     }
@@ -72,7 +75,7 @@ namespace vulkan{
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = app_context->queue_family_indices;
+        VulkanQueueFamilyIndices indices = app_context->queue_family_indices;
         uint32_t queue_family_indices[] = {indices.graphics_family.value(), indices.present_family.value()};
 
         if (indices.graphics_family != indices.present_family) {

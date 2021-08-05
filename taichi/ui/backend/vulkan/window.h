@@ -69,7 +69,6 @@ private:
 
     void recreate_swap_chain() ;
     
-    std::vector<const char*> get_required_extensions();
 
     static void framebuffer_resize_callback(GLFWwindow* glfw_window_, int width, int height);
     

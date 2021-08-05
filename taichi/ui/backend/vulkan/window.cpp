@@ -47,27 +47,9 @@ void Window::framebuffer_resize_callback(GLFWwindow* glfw_window_, int width, in
 void Window::init_vulkan() {
     swap_chain_.app_context = &app_context_;
     app_context_.swap_chain = &swap_chain_;
+    app_context_.glfw_window = glfw_window_;
 
-    app_context_.create_instance(get_required_extensions());
-    app_context_.setup_debug_messenger();
-    create_surface();
-    app_context_.pick_physical_device(swap_chain_.surface);
-
-    printf("phys dev %d\n",app_context_.physical_device);
-
-    app_context_.queue_family_indices = find_queue_families(app_context_.physical_device,swap_chain_.surface);
-
-    app_context_.create_logical_device();
-
-    swap_chain_.create_swap_chain();  
-    swap_chain_.create_image_views();  
-    swap_chain_.create_depth_resources();  
-    swap_chain_.create_sync_objects();  
-
-    app_context_.create_render_passes(); 
-    app_context_.creat_command_pool(); 
-
-    swap_chain_.create_framebuffers();  
+    app_context_.init();
 
     canvas_ = std::make_unique<Canvas>(&app_context_); 
 }
@@ -116,13 +98,6 @@ void Window::recreate_swap_chain() {
 }
 
 
-void Window::create_surface() {
-    if (glfwCreateWindowSurface(app_context_.instance, glfw_window_, nullptr, &swap_chain_.surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
-}
-
-
 void Window::draw_frame() {
     canvas_ ->draw_frame(&gui_);
 }
@@ -142,21 +117,7 @@ void Window::update_image_index(){
 
 
 
-std::vector<const char*> Window::get_required_extensions() {
-    uint32_t glfw_ext_count = 0;
-    const char** glfw_extensions;
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
 
-    std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_ext_count);
-
-    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-    extensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
-    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    
-
-    return extensions;
-}
 
 
 Window::~Window(){

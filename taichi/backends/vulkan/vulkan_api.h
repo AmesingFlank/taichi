@@ -79,7 +79,6 @@ class VulkanDevice {
     VkQueue compute_queue{VK_NULL_HANDLE};
     VkQueue graphics_queue{VK_NULL_HANDLE};
     VkQueue present_queue{VK_NULL_HANDLE};
-    VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkCommandPool command_pool{VK_NULL_HANDLE};
   };
 
@@ -99,10 +98,6 @@ class VulkanDevice {
 
   VkQueue present_queue() const {
     return rep_.present_queue;
-  }
-
-  VkSurfaceKHR surface() const {
-    return rep_.surface;
   }
 
   VkCommandPool command_pool() const {
@@ -174,6 +169,15 @@ class EmbeddedVulkanDevice {
   VkPhysicalDevice physical_device() const {
     return physical_device_;
   }
+  
+  VkSurfaceKHR surface() const{
+    return surface_;
+  }
+
+  VkInstance instance() const{
+    return instance_;
+  }
+
 
   const VulkanQueueFamilyIndices &queue_family_indices() const {
     return queue_family_indices_;
