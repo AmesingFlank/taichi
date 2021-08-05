@@ -33,6 +33,8 @@ struct SpirvCodeView {
 
 struct VulkanQueueFamilyIndices {
   std::optional<uint32_t> compute_family;
+  std::optional<uint32_t> graphics_family;
+  std::optional<uint32_t> present_family;
   // TODO: While it is the case that all COMPUTE/GRAPHICS queue also support
   // TRANSFER by default, maye there are some performance benefits to find a
   // TRANSFER-dedicated queue family.
@@ -40,6 +42,10 @@ struct VulkanQueueFamilyIndices {
 
   bool is_complete() const {
     return compute_family.has_value();
+  }
+
+  bool is_complete_for_ui() {
+        return graphics_family.has_value() && present_family.has_value();
   }
 };
 
@@ -70,6 +76,8 @@ class VulkanDevice {
   struct Params {
     VkDevice device{VK_NULL_HANDLE};
     VkQueue compute_queue{VK_NULL_HANDLE};
+    VkQueue graphics_queue{VK_NULL_HANDLE};
+    VkQueue present_queue{VK_NULL_HANDLE};
     VkCommandPool command_pool{VK_NULL_HANDLE};
   };
 
@@ -81,6 +89,14 @@ class VulkanDevice {
 
   VkQueue compute_queue() const {
     return rep_.compute_queue;
+  }
+
+  VkQueue graphics_queue() const {
+    return rep_.graphics_queue;
+  }
+
+  VkQueue present_queue() const {
+    return rep_.present_queue;
   }
 
   VkCommandPool command_pool() const {
@@ -126,6 +142,10 @@ class EmbeddedVulkanDevice {
  public:
   struct Params {
     std::optional<uint32_t> api_version;
+    bool is_for_ui{false};
+    std::vector<const char*> additional_instance_extensions;
+    std::vector<const char*> additional_device_extensions;
+    VkSurfaceKHR surface{VK_NULL_HANDLE};
   };
 
   explicit EmbeddedVulkanDevice(const Params &params);
@@ -156,7 +176,7 @@ class EmbeddedVulkanDevice {
   }
 
  private:
-  void create_instance(const Params &params);
+  void create_instance();
   void setup_debug_messenger();
   void pick_physical_device();
   void create_logical_device();
@@ -176,6 +196,8 @@ class EmbeddedVulkanDevice {
   // in Taichi we only use a single queue on a single device (i.e. a single CUDA
   // stream), so it doesn't make a difference.
   VkQueue compute_queue_{VK_NULL_HANDLE};
+  VkQueue graphics_queue_{VK_NULL_HANDLE};
+  VkQueue present_queue_{VK_NULL_HANDLE};
   // TODO: Shall we have dedicated command pools for COMPUTE and TRANSFER
   // commands, respectively?
   VkCommandPool command_pool_{VK_NULL_HANDLE};
@@ -183,6 +205,8 @@ class EmbeddedVulkanDevice {
   VulkanCapabilities capability_;
 
   std::unique_ptr<VulkanDevice> owned_device_{nullptr};
+
+  Params params_;
 };
 
 // VulkanPipeline maps to a VkPipeline, or a SPIR-V module (a GLSL compute
