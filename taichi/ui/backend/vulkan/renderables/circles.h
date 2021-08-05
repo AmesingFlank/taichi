@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -23,33 +21,27 @@
 #include "../../../common/field_info.h"
 #include "../../../common/canvas_base.h"
 
+namespace vulkan {
 
-namespace vulkan{
+class Circles : public Renderable {
+ public:
+  Circles(AppContext *app_context);
+  void update_data(const CirclesInfo &info);
 
+ private:
+  struct UniformBufferObject {
+    alignas(16) glm::vec3 color;
+    int use_per_vertex_color;
+    float radius;
+  };
 
-class Circles:public Renderable{
+  void init_circles(AppContext *app_context, int vertices_count);
 
-public:
-    Circles(AppContext* app_context);
-    void update_data(const CirclesInfo& info);
+  void update_ubo(glm::vec3 color, bool use_per_vertex_color, float radius);
 
-private:
-    
-    struct UniformBufferObject {
-        alignas(16) glm::vec3 color;
-        int use_per_vertex_color;
-        float radius;
-    };
+  virtual void create_descriptor_set_layout() override;
 
-    void init_circles(AppContext* app_context, int vertices_count);
+  virtual void create_descriptor_sets() override;
+};
 
-    void update_ubo(glm::vec3 color,bool use_per_vertex_color,float radius);
-
-    virtual void create_descriptor_set_layout()override ;
-
-    virtual void create_descriptor_sets() override;
-
- };
-
-
-}
+}  // namespace vulkan

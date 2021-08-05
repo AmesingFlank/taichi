@@ -7,25 +7,24 @@ class WindowsSecurityAttributes {
 
  public:
   WindowsSecurityAttributes();
-  SECURITY_ATTRIBUTES* operator&();
+  SECURITY_ATTRIBUTES *operator&();
   ~WindowsSecurityAttributes();
 };
 
 inline WindowsSecurityAttributes::WindowsSecurityAttributes() {
   security_descriptor = (PSECURITY_DESCRIPTOR)calloc(
-      1, SECURITY_DESCRIPTOR_MIN_LENGTH + 2 * sizeof(void**));
+      1, SECURITY_DESCRIPTOR_MIN_LENGTH + 2 * sizeof(void **));
 
-  PSID* sid =
-      (PSID*)((PBYTE)security_descriptor + SECURITY_DESCRIPTOR_MIN_LENGTH);
-  PACL* acl = (PACL*)((PBYTE)sid + sizeof(PSID*));
+  PSID *sid =
+      (PSID *)((PBYTE)security_descriptor + SECURITY_DESCRIPTOR_MIN_LENGTH);
+  PACL *acl = (PACL *)((PBYTE)sid + sizeof(PSID *));
 
   InitializeSecurityDescriptor(security_descriptor,
                                SECURITY_DESCRIPTOR_REVISION);
 
-  SID_IDENTIFIER_AUTHORITY sid_identifier_auth =
-      SECURITY_WORLD_SID_AUTHORITY;
-  AllocateAndInitializeSid(&sid_identifier_auth, 1, SECURITY_WORLD_RID, 0, 0,
-                           0, 0, 0, 0, 0, sid);
+  SID_IDENTIFIER_AUTHORITY sid_identifier_auth = SECURITY_WORLD_SID_AUTHORITY;
+  AllocateAndInitializeSid(&sid_identifier_auth, 1, SECURITY_WORLD_RID, 0, 0, 0,
+                           0, 0, 0, 0, sid);
 
   EXPLICIT_ACCESS explicit_access;
   ZeroMemory(&explicit_access, sizeof(EXPLICIT_ACCESS));
@@ -46,14 +45,14 @@ inline WindowsSecurityAttributes::WindowsSecurityAttributes() {
   security_attributes.bInheritHandle = TRUE;
 }
 
-inline SECURITY_ATTRIBUTES* WindowsSecurityAttributes::operator&() {
+inline SECURITY_ATTRIBUTES *WindowsSecurityAttributes::operator&() {
   return &security_attributes;
 }
 
 inline WindowsSecurityAttributes::~WindowsSecurityAttributes() {
-  PSID* sid =
-      (PSID*)((PBYTE)security_descriptor + SECURITY_DESCRIPTOR_MIN_LENGTH);
-  PACL* acl = (PACL*)((PBYTE)sid + sizeof(PSID*));
+  PSID *sid =
+      (PSID *)((PBYTE)security_descriptor + SECURITY_DESCRIPTOR_MIN_LENGTH);
+  PACL *acl = (PACL *)((PBYTE)sid + sizeof(PSID *));
 
   if (*sid) {
     FreeSid(*sid);

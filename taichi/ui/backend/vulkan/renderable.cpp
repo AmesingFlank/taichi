@@ -7,399 +7,456 @@
 
 namespace vulkan {
 
-
-void Renderable::init(const RenderableConfig& config, AppContext* app_context){
-    config_ = config;
-    app_context_ = app_context;
+void Renderable::init(const RenderableConfig &config, AppContext *app_context) {
+  config_ = config;
+  app_context_ = app_context;
 }
 
-void Renderable::init_render_resources(){
+void Renderable::init_render_resources() {
+  create_descriptor_pool();
+  create_descriptor_set_layout();
+  create_graphics_pipeline();
 
-    create_descriptor_pool();
-    create_descriptor_set_layout();  
-    create_graphics_pipeline();
+  create_vertex_buffer();
+  create_index_buffer();
+  create_uniform_buffers();
+  create_descriptor_sets();
 
-    create_vertex_buffer();
-    create_index_buffer();
-    create_uniform_buffers();
-    create_descriptor_sets();
-
-    if(app_context_->config.ti_arch == ARCH_CUDA){
-        vertex_buffer_device_ptr_ = (Vertex*) get_memory_pointer(vertex_buffer_memory_,config_.vertices_count * sizeof(Vertex), app_context_->device());
-        index_buffer_device_ptr_ = (int*) get_memory_pointer(index_buffer_memory_,config_.indices_count * sizeof(int), app_context_->device());
-    }
+  if (app_context_->config.ti_arch == ARCH_CUDA) {
+    vertex_buffer_device_ptr_ = (Vertex *)get_memory_pointer(
+        vertex_buffer_memory_, config_.vertices_count * sizeof(Vertex),
+        app_context_->device());
+    index_buffer_device_ptr_ = (int *)get_memory_pointer(
+        index_buffer_memory_, config_.indices_count * sizeof(int),
+        app_context_->device());
+  }
 }
 
-
-
-void Renderable::update_data(const RenderableInfo& info){
-    int num_vertices = info.vertices.shape[0];
-    int num_indices;
-    if (info.indices.valid){
-        num_indices = info.indices.shape[0];
-        if(info.indices.dtype != DTYPE_I32 && info.indices.dtype != DTYPE_U32 ){
-            throw std::runtime_error("dtype needs to be 32-bit ints for Mesh indices");
-        } 
+void Renderable::update_data(const RenderableInfo &info) {
+  int num_vertices = info.vertices.shape[0];
+  int num_indices;
+  if (info.indices.valid) {
+    num_indices = info.indices.shape[0];
+    if (info.indices.dtype != DTYPE_I32 && info.indices.dtype != DTYPE_U32) {
+      throw std::runtime_error(
+          "dtype needs to be 32-bit ints for Mesh indices");
     }
-    else{
-        num_indices = num_vertices;
-    } 
-    if(num_vertices > config_.vertices_count || num_indices  > config_.indices_count){
-        cleanup_swap_chain();
-        cleanup();
-        config_.vertices_count = num_vertices;
-        config_.indices_count = num_indices;
-        init_render_resources();
+  } else {
+    num_indices = num_vertices;
+  }
+  if (num_vertices > config_.vertices_count ||
+      num_indices > config_.indices_count) {
+    cleanup_swap_chain();
+    cleanup();
+    config_.vertices_count = num_vertices;
+    config_.indices_count = num_indices;
+    init_render_resources();
+  }
+
+  if (info.vertices.dtype != DTYPE_F32) {
+    throw std::runtime_error("dtype needs to be f32 for Mesh vertices");
+  }
+
+  int num_components = info.vertices.matrix_rows;
+
+  if (info.vertices.field_source == FIELD_SOURCE_CUDA) {
+    update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
+                                     (float *)info.vertices.data, num_vertices,
+                                     num_components);
+
+    if (info.per_vertex_color.valid) {
+      if (info.per_vertex_color.shape[0] != num_vertices) {
+        throw std::runtime_error(
+            "shape of per_vertex_color should be the same as vertices");
+      }
+      update_renderables_colors_cuda(vertex_buffer_device_ptr_,
+                                     (float *)info.per_vertex_color.data,
+                                     num_vertices);
     }
 
-    if(info.vertices.dtype != DTYPE_F32){
-        throw std::runtime_error("dtype needs to be f32 for Mesh vertices");
-    } 
-
-    int num_components = info.vertices.matrix_rows;
-
-    if(info.vertices.field_source == FIELD_SOURCE_CUDA){ 
-
-        update_renderables_vertices_cuda (vertex_buffer_device_ptr_, (float*)info.vertices.data, num_vertices,num_components);
-
-        if(info.per_vertex_color.valid){
-            if(info.per_vertex_color.shape[0]!=num_vertices){
-                throw std::runtime_error("shape of per_vertex_color should be the same as vertices");
-            }
-            update_renderables_colors_cuda(vertex_buffer_device_ptr_, (float*)info.per_vertex_color.data, num_vertices);
-        }
-
-        if(info.normals.valid){
-            if(info.normals.shape[0]!=num_vertices){
-                throw std::runtime_error("shape of normals should be the same as vertices");
-            }
-            update_renderables_normals_cuda(vertex_buffer_device_ptr_, (float*)info.normals.data, num_vertices);
-        }
-
-        if(info.indices.valid){
-            update_renderables_indices_cuda(index_buffer_device_ptr_, (int*)info.indices.data, num_indices);
-        }
-        else{
-            update_renderables_indices_unindexed_cuda(index_buffer_device_ptr_, num_indices);
-        }
-        
-        
-        CHECK_CUDA_ERROR("update Renderables data");
-
+    if (info.normals.valid) {
+      if (info.normals.shape[0] != num_vertices) {
+        throw std::runtime_error(
+            "shape of normals should be the same as vertices");
+      }
+      update_renderables_normals_cuda(vertex_buffer_device_ptr_,
+                                      (float *)info.normals.data, num_vertices);
     }
-    else if(info.vertices.field_source == FIELD_SOURCE_X64)
+
+    if (info.indices.valid) {
+      update_renderables_indices_cuda(index_buffer_device_ptr_,
+                                      (int *)info.indices.data, num_indices);
+    } else {
+      update_renderables_indices_unindexed_cuda(index_buffer_device_ptr_,
+                                                num_indices);
+    }
+
+    CHECK_CUDA_ERROR("update Renderables data");
+
+  } else if (info.vertices.field_source == FIELD_SOURCE_X64) {
     {
-        {
-            MappedMemory mapped_vbo(app_context_->device(), staging_vertex_buffer_memory_ , config_.vertices_count * sizeof(Vertex));
-            MappedMemory mapped_ibo(app_context_->device(), staging_index_buffer_memory_ , config_.indices_count * sizeof(int));
+      MappedMemory mapped_vbo(app_context_->device(),
+                              staging_vertex_buffer_memory_,
+                              config_.vertices_count * sizeof(Vertex));
+      MappedMemory mapped_ibo(app_context_->device(),
+                              staging_index_buffer_memory_,
+                              config_.indices_count * sizeof(int));
 
-            update_renderables_vertices_x64((Vertex* )mapped_vbo.data, (float*)info.vertices.data, num_vertices,num_components);
-            if(info.per_vertex_color.valid){
-                if(info.per_vertex_color.shape[0]!=num_vertices){
-                    throw std::runtime_error("shape of per_vertex_color should be the same as vertices");
-                }
-                update_renderables_colors_x64((Vertex* )mapped_vbo.data, (float*)info.per_vertex_color.data, num_vertices);
-            }
-            if(info.normals.valid){
-                if(info.normals.shape[0]!=num_vertices){
-                    throw std::runtime_error("shape of normals should be the same as vertices");
-                }
-                update_renderables_normals_x64((Vertex* )mapped_vbo.data, (float*)info.normals.data, num_vertices);
-            }
-            if(info.indices.valid){
-                update_renderables_indices_x64((int*)mapped_ibo.data, (int*)info.indices.data, num_indices);
-            }
-            else{
-                update_renderables_indices_unindexed_x64((int*)mapped_ibo.data, num_indices);
-            }
+      update_renderables_vertices_x64((Vertex *)mapped_vbo.data,
+                                      (float *)info.vertices.data, num_vertices,
+                                      num_components);
+      if (info.per_vertex_color.valid) {
+        if (info.per_vertex_color.shape[0] != num_vertices) {
+          throw std::runtime_error(
+              "shape of per_vertex_color should be the same as vertices");
         }
-        
-        copy_buffer(staging_vertex_buffer_, vertex_buffer_, config_.vertices_count * sizeof(Vertex), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
-        copy_buffer(staging_index_buffer_, index_buffer_, config_.indices_count * sizeof(int), app_context_ ->command_pool(), app_context_ ->device(), app_context_->graphics_queue()) ;
-    }
-    else{
-        throw std::runtime_error("unsupported field source");
+        update_renderables_colors_x64((Vertex *)mapped_vbo.data,
+                                      (float *)info.per_vertex_color.data,
+                                      num_vertices);
+      }
+      if (info.normals.valid) {
+        if (info.normals.shape[0] != num_vertices) {
+          throw std::runtime_error(
+              "shape of normals should be the same as vertices");
+        }
+        update_renderables_normals_x64((Vertex *)mapped_vbo.data,
+                                       (float *)info.normals.data,
+                                       num_vertices);
+      }
+      if (info.indices.valid) {
+        update_renderables_indices_x64((int *)mapped_ibo.data,
+                                       (int *)info.indices.data, num_indices);
+      } else {
+        update_renderables_indices_unindexed_x64((int *)mapped_ibo.data,
+                                                 num_indices);
+      }
     }
 
+    copy_buffer(staging_vertex_buffer_, vertex_buffer_,
+                config_.vertices_count * sizeof(Vertex),
+                app_context_->command_pool(), app_context_->device(),
+                app_context_->graphics_queue());
+    copy_buffer(staging_index_buffer_, index_buffer_,
+                config_.indices_count * sizeof(int),
+                app_context_->command_pool(), app_context_->device(),
+                app_context_->graphics_queue());
+  } else {
+    throw std::runtime_error("unsupported field source");
+  }
 }
 
-void Renderable::create_descriptor_pool(){
-    int swap_chain_size = app_context_->swap_chain.swap_chain_images.size();
-    std::array<VkDescriptorPoolSize, 2> pool_sizes{};
-    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_sizes[0].descriptorCount = static_cast<uint32_t>(swap_chain_size)  ;
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = static_cast<uint32_t>(swap_chain_size) ;
+void Renderable::create_descriptor_pool() {
+  int swap_chain_size = app_context_->swap_chain.swap_chain_images.size();
+  std::array<VkDescriptorPoolSize, 2> pool_sizes{};
+  pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  pool_sizes[0].descriptorCount = static_cast<uint32_t>(swap_chain_size);
+  pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  pool_sizes[1].descriptorCount = static_cast<uint32_t>(swap_chain_size);
 
-    VkDescriptorPoolCreateInfo pool_info{};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-    pool_info.pPoolSizes = pool_sizes.data();
-    pool_info.maxSets = static_cast<uint32_t>(swap_chain_size) ;
+  VkDescriptorPoolCreateInfo pool_info{};
+  pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+  pool_info.pPoolSizes = pool_sizes.data();
+  pool_info.maxSets = static_cast<uint32_t>(swap_chain_size);
 
-    if (vkCreateDescriptorPool(app_context_->device(), &pool_info, nullptr, &descriptor_pool_) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
+  if (vkCreateDescriptorPool(app_context_->device(), &pool_info, nullptr,
+                             &descriptor_pool_) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create descriptor pool!");
+  }
 }
 
 void Renderable::create_graphics_pipeline() {
-    auto vert_code = read_file(config_.vertex_shader_path);
-    auto frag_code = read_file(config_.fragment_shader_path);
+  auto vert_code = read_file(config_.vertex_shader_path);
+  auto frag_code = read_file(config_.fragment_shader_path);
 
-    VkShaderModule vert_shader_module = create_shader_module(vert_code,app_context_->device());
-    VkShaderModule frag_shader_module = create_shader_module(frag_code,app_context_->device());
+  VkShaderModule vert_shader_module =
+      create_shader_module(vert_code, app_context_->device());
+  VkShaderModule frag_shader_module =
+      create_shader_module(frag_code, app_context_->device());
 
-    VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
-    vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_shader_stage_info.module = vert_shader_module;
-    vert_shader_stage_info.pName = "main";
+  VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
+  vert_shader_stage_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+  vert_shader_stage_info.module = vert_shader_module;
+  vert_shader_stage_info.pName = "main";
 
-    VkPipelineShaderStageCreateInfo frag_shader_stage_info{};
-    frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_shader_stage_info.module = frag_shader_module;
-    frag_shader_stage_info.pName = "main";
+  VkPipelineShaderStageCreateInfo frag_shader_stage_info{};
+  frag_shader_stage_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  frag_shader_stage_info.module = frag_shader_module;
+  frag_shader_stage_info.pName = "main";
 
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vert_shader_stage_info, frag_shader_stage_info};
+  std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
+      vert_shader_stage_info, frag_shader_stage_info};
 
-    VkShaderModule geom_shader_module = VK_NULL_HANDLE;
+  VkShaderModule geom_shader_module = VK_NULL_HANDLE;
 
-    bool has_geom_shader = config_.geometry_shader_path.size() > 0;
+  bool has_geom_shader = config_.geometry_shader_path.size() > 0;
 
-    if(has_geom_shader){
-        auto geom_code = read_file(config_.geometry_shader_path);
+  if (has_geom_shader) {
+    auto geom_code = read_file(config_.geometry_shader_path);
 
-        geom_shader_module = create_shader_module(geom_code,app_context_->device());
+    geom_shader_module =
+        create_shader_module(geom_code, app_context_->device());
 
-        VkPipelineShaderStageCreateInfo geom_shader_stage_info{};
-        geom_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        geom_shader_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-        geom_shader_stage_info.module = geom_shader_module;
-        geom_shader_stage_info.pName = "main";
+    VkPipelineShaderStageCreateInfo geom_shader_stage_info{};
+    geom_shader_stage_info.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    geom_shader_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    geom_shader_stage_info.module = geom_shader_module;
+    geom_shader_stage_info.pName = "main";
 
-        shader_stages = {vert_shader_stage_info, frag_shader_stage_info, geom_shader_stage_info};
-    }
+    shader_stages = {vert_shader_stage_info, frag_shader_stage_info,
+                     geom_shader_stage_info};
+  }
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_info{};
-    vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  VkPipelineVertexInputStateCreateInfo vertex_input_info{};
+  vertex_input_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto binding_description = Vertex::get_binding_description();
-    auto attribute_descriptions = Vertex::get_attribute_descriptions();
+  auto binding_description = Vertex::get_binding_description();
+  auto attribute_descriptions = Vertex::get_attribute_descriptions();
 
-    vertex_input_info.vertexBindingDescriptionCount = 1;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
-    vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
+  vertex_input_info.vertexBindingDescriptionCount = 1;
+  vertex_input_info.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attribute_descriptions.size());
+  vertex_input_info.pVertexBindingDescriptions = &binding_description;
+  vertex_input_info.pVertexAttributeDescriptions =
+      attribute_descriptions.data();
 
-    VkPipelineInputAssemblyStateCreateInfo input_assembly{};
-    input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    if(config_.topology_type == TopologyType::TriangleList){
-        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    }
-    else if(config_.topology_type == TopologyType::Points){
-        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    }
-    else{
-        throw std::runtime_error("invalid topology");
-    }
-    
-    input_assembly.primitiveRestartEnable = VK_FALSE;
+  VkPipelineInputAssemblyStateCreateInfo input_assembly{};
+  input_assembly.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  if (config_.topology_type == TopologyType::TriangleList) {
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  } else if (config_.topology_type == TopologyType::Points) {
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  } else {
+    throw std::runtime_error("invalid topology");
+  }
 
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = app_context_ ->swap_chain. swap_chain_extent.width ;
-    viewport.height = app_context_ ->swap_chain. swap_chain_extent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+  input_assembly.primitiveRestartEnable = VK_FALSE;
 
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = {(uint32_t)viewport.width,(uint32_t)viewport.height};
+  VkViewport viewport{};
+  viewport.x = 0.0f;
+  viewport.y = 0.0f;
+  viewport.width = app_context_->swap_chain.swap_chain_extent.width;
+  viewport.height = app_context_->swap_chain.swap_chain_extent.height;
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
 
-    VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
+  VkRect2D scissor{};
+  scissor.offset = {0, 0};
+  scissor.extent = {(uint32_t)viewport.width, (uint32_t)viewport.height};
 
-    VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_NONE ;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
+  VkPipelineViewportStateCreateInfo viewport_state{};
+  viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewport_state.viewportCount = 1;
+  viewport_state.pViewports = &viewport;
+  viewport_state.scissorCount = 1;
+  viewport_state.pScissors = &scissor;
 
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+  VkPipelineRasterizationStateCreateInfo rasterizer{};
+  rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  rasterizer.depthClampEnable = VK_FALSE;
+  rasterizer.rasterizerDiscardEnable = VK_FALSE;
+  rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+  rasterizer.lineWidth = 1.0f;
+  rasterizer.cullMode = VK_CULL_MODE_NONE;
+  rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterizer.depthBiasEnable = VK_FALSE;
 
-    VkPipelineDepthStencilStateCreateInfo depth_stencil{};
-    depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil.depthTestEnable = VK_TRUE;
-    depth_stencil.depthWriteEnable = VK_TRUE;
-    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-    depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.stencilTestEnable = VK_FALSE;
+  VkPipelineMultisampleStateCreateInfo multisampling{};
+  multisampling.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  multisampling.sampleShadingEnable = VK_FALSE;
+  multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment{};
-    color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    color_blend_attachment.blendEnable = VK_FALSE;
+  VkPipelineDepthStencilStateCreateInfo depth_stencil{};
+  depth_stencil.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  depth_stencil.depthTestEnable = VK_TRUE;
+  depth_stencil.depthWriteEnable = VK_TRUE;
+  depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+  depth_stencil.depthBoundsTestEnable = VK_FALSE;
+  depth_stencil.stencilTestEnable = VK_FALSE;
 
-    VkPipelineColorBlendStateCreateInfo color_blending{};
-    color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    color_blending.logicOpEnable = VK_FALSE;
-    color_blending.logicOp = VK_LOGIC_OP_COPY;
-    color_blending.attachmentCount = 1;
-    color_blending.pAttachments = &color_blend_attachment;
-    color_blending.blendConstants[0] = 0.0f;
-    color_blending.blendConstants[1] = 0.0f;
-    color_blending.blendConstants[2] = 0.0f;
-    color_blending.blendConstants[3] = 0.0f;
+  VkPipelineColorBlendAttachmentState color_blend_attachment{};
+  color_blend_attachment.colorWriteMask =
+      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  color_blend_attachment.blendEnable = VK_FALSE;
 
-    VkPipelineLayoutCreateInfo pipeline_layout__info{};
-    pipeline_layout__info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout__info.setLayoutCount = 1;
-    pipeline_layout__info.pSetLayouts = &descriptor_set_layout_;
+  VkPipelineColorBlendStateCreateInfo color_blending{};
+  color_blending.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  color_blending.logicOpEnable = VK_FALSE;
+  color_blending.logicOp = VK_LOGIC_OP_COPY;
+  color_blending.attachmentCount = 1;
+  color_blending.pAttachments = &color_blend_attachment;
+  color_blending.blendConstants[0] = 0.0f;
+  color_blending.blendConstants[1] = 0.0f;
+  color_blending.blendConstants[2] = 0.0f;
+  color_blending.blendConstants[3] = 0.0f;
 
-    if (vkCreatePipelineLayout(app_context_->device(), &pipeline_layout__info, nullptr, &pipeline_layout_) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
+  VkPipelineLayoutCreateInfo pipeline_layout__info{};
+  pipeline_layout__info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipeline_layout__info.setLayoutCount = 1;
+  pipeline_layout__info.pSetLayouts = &descriptor_set_layout_;
 
-    std::vector<VkDynamicState> dynamic_state_enables = {} ; //{VK_DYNAMIC_STATE_LINE_WIDTH};
-    VkPipelineDynamicStateCreateInfo dynamic_state = {};
-    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.pNext = NULL;
-    dynamic_state.pDynamicStates = dynamic_state_enables.data();
-    dynamic_state.dynamicStateCount = dynamic_state_enables.size();
+  if (vkCreatePipelineLayout(app_context_->device(), &pipeline_layout__info,
+                             nullptr, &pipeline_layout_) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create pipeline layout!");
+  }
 
-    VkGraphicsPipelineCreateInfo pipeline_info{};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = shader_stages.size();
-    pipeline_info.pStages = shader_stages.data();
-    pipeline_info.pVertexInputState = &vertex_input_info;
-    pipeline_info.pInputAssemblyState = &input_assembly;
-    pipeline_info.pViewportState = &viewport_state;
-    pipeline_info.pRasterizationState = &rasterizer;
-    pipeline_info.pMultisampleState = &multisampling;
-    pipeline_info.pDepthStencilState = &depth_stencil;
-    pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.pDynamicState = &dynamic_state;
-    pipeline_info.layout = pipeline_layout_;
-    pipeline_info.renderPass = app_context_->render_pass();
-    
-    
-    pipeline_info.subpass = 0;
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+  std::vector<VkDynamicState> dynamic_state_enables =
+      {};  //{VK_DYNAMIC_STATE_LINE_WIDTH};
+  VkPipelineDynamicStateCreateInfo dynamic_state = {};
+  dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  dynamic_state.pNext = NULL;
+  dynamic_state.pDynamicStates = dynamic_state_enables.data();
+  dynamic_state.dynamicStateCount = dynamic_state_enables.size();
 
-    if (vkCreateGraphicsPipelines(app_context_->device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline_) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+  VkGraphicsPipelineCreateInfo pipeline_info{};
+  pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  pipeline_info.stageCount = shader_stages.size();
+  pipeline_info.pStages = shader_stages.data();
+  pipeline_info.pVertexInputState = &vertex_input_info;
+  pipeline_info.pInputAssemblyState = &input_assembly;
+  pipeline_info.pViewportState = &viewport_state;
+  pipeline_info.pRasterizationState = &rasterizer;
+  pipeline_info.pMultisampleState = &multisampling;
+  pipeline_info.pDepthStencilState = &depth_stencil;
+  pipeline_info.pColorBlendState = &color_blending;
+  pipeline_info.pDynamicState = &dynamic_state;
+  pipeline_info.layout = pipeline_layout_;
+  pipeline_info.renderPass = app_context_->render_pass();
 
-    vkDestroyShaderModule(app_context_->device(), frag_shader_module, nullptr);
-    vkDestroyShaderModule(app_context_->device(), vert_shader_module, nullptr);
-    if(has_geom_shader){
-        vkDestroyShaderModule(app_context_->device(), geom_shader_module, nullptr);
-    }
+  pipeline_info.subpass = 0;
+  pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+
+  if (vkCreateGraphicsPipelines(app_context_->device(), VK_NULL_HANDLE, 1,
+                                &pipeline_info, nullptr,
+                                &graphics_pipeline_) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create graphics pipeline!");
+  }
+
+  vkDestroyShaderModule(app_context_->device(), frag_shader_module, nullptr);
+  vkDestroyShaderModule(app_context_->device(), vert_shader_module, nullptr);
+  if (has_geom_shader) {
+    vkDestroyShaderModule(app_context_->device(), geom_shader_module, nullptr);
+  }
 }
 
-
-
 void Renderable::create_vertex_buffer() {
-    VkDeviceSize buffer_size = sizeof(Vertex) * config_.vertices_count;
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer_, vertex_buffer_memory_,app_context_->device(),app_context_->physical_device());
+  VkDeviceSize buffer_size = sizeof(Vertex) * config_.vertices_count;
+  create_buffer(
+      buffer_size,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer_,
+      vertex_buffer_memory_, app_context_->device(),
+      app_context_->physical_device());
 
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_vertex_buffer_, staging_vertex_buffer_memory_,app_context_->device(),app_context_->physical_device());
+  create_buffer(
+      buffer_size,
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+      staging_vertex_buffer_, staging_vertex_buffer_memory_,
+      app_context_->device(), app_context_->physical_device());
 }
 
 void Renderable::create_index_buffer() {
-    VkDeviceSize buffer_size = sizeof(int) * config_.indices_count;
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT , index_buffer_, index_buffer_memory_,app_context_->device(),app_context_->physical_device());
+  VkDeviceSize buffer_size = sizeof(int) * config_.indices_count;
+  create_buffer(
+      buffer_size,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer_, index_buffer_memory_,
+      app_context_->device(), app_context_->physical_device());
 
-    create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , staging_index_buffer_, staging_index_buffer_memory_,app_context_->device(),app_context_->physical_device());
+  create_buffer(
+      buffer_size,
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+      staging_index_buffer_, staging_index_buffer_memory_,
+      app_context_->device(), app_context_->physical_device());
 }
 
 void Renderable::create_uniform_buffers() {
-    VkDeviceSize buffer_size = config_.ubo_size;
+  VkDeviceSize buffer_size = config_.ubo_size;
 
-    uniform_buffers_.resize(app_context_->get_swap_chain_size());
-    uniform_buffer_memories_.resize(app_context_->get_swap_chain_size());
+  uniform_buffers_.resize(app_context_->get_swap_chain_size());
+  uniform_buffer_memories_.resize(app_context_->get_swap_chain_size());
 
-    for (size_t i = 0; i < app_context_->get_swap_chain_size(); i++) {
-        create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers_[i] , uniform_buffer_memories_[i] ,app_context_->device(),app_context_->physical_device());
-    }
+  for (size_t i = 0; i < app_context_->get_swap_chain_size(); i++) {
+    create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                  uniform_buffers_[i], uniform_buffer_memories_[i],
+                  app_context_->device(), app_context_->physical_device());
+  }
 }
-
 
 void Renderable::recreate_swap_chain() {
-    
-    create_graphics_pipeline();
-    create_uniform_buffers();
-    create_descriptor_pool();
-    create_descriptor_sets();
-
+  create_graphics_pipeline();
+  create_uniform_buffers();
+  create_descriptor_pool();
+  create_descriptor_sets();
 }
 
-void Renderable::cleanup_swap_chain(){
+void Renderable::cleanup_swap_chain() {
+  vkDestroyPipeline(app_context_->device(), graphics_pipeline_, nullptr);
+  vkDestroyPipelineLayout(app_context_->device(), pipeline_layout_, nullptr);
 
-    vkDestroyPipeline(app_context_->device(), graphics_pipeline_, nullptr);
-    vkDestroyPipelineLayout(app_context_->device(), pipeline_layout_, nullptr);
+  for (int i = 0; i < uniform_buffers_.size(); ++i) {
+    vkDestroyBuffer(app_context_->device(), uniform_buffers_[i], nullptr);
+    vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i], nullptr);
+  }
 
-    for (int i = 0;i<uniform_buffers_.size();++i){
-        vkDestroyBuffer(app_context_->device(), uniform_buffers_[i] , nullptr);
-        vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i] , nullptr);
-    }
-
-    vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
-    
+  vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
 }
 
-void Renderable::cleanup(){
+void Renderable::cleanup() {
+  vkDestroyDescriptorSetLayout(app_context_->device(), descriptor_set_layout_,
+                               nullptr);
 
-    vkDestroyDescriptorSetLayout(app_context_->device(), descriptor_set_layout_, nullptr);
+  vkDestroyBuffer(app_context_->device(), index_buffer_, nullptr);
+  vkFreeMemory(app_context_->device(), index_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device(), index_buffer_, nullptr);
-    vkFreeMemory(app_context_->device(), index_buffer_memory_, nullptr);
+  vkDestroyBuffer(app_context_->device(), vertex_buffer_, nullptr);
+  vkFreeMemory(app_context_->device(), vertex_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device(), vertex_buffer_, nullptr);
-    vkFreeMemory(app_context_->device(), vertex_buffer_memory_, nullptr);
+  vkDestroyBuffer(app_context_->device(), staging_index_buffer_, nullptr);
+  vkFreeMemory(app_context_->device(), staging_index_buffer_memory_, nullptr);
 
-    vkDestroyBuffer(app_context_->device(), staging_index_buffer_, nullptr);
-    vkFreeMemory(app_context_->device(), staging_index_buffer_memory_, nullptr);
-
-    vkDestroyBuffer(app_context_->device(), staging_vertex_buffer_, nullptr);
-    vkFreeMemory(app_context_->device(), staging_vertex_buffer_memory_, nullptr);
+  vkDestroyBuffer(app_context_->device(), staging_vertex_buffer_, nullptr);
+  vkFreeMemory(app_context_->device(), staging_vertex_buffer_memory_, nullptr);
 }
 
-void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer){
+void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer) {
+  vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphics_pipeline_);
 
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline_);
+  VkBuffer vertex_buffer_s[] = {vertex_buffer_};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffer_s, offsets);
 
-    VkBuffer vertex_buffer_s[] = {vertex_buffer_};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffer_s, offsets);
+  vkCmdBindIndexBuffer(command_buffer, index_buffer_, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindIndexBuffer(command_buffer, index_buffer_, 0, VK_INDEX_TYPE_UINT32);
+  vkCmdBindDescriptorSets(
+      command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1,
+      &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1, &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
-
-    vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
+  vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
 }
 
-void Renderable::create_descriptor_set_layout(){
-
+void Renderable::create_descriptor_set_layout() {
 }
 
-void Renderable::create_descriptor_sets(){
-
+void Renderable::create_descriptor_sets() {
 }
 
-
-
-}//namespace vulkan
+}  // namespace vulkan

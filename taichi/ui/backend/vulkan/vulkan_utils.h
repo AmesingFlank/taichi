@@ -6,72 +6,124 @@
 #include "taichi/backends/vulkan/vulkan_api.h"
 #include "taichi/backends/vulkan/loader.h"
 
-namespace vulkan{
+namespace vulkan {
 
-struct MappedMemory{
-    void* data;
-    VkDevice device;
-    VkDeviceMemory mem;
-    VkDeviceSize size;
-    MappedMemory(VkDevice device_, VkDeviceMemory mem_, VkDeviceSize size_):device(device_),mem(mem_),size(size_){
-        vkMapMemory( device, mem , 0, size, 0, &data);
-    }
-    ~MappedMemory(){
-        vkUnmapMemory(device,mem );
-    }
+struct MappedMemory {
+  void *data;
+  VkDevice device;
+  VkDeviceMemory mem;
+  VkDeviceSize size;
+  MappedMemory(VkDevice device_, VkDeviceMemory mem_, VkDeviceSize size_)
+      : device(device_), mem(mem_), size(size_) {
+    vkMapMemory(device, mem, 0, size, 0, &data);
+  }
+  ~MappedMemory() {
+    vkUnmapMemory(device, mem);
+  }
 };
 
 struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> present_modes;
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> present_modes;
 };
 
-
 struct QueueFamilyIndices {
-    std::optional<uint32_t> graphics_family;
-    std::optional<uint32_t> present_family;
+  std::optional<uint32_t> graphics_family;
+  std::optional<uint32_t> present_family;
 
-    bool is_complete() {
-        return graphics_family.has_value() && present_family.has_value();
-    }
+  bool is_complete() {
+    return graphics_family.has_value() && present_family.has_value();
+  }
 };
 
 void check_vulkan_result(VkResult err);
 
-QueueFamilyIndices find_queue_families(VkPhysicalDevice device,VkSurfaceKHR surface);
+QueueFamilyIndices find_queue_families(VkPhysicalDevice device,
+                                       VkSurfaceKHR surface);
 
-SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+SwapChainSupportDetails query_swap_chain_support(
+    VkPhysicalDevice physical_device,
+    VkSurfaceKHR surface);
 
-VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features,VkPhysicalDevice physical_device);
+VkFormat find_supported_format(const std::vector<VkFormat> &candidates,
+                               VkImageTiling tiling,
+                               VkFormatFeatureFlags features,
+                               VkPhysicalDevice physical_device);
 
-VkFormat find_depth_format(VkPhysicalDevice physical_device) ;
+VkFormat find_depth_format(VkPhysicalDevice physical_device);
 
-VkCommandBuffer create_new_command_buffer( VkCommandPool command_pool, VkDevice device);
+VkCommandBuffer create_new_command_buffer(VkCommandPool command_pool,
+                                          VkDevice device);
 
-VkCommandBuffer begin_single_time_commands( VkCommandPool command_pool, VkDevice device) ;
+VkCommandBuffer begin_single_time_commands(VkCommandPool command_pool,
+                                           VkDevice device);
 
-void end_single_time_commands(VkCommandBuffer command_buffer,VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue);
+void end_single_time_commands(VkCommandBuffer command_buffer,
+                              VkCommandPool command_pool,
+                              VkDevice device,
+                              VkQueue graphics_queue);
 
-void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size, VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) ;
+void copy_buffer(VkBuffer src_buffer,
+                 VkBuffer dst_buffer,
+                 VkDeviceSize size,
+                 VkCommandPool command_pool,
+                 VkDevice device,
+                 VkQueue graphics_queue);
 
-void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) ;
+void copy_buffer_to_image(VkBuffer buffer,
+                          VkImage image,
+                          uint32_t width,
+                          uint32_t height,
+                          VkCommandPool command_pool,
+                          VkDevice device,
+                          VkQueue graphics_queue);
 
-uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties,VkPhysicalDevice physical_device);
+uint32_t find_memory_type(uint32_t type_filter,
+                          VkMemoryPropertyFlags properties,
+                          VkPhysicalDevice physical_device);
 
-void alloc_device_memory(VkMemoryRequirements mem_requirements, VkMemoryPropertyFlags properties,VkDevice device,VkPhysicalDevice physical_device,VkDeviceMemory& mem);
+void alloc_device_memory(VkMemoryRequirements mem_requirements,
+                         VkMemoryPropertyFlags properties,
+                         VkDevice device,
+                         VkPhysicalDevice physical_device,
+                         VkDeviceMemory &mem);
 
-void create_semaphore(VkSemaphore& result, VkDevice device);
+void create_semaphore(VkSemaphore &result, VkDevice device);
 
-void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_mem,VkDevice device,VkPhysicalDevice physical_device) ;
+void create_buffer(VkDeviceSize size,
+                   VkBufferUsageFlags usage,
+                   VkMemoryPropertyFlags properties,
+                   VkBuffer &buffer,
+                   VkDeviceMemory &buffer_mem,
+                   VkDevice device,
+                   VkPhysicalDevice physical_device);
 
-VkShaderModule create_shader_module(const std::vector<char>& code, VkDevice device);
+VkShaderModule create_shader_module(const std::vector<char> &code,
+                                    VkDevice device);
 
-void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_mem,VkDevice device,VkPhysicalDevice physical_device);
+void create_image(uint32_t width,
+                  uint32_t height,
+                  VkFormat format,
+                  VkImageTiling tiling,
+                  VkImageUsageFlags usage,
+                  VkMemoryPropertyFlags properties,
+                  VkImage &image,
+                  VkDeviceMemory &image_mem,
+                  VkDevice device,
+                  VkPhysicalDevice physical_device);
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags,VkDevice device);
+VkImageView create_image_view(VkImage image,
+                              VkFormat format,
+                              VkImageAspectFlags aspect_flags,
+                              VkDevice device);
 
-void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout,VkCommandPool command_pool, VkDevice device, VkQueue graphics_queue) ;
+void transition_image_layout(VkImage image,
+                             VkFormat format,
+                             VkImageLayout old_layout,
+                             VkImageLayout new_layout,
+                             VkCommandPool command_pool,
+                             VkDevice device,
+                             VkQueue graphics_queue);
 
-
-}
+}  // namespace vulkan

@@ -5,7 +5,6 @@
 #include "taichi/system/dynamic_loader.h"
 #include "taichi/backends/cuda/cuda_types.h"
 
-
 #if (0)
 // Turn on to check for comptability
 namespace taichi {

@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -23,50 +21,43 @@
 #include "../../../common/field_info.h"
 #include "../../../common/canvas_base.h"
 
-namespace vulkan{
+namespace vulkan {
 
+class SetImage : public Renderable {
+ public:
+  int width, height;
 
-class SetImage:public Renderable{
+  SetImage(AppContext *app_context);
 
-public:
-    int width, height;
+  void update_data(const SetImageInfo &info);
 
-    SetImage(AppContext* app_context);
+  virtual void cleanup() override;
 
-    void update_data(const SetImageInfo& info);
+ private:
+  // the staging buffer is only used if we have a CPU ti backend.
+  VkBuffer staging_buffer_;
+  VkDeviceMemory staging_buffer_memory_;
 
-    virtual void cleanup() override;
+  VkImage texture_image_;
+  VkDeviceMemory texture_image_memory_;
+  VkImageView texture_image_view_;
+  VkSampler texture_sampler_;
+  uint64_t texture_surface_;
 
+ private:
+  void init_set_image(AppContext *app_context, int img_width, int img_height);
 
-private:
-    // the staging buffer is only used if we have a CPU ti backend.
-    VkBuffer staging_buffer_;
-    VkDeviceMemory staging_buffer_memory_;
-        
+  virtual void create_descriptor_set_layout() override;
 
-    VkImage texture_image_;
-    VkDeviceMemory texture_image_memory_;
-    VkImageView texture_image_view_;
-    VkSampler texture_sampler_;
-    uint64_t texture_surface_;
+  virtual void create_descriptor_sets() override;
 
-    
-private:
-    void init_set_image(AppContext* app_context,int img_width, int img_height);
+  void create_texture_image_(int W, int H);
+  void create_texture_image_view_();
+  void create_texture_sampler_();
 
-    virtual void create_descriptor_set_layout()override ;
+  void update_vertex_buffer_();
 
-    virtual void create_descriptor_sets() override  ;
-
-    void create_texture_image_(int W, int H);
-    void create_texture_image_view_();
-    void create_texture_sampler_() ;
-
-    void update_vertex_buffer_();
-
-    void update_index_buffer_();
-    
+  void update_index_buffer_();
 };
 
-
-}
+}  // namespace vulkan

@@ -3,7 +3,4 @@
 #include <vector>
 #include "../common/constants.h"
 
- 
-#define CHECK_CUDA_ERROR(msg) 
-
-
+#define CHECK_CUDA_ERROR(msg)

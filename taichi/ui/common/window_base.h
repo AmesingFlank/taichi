@@ -15,59 +15,61 @@
 #include "gui_base.h"
 #include "app_config.h"
 
-class WindowBase{
+class WindowBase {
+ public:
+  bool is_pressed(std::string button);
 
-public:
+  bool is_running();
 
-    bool is_pressed(std::string button);
+  void set_is_running(bool value);
 
-    bool is_running();
+  std::tuple<float, float> get_cursor_pos();
 
-    void set_is_running(bool value);
+  std::vector<Event> get_events(int tag);
 
-    std::tuple<float,float> get_cursor_pos();
+  bool get_event(int tag);
 
-    std::vector<Event> get_events(int tag);
+  Event get_current_event();
 
-    bool get_event(int tag);
+  void set_current_event(const Event &event);
 
-    Event get_current_event();
+  virtual CanvasBase *get_canvas();
 
-    void set_current_event(const Event& event);
+  virtual void show();
 
-    virtual CanvasBase* get_canvas();
+  virtual GuiBase *GUI();
 
-    virtual void show() ;
+  virtual ~WindowBase();
 
-    virtual GuiBase* GUI();
+ protected:
+  AppConfig config_;
+  GLFWwindow *glfw_window_;
+  InputHandler input_handler_;
 
-    virtual ~WindowBase();
+  // used for FPS counting
+  double last_record_time_;
+  int frames_since_last_record_{0};
 
-protected:
+  std::list<Event> events_;
+  Event current_event_{EVENT_NONE, ""};
 
-    AppConfig config_;
-    GLFWwindow* glfw_window_;
-    InputHandler input_handler_;
+ protected:
+  WindowBase(AppConfig config);
 
-    // used for FPS counting
-    double last_record_time_;
-    int frames_since_last_record_{0};
+  void set_callbacks();
 
-    std::list<Event> events_;
-    Event current_event_{EVENT_NONE,""};
+  static void key_callback(GLFWwindow *glfw_window,
+                           int key,
+                           int scancode,
+                           int action,
+                           int mode);
 
-protected:
+  static void mouse_pos_callback(GLFWwindow *glfw_window,
+                                 double xpos,
+                                 double ypos);
 
-    WindowBase(AppConfig config);
-
-    void set_callbacks();
-
-    static void key_callback(GLFWwindow* glfw_window, int key, int scancode, int action, int mode);
-
-    static void mouse_pos_callback(GLFWwindow* glfw_window, double xpos, double ypos);
-
-	static void mouse_button_callback(GLFWwindow* glfw_window, int button, int action, int modifier);
-
+  static void mouse_button_callback(GLFWwindow *glfw_window,
+                                    int button,
+                                    int action,
+                                    int modifier);
 };
-
-

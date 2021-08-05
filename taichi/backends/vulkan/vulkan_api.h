@@ -46,7 +46,7 @@ struct VulkanQueueFamilyIndices {
   }
 
   bool is_complete_for_ui() {
-        return graphics_family.has_value() && present_family.has_value();
+    return graphics_family.has_value() && present_family.has_value();
   }
 };
 
@@ -144,10 +144,11 @@ class EmbeddedVulkanDevice {
   struct Params {
     std::optional<uint32_t> api_version;
     bool is_for_ui{false};
-    std::vector<const char*> additional_instance_extensions;
-    std::vector<const char*> additional_device_extensions;
-    // the VkSurfaceKHR needs to be created after creating the VkInstance, but before creating the VkPhysicalDevice
-    // thus, we allow the user to pass in a custom surface creator
+    std::vector<const char *> additional_instance_extensions;
+    std::vector<const char *> additional_device_extensions;
+    // the VkSurfaceKHR needs to be created after creating the VkInstance, but
+    // before creating the VkPhysicalDevice thus, we allow the user to pass in a
+    // custom surface creator
     std::function<VkSurfaceKHR(VkInstance)> surface_creator;
   };
 
@@ -169,15 +170,14 @@ class EmbeddedVulkanDevice {
   VkPhysicalDevice physical_device() const {
     return physical_device_;
   }
-  
-  VkSurfaceKHR surface() const{
+
+  VkSurfaceKHR surface() const {
     return surface_;
   }
 
-  VkInstance instance() const{
+  VkInstance instance() const {
     return instance_;
   }
-
 
   const VulkanQueueFamilyIndices &queue_family_indices() const {
     return queue_family_indices_;

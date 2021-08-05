@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -23,35 +21,32 @@
 #include "../../../common/field_info.h"
 #include "../scene.h"
 
-namespace vulkan{
+namespace vulkan {
 
+class Mesh : public Renderable {
+ public:
+  Mesh(AppContext *app_context);
 
-class Mesh:public Renderable{
-public:
-    Mesh(AppContext* app_context);
+  void update_data(const MeshInfo &info, const Scene &scene);
 
-    void update_data(const MeshInfo& info,const Scene& scene);
+ private:
+  struct UniformBufferObject {
+    Scene::SceneUniformBuffer scene;
+    alignas(16) glm::vec3 color;
+    int use_per_vertex_color;
+    float shininess;
+    int need_normal_generation;
+  };
 
-private:
+  void init_mesh(AppContext *app_context,
+                 int vertices_count,
+                 int indices_count);
 
-    struct UniformBufferObject {
-        Scene::SceneUniformBuffer scene;
-        alignas(16) glm::vec3 color;
-        int use_per_vertex_color;
-        float shininess;
-        int need_normal_generation;
-    };
+  void update_ubo(const MeshInfo &info, const Scene &scene);
 
-    
-    void init_mesh(AppContext* app_context, int vertices_count, int indices_count);
+  virtual void create_descriptor_set_layout() override;
 
-    void update_ubo(const MeshInfo& info,const Scene& scene);
-
-    virtual void create_descriptor_set_layout()override ;
-
-    virtual void create_descriptor_sets() override;
-    
+  virtual void create_descriptor_sets() override;
 };
 
-
-}
+}  // namespace vulkan

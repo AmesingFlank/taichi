@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -32,70 +30,62 @@
 #include "renderables/circles.h"
 #include "renderables/lines.h"
 
+namespace vulkan {
 
-namespace vulkan{
+class Canvas : public CanvasBase {
+ public:
+  Canvas(AppContext *app_context);
 
+  void prepare_for_next_frame();
 
+  virtual void set_background_color(const glm::vec3 &color) override;
 
-class Canvas: public CanvasBase{
-public:
-    Canvas(AppContext* app_context);
+  virtual void set_image(const SetImageInfo &info) override;
 
-    void prepare_for_next_frame();
+  virtual void triangles(const TrianglesInfo &info) override;
 
-    virtual void set_background_color(const glm::vec3& color) override;
+  virtual void circles(const CirclesInfo &info) override;
 
-    virtual void set_image(const SetImageInfo& info) override;
+  virtual void lines(const LinesInfo &info) override;
 
-    virtual void triangles(const TrianglesInfo& info) override;
+  void mesh(const MeshInfo &info, Scene *scene);
 
-    virtual void circles(const CirclesInfo& info) override;
+  void particles(const ParticlesInfo &info, Scene *scene);
 
-    virtual void lines(const LinesInfo& info) override;
+  virtual void scene(SceneBase *scene_base) override;
 
-    void mesh(const MeshInfo& info, Scene* scene);
+  void draw_frame(Gui *gui);
 
-    void particles(const ParticlesInfo& info, Scene* scene);
+  virtual void cleanup();
 
-    virtual void scene(SceneBase* scene_base)override;
+  virtual void cleanup_swap_chain();
 
-    void draw_frame(Gui* gui);
+  void recreate_swap_chain();
 
+ private:
+  glm::vec3 background_color_ = glm::vec3(0.f, 0.f, 0.f);
 
-    virtual void cleanup();
+  std::vector<std::unique_ptr<Renderable>> renderables_;
+  int next_renderable_;
 
-    virtual void cleanup_swap_chain();
+  AppContext *app_context_;
 
-    void recreate_swap_chain();
+  VkSemaphore prev_draw_finished_vk_;
+  VkSemaphore this_draw_data_ready_vk_;
 
-private:
+  uint64_t prev_draw_finished_cuda_;
+  uint64_t this_draw_data_ready_cuda_;
 
-    glm::vec3 background_color_ = glm::vec3(0.f,0.f,0.f);
+  std::vector<VkCommandBuffer> cached_command_buffers_;
 
-    std::vector<std::unique_ptr<Renderable>> renderables_;
-    int next_renderable_;
+ private:
+  void clear_command_buffer_cache();
 
-    AppContext* app_context_;
+  void create_semaphores();
+  void import_semaphores();
 
-    VkSemaphore prev_draw_finished_vk_;
-    VkSemaphore this_draw_data_ready_vk_;
-
-    uint64_t prev_draw_finished_cuda_;
-    uint64_t this_draw_data_ready_cuda_;
-
-    std::vector<VkCommandBuffer> cached_command_buffers_;
-
-private:
-
-    void clear_command_buffer_cache();
-
-    void create_semaphores();
-    void import_semaphores();
-
-    template <typename T>
-    T* get_renderable_of_type();
-
+  template <typename T>
+  T *get_renderable_of_type();
 };
 
-
-}
+}  // namespace vulkan

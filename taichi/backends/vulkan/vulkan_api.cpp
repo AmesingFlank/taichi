@@ -99,7 +99,8 @@ std::vector<const char *> get_required_extensions() {
   return extensions;
 }
 
-VulkanQueueFamilyIndices find_queue_families(VkPhysicalDevice device,VkSurfaceKHR surface) {
+VulkanQueueFamilyIndices find_queue_families(VkPhysicalDevice device,
+                                             VkSurfaceKHR surface) {
   VulkanQueueFamilyIndices indices;
 
   uint32_t queue_family_count = 0;
@@ -124,9 +125,10 @@ VulkanQueueFamilyIndices find_queue_families(VkPhysicalDevice device,VkSurfaceKH
       indices.graphics_family = i;
     }
 
-    if(surface != VK_NULL_HANDLE){
+    if (surface != VK_NULL_HANDLE) {
       VkBool32 present_support = false;
-      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
+                                           &present_support);
 
       if (present_support) {
         indices.present_family = i;
@@ -151,12 +153,11 @@ VulkanQueueFamilyIndices find_queue_families(VkPhysicalDevice device,VkSurfaceKH
   return indices;
 }
 
-bool is_device_suitable(VkPhysicalDevice device,VkSurfaceKHR surface) {
-  auto indices = find_queue_families(device,surface);
-  if(surface != VK_NULL_HANDLE){
+bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
+  auto indices = find_queue_families(device, surface);
+  if (surface != VK_NULL_HANDLE) {
     return indices.is_complete_for_ui();
-  }
-  else{
+  } else {
     return indices.is_complete();
   }
 }
@@ -181,7 +182,8 @@ VkShaderModule create_shader_module(VkDevice device,
 VulkanDevice::VulkanDevice(const Params &params) : rep_(params) {
 }
 
-EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params):params_(params) {
+EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params)
+    : params_(params) {
   if (!VulkanLoader::instance().init()) {
     throw std::runtime_error("Error loading vulkan");
   }
@@ -266,7 +268,7 @@ void EmbeddedVulkanDevice::create_instance() {
   }
 
   auto extensions = get_required_extensions();
-  for(auto ext:params_.additional_instance_extensions){
+  for (auto ext : params_.additional_instance_extensions) {
     extensions.push_back(ext);
   }
 
@@ -313,10 +315,9 @@ void EmbeddedVulkanDevice::setup_debug_messenger() {
       "failed to set up debug messenger");
 }
 
-void EmbeddedVulkanDevice::create_surface(){
+void EmbeddedVulkanDevice::create_surface() {
   surface_ = params_.surface_creator(instance_);
 }
-
 
 void EmbeddedVulkanDevice::pick_physical_device() {
   uint32_t device_count = 0;
@@ -327,7 +328,7 @@ void EmbeddedVulkanDevice::pick_physical_device() {
   vkEnumeratePhysicalDevices(instance_, &device_count, devices.data());
   physical_device_ = VK_NULL_HANDLE;
   for (const auto &device : devices) {
-    if (is_device_suitable(device,surface_)) {
+    if (is_device_suitable(device, surface_)) {
       physical_device_ = device;
       break;
     }
@@ -335,28 +336,28 @@ void EmbeddedVulkanDevice::pick_physical_device() {
   TI_ASSERT_INFO(physical_device_ != VK_NULL_HANDLE,
                  "failed to find a suitable GPU");
 
-  queue_family_indices_ = find_queue_families(physical_device_,surface_);
+  queue_family_indices_ = find_queue_families(physical_device_, surface_);
 }
 
 void EmbeddedVulkanDevice::create_logical_device() {
   std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
   std::unordered_set<uint32_t> unique_families;
 
-  if(params_.is_for_ui){
-    unique_families = {queue_family_indices_.graphics_family.value(), queue_family_indices_.present_family.value()};
-  } 
-  else{
+  if (params_.is_for_ui) {
+    unique_families = {queue_family_indices_.graphics_family.value(),
+                       queue_family_indices_.present_family.value()};
+  } else {
     unique_families = {queue_family_indices_.compute_family.value()};
   }
 
   float queue_priority = 1.0f;
   for (uint32_t queue_family : unique_families) {
-      VkDeviceQueueCreateInfo queueCreateInfo{};
-      queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-      queueCreateInfo.queueFamilyIndex = queue_family;
-      queueCreateInfo.queueCount = 1;
-      queueCreateInfo.pQueuePriorities = &queue_priority;
-      queue_create_infos.push_back(queueCreateInfo);
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queue_family;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queue_priority;
+    queue_create_infos.push_back(queueCreateInfo);
   }
 
   VkDeviceCreateInfo create_info{};
@@ -377,7 +378,7 @@ void EmbeddedVulkanDevice::create_logical_device() {
   // Detect extensions
   std::vector<const char *> enabled_extensions;
 
-  for(auto ext:params_.additional_device_extensions){
+  for (auto ext : params_.additional_device_extensions) {
     enabled_extensions.push_back(ext);
   }
 
@@ -446,7 +447,7 @@ void EmbeddedVulkanDevice::create_logical_device() {
   capability_.has_int16 = false;
   capability_.has_int64 = true;
   capability_.has_float64 = true;
-  if(params_.is_for_ui){
+  if (params_.is_for_ui) {
     device_features.samplerAnisotropy = VK_TRUE;
     device_features.geometryShader = VK_TRUE;
   }
@@ -503,25 +504,25 @@ void EmbeddedVulkanDevice::create_logical_device() {
                                        kNoVkAllocCallbacks, &device_),
                         "failed to create logical device");
   VulkanLoader::instance().load_device(device_);
-  
-  if(params_.is_for_ui){
-    vkGetDeviceQueue(device_, queue_family_indices_.graphics_family.value(),0, &graphics_queue_);
-    vkGetDeviceQueue(device_, queue_family_indices_.graphics_family.value(),0, &present_queue_);
-  }
-  else{
-    vkGetDeviceQueue(device_, queue_family_indices_.compute_family.value(), 0, &compute_queue_);
-  }
 
+  if (params_.is_for_ui) {
+    vkGetDeviceQueue(device_, queue_family_indices_.graphics_family.value(), 0,
+                     &graphics_queue_);
+    vkGetDeviceQueue(device_, queue_family_indices_.graphics_family.value(), 0,
+                     &present_queue_);
+  } else {
+    vkGetDeviceQueue(device_, queue_family_indices_.compute_family.value(), 0,
+                     &compute_queue_);
+  }
 }
 
 void EmbeddedVulkanDevice::create_command_pool() {
   VkCommandPoolCreateInfo pool_info{};
   pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   pool_info.flags = 0;
-  if(params_.is_for_ui){
+  if (params_.is_for_ui) {
     pool_info.queueFamilyIndex = queue_family_indices_.graphics_family.value();
-  }
-  else{
+  } else {
     pool_info.queueFamilyIndex = queue_family_indices_.compute_family.value();
   }
   BAIL_ON_VK_BAD_RESULT(

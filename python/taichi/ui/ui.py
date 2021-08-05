@@ -1,23 +1,25 @@
-from taichi.core import ti_core as _ti_core
-from taichi.lang.kernel_impl import kernel
-from taichi.lang.kernel_arguments import ext_arr, template
-from taichi.core.primitive_types import *
-from taichi.lang.ops import get_addr
-from taichi.lang.impl import default_cfg
-
-
-
 import pathlib
+
+from taichi.core import ti_core as _ti_core
+from taichi.core.primitive_types import *
+from taichi.lang.impl import default_cfg
+from taichi.lang.kernel_arguments import ext_arr, template
+from taichi.lang.kernel_impl import kernel
+from taichi.lang.ops import get_addr
+
 
 @kernel
 def get_field_addr_0D(x: template()) -> u64:
-    return get_addr(x,[None])
+    return get_addr(x, [None])
+
 
 @kernel
 def get_field_addr_ND(x: template()) -> u64:
-    return get_addr(x,[0 for _ in x.shape])
+    return get_addr(x, [0 for _ in x.shape])
+
 
 field_addr_cache = {}
+
 
 def get_field_addr(x):
     if x not in field_addr_cache:
@@ -69,7 +71,7 @@ def get_field_info(field):
     info.dtype = dtype
     info.data = get_field_addr(field)
 
-    if hasattr(field,'n'):
+    if hasattr(field, 'n'):
         info.field_type = _ti_core.FIELD_TYPE_MATRIX
         info.matrix_rows = field.n
         info.matrix_cols = field.m
@@ -79,50 +81,74 @@ def get_field_info(field):
 
 
 class Canvas:
-    def __init__(self,canvas) -> None:
-        self.canvas = canvas #reference to a PyCanvas
-    def set_background_color(self,color):
+    def __init__(self, canvas) -> None:
+        self.canvas = canvas  #reference to a PyCanvas
+
+    def set_background_color(self, color):
         self.canvas.set_background_color(color)
-    def set_image(self,img):
+
+    def set_image(self, img):
         info = get_field_info(img)
         self.canvas.set_image(info)
 
-    def triangles(self,vertices,color=(0.5,0.5,0.5),indices=None,per_vertex_color=None):
+    def triangles(self,
+                  vertices,
+                  color=(0.5, 0.5, 0.5),
+                  indices=None,
+                  per_vertex_color=None):
         vertices_info = get_field_info(vertices)
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
-        self.canvas.triangles(vertices_info,indices_info,colors_info,color)
-        
-    def lines(self,vertices,width,indices=None,color = (0.5,0.5,0.5),per_vertex_color=None):
+        self.canvas.triangles(vertices_info, indices_info, colors_info, color)
+
+    def lines(self,
+              vertices,
+              width,
+              indices=None,
+              color=(0.5, 0.5, 0.5),
+              per_vertex_color=None):
         vertices_info = get_field_info(vertices)
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
-        self.canvas.lines(vertices_info,indices_info,colors_info,color,width)
+        self.canvas.lines(vertices_info, indices_info, colors_info, color,
+                          width)
 
-    def circles(self,vertices,radius,color = (0.5,0.5,0.5),per_vertex_color=None):
+    def circles(self,
+                vertices,
+                radius,
+                color=(0.5, 0.5, 0.5),
+                per_vertex_color=None):
         vertices_info = get_field_info(vertices)
         colors_info = get_field_info(per_vertex_color)
-        self.canvas.circles(vertices_info,colors_info,color,radius)
+        self.canvas.circles(vertices_info, colors_info, color, radius)
 
-    def scene(self,scene):
+    def scene(self, scene):
         self.canvas.scene(scene)
 
+
 class Gui:
-    def __init__(self,gui) -> None:
-        self.gui = gui #reference to a PyGui
-    def begin(self,name,x,y,width,height):
-        self.gui.begin(name,x,y,width,height)
+    def __init__(self, gui) -> None:
+        self.gui = gui  #reference to a PyGui
+
+    def begin(self, name, x, y, width, height):
+        self.gui.begin(name, x, y, width, height)
+
     def end(self):
         self.gui.end()
-    def text(self,text):
+
+    def text(self, text):
         self.gui.text(text)
-    def checkbox(self,text,old_value):
-        return self.gui.checkbox(text,old_value)
-    def slider_float(self,text,old_value,minimum,maximum):
-        return self.gui.slider_float(text,old_value,minimum,maximum)
-    def color_edit_3(self,text,old_value):
-        return self.gui.color_edit_3(text,old_value)
-    def button(self,text):
+
+    def checkbox(self, text, old_value):
+        return self.gui.checkbox(text, old_value)
+
+    def slider_float(self, text, old_value, minimum, maximum):
+        return self.gui.slider_float(text, old_value, minimum, maximum)
+
+    def color_edit_3(self, text, old_value):
+        return self.gui.color_edit_3(text, old_value)
+
+    def button(self, text):
         return self.gui.button(text)
 
 
@@ -151,33 +177,34 @@ MOTION = "Motion"
 PRESS = "Press"
 RELEASE = "Release"
 
+
 class Window(_ti_core.PyWindow):
-    def __init__(self,name,res,vsync = False):
+    def __init__(self, name, res, vsync=False):
         package_path = str(pathlib.Path(__file__).parent.parent)
 
         if default_cfg().arch == _ti_core.cuda:
             ti_arch = _ti_core.ARCH_CUDA
         elif default_cfg().arch == _ti_core.x64:
             ti_arch = _ti_core.ARCH_X64
-        super().__init__(name,res,vsync,package_path,ti_arch)
-    
+        super().__init__(name, res, vsync, package_path, ti_arch)
+
     @property
     def running(self):
         return self.is_running()
-    
+
     @running.setter
     def running(self, value):
         self.set_is_running(value)
 
-    def get_events(self,tag = None):
-        if tag==None:
+    def get_events(self, tag=None):
+        if tag == None:
             return super().get_events(_ti_core.EVENT_NONE)
         elif tag == PRESS:
             return super().get_events(_ti_core.EVENT_PRESS)
         raise Exception("unrecognized event tag")
 
-    def get_event(self,tag = None):
-        if tag==None:
+    def get_event(self, tag=None):
+        if tag == None:
             return super().get_event(_ti_core.EVENT_NONE)
         elif tag == PRESS:
             return super().get_event(_ti_core.EVENT_PRESS)
@@ -188,7 +215,6 @@ class Window(_ti_core.PyWindow):
             if super().is_pressed(k):
                 return True
         return False
-        
 
     def get_canvas(self):
         return Canvas(super().get_canvas())
@@ -202,26 +228,39 @@ class Scene(_ti_core.PyScene):
     def __init__(self):
         super().__init__()
 
-    def set_camera(self,camera):
+    def set_camera(self, camera):
         super().set_camera(camera)
 
-    def mesh(self,vertices,indices,normals=None,color = (0.5,0.5,0.5),per_vertex_color = None,shininess = 32.0):
+    def mesh(self,
+             vertices,
+             indices,
+             normals=None,
+             color=(0.5, 0.5, 0.5),
+             per_vertex_color=None,
+             shininess=32.0):
         vertices_info = get_field_info(vertices)
         normals_info = get_field_info(normals)
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
-        super().mesh(vertices_info,normals_info,colors_info,indices_info,color,shininess)
+        super().mesh(vertices_info, normals_info, colors_info, indices_info,
+                     color, shininess)
 
-    def particles(self,vertices,radius,color = (0.5,0.5,0.5),per_vertex_color = None,shininess = 32.0):
+    def particles(self,
+                  vertices,
+                  radius,
+                  color=(0.5, 0.5, 0.5),
+                  per_vertex_color=None,
+                  shininess=32.0):
         vertices_info = get_field_info(vertices)
         colors_info = get_field_info(per_vertex_color)
-        super().particles(vertices_info,colors_info,color,radius,shininess)
+        super().particles(vertices_info, colors_info, color, radius, shininess)
 
-    def point_light(self,pos,color):
-        super().point_light(pos,color)
-    
-    def ambient_light(self,color):
+    def point_light(self, pos, color):
+        super().point_light(pos, color)
+
+    def ambient_light(self, color):
         super().ambient_light(color)
+
 
 def make_camera():
     return _ti_core.PyCamera()

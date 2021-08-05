@@ -1,11 +1,8 @@
-
 import numpy as np
+
 import taichi as ti
 
-
-
 ti.init(ti.cuda)
-
 
 #dim, n_grid, steps, dt = 2, 128, 20, 2e-4
 #dim, n_grid, steps, dt = 2, 256, 32, 1e-4
@@ -13,11 +10,9 @@ ti.init(ti.cuda)
 dim, n_grid, steps, dt = 3, 64, 25, 2e-4
 #dim, n_grid, steps, dt = 3, 128, 5, 1e-4
 
-
 n_particles = n_grid**dim // 2**(dim - 1)
 
 print(n_particles)
-
 
 dx = 1 / n_grid
 
@@ -34,7 +29,6 @@ C = ti.Matrix.field(dim, dim, float, n_particles)
 J = ti.field(float, n_particles)
 
 colors = ti.Vector.field(3, float, n_particles)
-
 
 grid_v = ti.Vector.field(dim, float, (n_grid, ) * dim)
 grid_m = ti.field(float, (n_grid, ) * dim)
@@ -96,7 +90,7 @@ def init():
     for i in range(n_particles):
         x[i] = ti.Vector([ti.random() for i in range(dim)]) * 0.4 + 0.15
         J[i] = 1
-        colors[i] = ti.Vector([ti.random(),ti.random(),ti.random()])
+        colors[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
 
 
 def T(a):
@@ -114,12 +108,10 @@ def T(a):
     return np.array([u, v]).swapaxes(0, 1) + 0.5
 
 
-
 init()
 
-res = (1920,1080)
-window = ti.ui.Window("heyy",res)
-
+res = (1920, 1080)
+window = ti.ui.Window("heyy", res)
 
 frame_id = 0
 canvas = window.get_canvas()
@@ -132,7 +124,7 @@ camera_y = 2.0
 camera_z = 2.0
 
 use_random_colors = False
-particles_color = (0,0,1)
+particles_color = (0, 0, 1)
 particles_radius = 0.05
 
 while window.running:
@@ -143,31 +135,34 @@ while window.running:
     for s in range(steps):
         substep()
 
-    camera.position(camera_x,camera_y,camera_z )
-    camera.lookat(0,0,0)
-    camera.up(0,1,0)
+    camera.position(camera_x, camera_y, camera_z)
+    camera.lookat(0, 0, 0)
+    camera.up(0, 1, 0)
     scene.set_camera(camera)
     if show_particles:
         if use_random_colors:
-            scene.particles(x,per_vertex_color = colors,radius = particles_radius)
+            scene.particles(x,
+                            per_vertex_color=colors,
+                            radius=particles_radius)
         else:
-            scene.particles(x,color = particles_color,radius = particles_radius)
-    scene.point_light(pos = (camera_x,camera_y,camera_z ),color = (1,1,1))
+            scene.particles(x, color=particles_color, radius=particles_radius)
+    scene.point_light(pos=(camera_x, camera_y, camera_z), color=(1, 1, 1))
 
-    
     canvas.scene(scene)
 
-
-    window.GUI.begin("Real MPM 3D",0.1,0.1,0.2,0.8)
+    window.GUI.begin("Real MPM 3D", 0.1, 0.1, 0.2, 0.8)
     window.GUI.text("hello text")
-    show_particles = window.GUI.checkbox("show particles",show_particles)
-    camera_x = window.GUI.slider_float("camera x",camera_x,-10,10)
-    camera_y = window.GUI.slider_float("camera y",camera_y,-10,10)
-    camera_z = window.GUI.slider_float("camera z",camera_z,-10,10)
-    use_random_colors = window.GUI.checkbox("use_random_colors",use_random_colors)
+    show_particles = window.GUI.checkbox("show particles", show_particles)
+    camera_x = window.GUI.slider_float("camera x", camera_x, -10, 10)
+    camera_y = window.GUI.slider_float("camera y", camera_y, -10, 10)
+    camera_z = window.GUI.slider_float("camera z", camera_z, -10, 10)
+    use_random_colors = window.GUI.checkbox("use_random_colors",
+                                            use_random_colors)
     if not use_random_colors:
-        particles_color = window.GUI.color_edit_3("particles color",particles_color)
-    particles_radius = window.GUI.slider_float("particles radius ",particles_radius,0,0.1)
+        particles_color = window.GUI.color_edit_3("particles color",
+                                                  particles_color)
+    particles_radius = window.GUI.slider_float("particles radius ",
+                                               particles_radius, 0, 0.1)
     if window.GUI.button("restart"):
         init()
     window.GUI.end()

@@ -6,44 +6,40 @@
 #include "taichi/backends/vulkan/loader.h"
 #include "swap_chain.h"
 
-namespace vulkan{
+namespace vulkan {
 
+class AppContext {
+ public:
+  void init();
 
-class AppContext{
+  void cleanup_swap_chain();
+  void cleanup();
+  void recreate_swap_chain();
 
-public:
-    void init();
+  int get_swap_chain_size();
 
-    void cleanup_swap_chain();
-    void cleanup();
-    void recreate_swap_chain();
+  VkInstance instance() const;
+  VkDevice device() const;
+  VkPhysicalDevice physical_device() const;
+  taichi::lang::vulkan::VulkanQueueFamilyIndices queue_family_indices() const;
+  VkQueue graphics_queue() const;
+  VkQueue present_queue() const;
+  VkCommandPool command_pool() const;
+  VkRenderPass render_pass() const;
 
-    int get_swap_chain_size();
+  AppConfig config;
+  SwapChain swap_chain;
 
-    VkInstance instance() const;
-    VkDevice device()const;
-    VkPhysicalDevice physical_device()const;
-    taichi::lang::vulkan::VulkanQueueFamilyIndices queue_family_indices()const;
-    VkQueue graphics_queue()const;
-    VkQueue present_queue() const;
-    VkCommandPool command_pool() const;
-    VkRenderPass render_pass() const;
+  GLFWwindow *glfw_window;
 
-    AppConfig config;
-    SwapChain swap_chain;
+ private:
+  std::unique_ptr<taichi::lang::vulkan::EmbeddedVulkanDevice> vulkan_device_;
 
-    GLFWwindow* glfw_window;
+  VkRenderPass render_pass_;
 
-private:
-
-    std::unique_ptr<taichi::lang::vulkan::EmbeddedVulkanDevice> vulkan_device_;
-
-    VkRenderPass render_pass_;
-
-    void create_render_pass(VkRenderPass& render_pass,VkImageLayout final_color_layout );
-    void create_render_passes();
-     
+  void create_render_pass(VkRenderPass &render_pass,
+                          VkImageLayout final_color_layout);
+  void create_render_passes();
 };
 
-
-}
+}  // namespace vulkan
