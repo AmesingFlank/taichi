@@ -78,7 +78,7 @@ if(TI_WITH_GGUI)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -std=c++17" )
     list(APPEND TAICHI_CORE_SOURCE ${TAICHI_GGUI_SOURCE})
 
-    include_directories(external/glm)
+    include_directories(SYSTEM external/glm)
 
 endif()
 
