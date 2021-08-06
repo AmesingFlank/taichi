@@ -1,15 +1,22 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #include <array>
 #include <volk.h>
 
 struct Vertex {
-  glm::vec3 pos;
-  glm::vec3 normal;
-  glm::vec2 texCoord;
-  glm::vec3 color;
+  struct vec3{
+    float x;
+    float y;
+    float z;
+  };
+  struct vec2{
+    float x;
+    float y;
+  };
+  vec3 pos;
+  vec3 normal;
+  vec2 texCoord;
+  vec3 color;
 
   static VkVertexInputBindingDescription get_binding_description() {
     VkVertexInputBindingDescription binding_description{};

@@ -334,7 +334,7 @@ if(TI_WITH_GGUI)
     # Dear ImGui
     add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
     set(IMGUI_DIR external/imgui)
-    include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
+    include_directories(SYSTEM ${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
     add_library(imgui  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
     target_link_libraries(${CORE_LIBRARY_NAME} imgui)
 

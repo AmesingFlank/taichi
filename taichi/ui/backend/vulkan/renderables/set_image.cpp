@@ -36,10 +36,10 @@ void SetImage::update_data(const SetImageInfo &info) {
   if (img.field_source == FIELD_SOURCE_CUDA) {
     if (img.dtype == DTYPE_U8) {
       copy_to_texture_fuffer_cuda((unsigned char *)img.data,
-                                  (void *)texture_surface_, width, height,
+                                  (uint64_t)texture_surface_, width, height,
                                   actual_width, actual_height, img.matrix_rows);
     } else if (img.dtype == DTYPE_F32) {
-      copy_to_texture_fuffer_cuda((float *)img.data, (void *)texture_surface_,
+      copy_to_texture_fuffer_cuda((float *)img.data, (uint64_t)texture_surface_,
                                   width, height, actual_width, actual_height,
                                   img.matrix_rows);
     } else {

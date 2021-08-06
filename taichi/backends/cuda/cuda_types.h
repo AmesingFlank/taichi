@@ -2,7 +2,7 @@
 
 using CUexternalMemory = void *;
 using CUexternalSemaphore = void *;
-using CUsurfObject = void *;
+using CUsurfObject = uint64_t;
 using CUstream = void *;
 using CUdeviceptr = void *;
 using CUmipmappedArray = void *;

@@ -323,7 +323,7 @@ __device__ __host__ inline unsigned char get_color_value<float>(float x) {
 
 template <typename T>
 __global__ void copy_to_texture_fuffer_cuda_impl(T *src,
-                                                 CUsurfObject surface,
+                                                 uint64_t surface,
                                                  int width,
                                                  int height,
                                                  int actual_width,
@@ -349,7 +349,7 @@ __global__ void copy_to_texture_fuffer_cuda_impl(T *src,
 
 template <typename T>
 void copy_to_texture_fuffer_cuda(T *src,
-                                 void *surface,
+                                 uint64_t surface,
                                  int width,
                                  int height,
                                  int actual_width,
@@ -358,7 +358,7 @@ void copy_to_texture_fuffer_cuda(T *src,
   int num_blocks, num_threads;
   set_num_blocks_threads(width * height, num_blocks, num_threads);
   copy_to_texture_fuffer_cuda_impl<<<num_blocks, num_threads>>>(
-      src, (CUsurfObject)surface, width, height, actual_width, actual_height,
+      src, (uint64_t)surface, width, height, actual_width, actual_height,
       channels);
 }
 
@@ -387,14 +387,14 @@ void copy_to_texture_fuffer_x64(T *src,
 }
 
 template void copy_to_texture_fuffer_cuda<float>(float *src,
-                                                 void *surface,
+                                                 uint64_t surface,
                                                  int width,
                                                  int height,
                                                  int actual_width,
                                                  int actual_height,
                                                  int channels);
 template void copy_to_texture_fuffer_cuda<unsigned char>(unsigned char *src,
-                                                         void *surface,
+                                                         uint64_t surface,
                                                          int width,
                                                          int height,
                                                          int actual_width,

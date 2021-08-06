@@ -50,7 +50,7 @@ void update_lines_vbo_x64(Vertex *vbo,
 
 template <typename T>
 void copy_to_texture_fuffer_cuda(T *src,
-                                 void *surface,
+                                 uint64_t surface,
                                  int width,
                                  int height,
                                  int actual_width,
