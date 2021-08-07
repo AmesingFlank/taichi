@@ -189,7 +189,9 @@ EmbeddedVulkanDevice::EmbeddedVulkanDevice(const Params &params)
   }
   create_instance();
   setup_debug_messenger();
-  create_surface();
+  if(params_.is_for_ui){
+    create_surface();
+  }
   pick_physical_device();
   create_logical_device();
   create_command_pool();
