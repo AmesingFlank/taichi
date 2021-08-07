@@ -52,8 +52,8 @@ class SetImage final : public Renderable {
   virtual void create_descriptor_sets() override;
 
   void create_texture_image_(int W, int H);
-  void create_texture_image_view_();
-  void create_texture_sampler_();
+  void create_texture_image_view();
+  void create_texture_sampler();
 
   void update_vertex_buffer_();
 

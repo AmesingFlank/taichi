@@ -6,7 +6,7 @@ namespace vulkan {
 
 #ifdef _WIN64  // For windows
 HANDLE get_device_mem_handle(VkDeviceMemory &mem, VkDevice device) {
-  HANDLE handle = (HANDLE)999;
+  HANDLE handle;
 
   VkMemoryGetWin32HandleInfoKHR memory_get_win32_handle_info = {};
   memory_get_win32_handle_info.sType =
@@ -128,8 +128,9 @@ void *get_memory_pointer(VkDeviceMemory mem,
 
 CUsurfObject get_image_surface_object_of_external_memory(
     CUexternalMemory external_mem,
-    int W,
-    int H) {
+    int width,
+    int height,
+    int depth) {
   CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC external_mem_mipmapped_array_desc;
 
   memset(&external_mem_mipmapped_array_desc, 0,
@@ -137,14 +138,13 @@ CUsurfObject get_image_surface_object_of_external_memory(
 
   external_mem_mipmapped_array_desc.offset = 0;
   external_mem_mipmapped_array_desc.numLevels = 1;
-  external_mem_mipmapped_array_desc.arrayDesc.Width = W;
-  external_mem_mipmapped_array_desc.arrayDesc.Height = H;
-  external_mem_mipmapped_array_desc.arrayDesc.Depth = 0;
-  external_mem_mipmapped_array_desc.arrayDesc.Format =
-      CU_AD_FORMAT_UNSIGNED_INT8;
+  external_mem_mipmapped_array_desc.arrayDesc.Width = width ;
+  external_mem_mipmapped_array_desc.arrayDesc.Height = height ;
+  external_mem_mipmapped_array_desc.arrayDesc.Depth = depth;
+  external_mem_mipmapped_array_desc.arrayDesc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
   external_mem_mipmapped_array_desc.arrayDesc.NumChannels = 4;
-  external_mem_mipmapped_array_desc.arrayDesc.Flags =
-      CUDA_ARRAY3D_COLOR_ATTACHMENT;
+  external_mem_mipmapped_array_desc.arrayDesc.Flags = CUDA_ARRAY3D_SURFACE_LDST;
+
 
   CUmipmappedArray cuda_mipmapped_image_array;
 

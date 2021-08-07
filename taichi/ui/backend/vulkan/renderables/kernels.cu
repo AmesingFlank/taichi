@@ -344,7 +344,7 @@ __global__ void copy_to_texture_fuffer_cuda_impl(T *src,
   data.z = get_color_value<T>(src_base_addr[2]);
   data.w = 255;
 
-  surf2Dwrite(data, surface, x * sizeof(uchar4), y);
+  surf3Dwrite(data, surface, x * sizeof(uchar4), y,0);
 }
 
 template <typename T>

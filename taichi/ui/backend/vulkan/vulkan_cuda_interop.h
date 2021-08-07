@@ -36,8 +36,9 @@ void *get_memory_pointer(VkDeviceMemory mem,
 
 CUsurfObject get_image_surface_object_of_external_memory(
     CUexternalMemory external_mem,
-    int W,
-    int H);
+    int width,
+    int height,
+    int depth);
 
 CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,
                                              VkDevice device);

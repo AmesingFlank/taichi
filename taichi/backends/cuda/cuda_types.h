@@ -401,6 +401,12 @@ typedef struct CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS_st {
  */
 #define CUDA_EXTERNAL_MEMORY_DEDICATED 0x1
 
+ /**
+  * This flag must be set in order to bind a surface reference
+  * to the CUDA array
+  */
+#define CUDA_ARRAY3D_SURFACE_LDST   0x02
+
 /**
  * This flag indicates that the CUDA array may be bound as a color target
  * in an external graphics API

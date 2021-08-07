@@ -349,8 +349,11 @@ VkShaderModule create_shader_module(const std::vector<char> &code,
   return shader_module;
 }
 
-void create_image(uint32_t width,
+void create_image(
+                  int dim,
+                  uint32_t width,
                   uint32_t height,
+                  uint32_t depth,
                   VkFormat format,
                   VkImageTiling tiling,
                   VkImageUsageFlags usage,
@@ -361,10 +364,21 @@ void create_image(uint32_t width,
                   VkPhysicalDevice physical_device) {
   VkImageCreateInfo image_info{};
   image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  image_info.imageType = VK_IMAGE_TYPE_2D;
+  if(dim==1){
+    image_info.imageType = VK_IMAGE_TYPE_1D;
+  }
+  else if(dim==2){
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+  }
+  else if(dim==3){
+    image_info.imageType = VK_IMAGE_TYPE_3D;
+  }
+  else{
+    throw std::runtime_error("dim can only be 1 2 3");
+  }
   image_info.extent.width = width;
   image_info.extent.height = height;
-  image_info.extent.depth = 1;
+  image_info.extent.depth = depth;
   image_info.mipLevels = 1;
   image_info.arrayLayers = 1;
   image_info.format = format;
@@ -402,14 +416,26 @@ void create_image(uint32_t width,
   vkBindImageMemory(device, image, image_mem, 0);
 }
 
-VkImageView create_image_view(VkImage image,
+VkImageView create_image_view(int dim,VkImage image,
                               VkFormat format,
                               VkImageAspectFlags aspect_flags,
                               VkDevice device) {
   VkImageViewCreateInfo view_info{};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   view_info.image = image;
-  view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  if(dim==1){
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_1D;
+  }
+  else if(dim==2){
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  }
+  else if(dim==3){
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
+  }
+  else{
+    throw std::runtime_error("dim can only be 1 2 3");
+  }
+  
   view_info.format = format;
   view_info.subresourceRange.aspectMask = aspect_flags;
   view_info.subresourceRange.baseMipLevel = 0;

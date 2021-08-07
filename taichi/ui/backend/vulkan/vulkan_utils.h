@@ -102,8 +102,10 @@ void create_buffer(VkDeviceSize size,
 VkShaderModule create_shader_module(const std::vector<char> &code,
                                     VkDevice device);
 
-void create_image(uint32_t width,
+void create_image(int dim,
+                  uint32_t width,
                   uint32_t height,
+                  uint32_t depth,
                   VkFormat format,
                   VkImageTiling tiling,
                   VkImageUsageFlags usage,
@@ -113,7 +115,7 @@ void create_image(uint32_t width,
                   VkDevice device,
                   VkPhysicalDevice physical_device);
 
-VkImageView create_image_view(VkImage image,
+VkImageView create_image_view(int dim,VkImage image,
                               VkFormat format,
                               VkImageAspectFlags aspect_flags,
                               VkDevice device);
