@@ -30,8 +30,6 @@ HANDLE get_device_mem_handle(VkDeviceMemory &mem, VkDevice device) {
     printf("vkGetMemoryWin32HandleKHR failed\n");
   }
 
-  printf("HANDLE: %ld \n", handle);
-
   return handle;
 }
 #else
@@ -73,7 +71,7 @@ CUexternalMemory import_vk_memory_object_from_handle(HANDLE handle,
     desc.flags |= CUDA_EXTERNAL_MEMORY_DEDICATED;
   }
 
-  HANDLE_ERROR(cuImportExternalMemory(&ext_mem, &desc));
+  CUDADriver::get_instance().import_external_memory(&ext_mem, &desc);
   return ext_mem;
 }
 #else
