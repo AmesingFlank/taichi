@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../utils/utils.h"
-#include "vulkan_utils.h"
+#include "taichi/ui/utils/utils.h"
+#include "taichi/ui/backend/vulkan/vulkan_utils.h"
 #include "taichi/backends/cuda/cuda_driver.h"
 
 TI_UI_NAMESPACE_BEGIN

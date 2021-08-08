@@ -1,5 +1,5 @@
 #include "canvas.h"
-#include "../../utils/utils.h"
+#include "taichi/ui/utils/utils.h"
 
 #include "vulkan_cuda_interop.h"
 #include "vulkan_cuda_interop.h"

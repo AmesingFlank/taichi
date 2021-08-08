@@ -12,11 +12,11 @@
 #include <array>
 #include <optional>
 #include <set>
-#include "../../utils/utils.h"
-#include "vertex.h"
-#include "vulkan_utils.h"
-#include "app_context.h"
-#include "swap_chain.h"
+#include "taichi/ui/utils/utils.h"
+#include "taichi/ui/backend/vulkan/vertex.h"
+#include "taichi/ui/backend/vulkan/vulkan_utils.h"
+#include "taichi/ui/backend/vulkan/app_context.h"
+#include "taichi/ui/backend/vulkan/swap_chain.h"
 #include "../../common/renderable_info.h"
 
 TI_UI_NAMESPACE_BEGIN

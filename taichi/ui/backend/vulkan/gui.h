@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/utils.h"
+#include "taichi/ui/utils/utils.h"
 
 #ifndef IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
@@ -9,7 +9,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
-#include "app_context.h"
+#include "taichi/ui/backend/vulkan/app_context.h"
 #include "../../common/gui_base.h"
 
 TI_UI_NAMESPACE_BEGIN
