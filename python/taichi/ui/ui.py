@@ -35,22 +35,22 @@ if _ti_core.GGUI_AVAILABLE:
             return info
         info.valid = True
         if default_cfg().arch == _ti_core.cuda:
-            info.field_source = _ti_core.FIELD_SOURCE_CUDA
+            info.field_source = _ti_core.FieldSource.TaichiCuda
         elif default_cfg().arch == _ti_core.x64:
-            info.field_source = _ti_core.FIELD_SOURCE_X64
+            info.field_source = _ti_core.FieldSource.TaichiX64
         else:
-            raise Exception("unsupported ti compute backend")
+            raise Exception("unsupported taichi backend")
         info.shape = [n for n in field.shape]
 
         info.dtype = field.dtype
         info.data = get_field_addr(field)
 
         if hasattr(field, 'n'):
-            info.field_type = _ti_core.FIELD_TYPE_MATRIX
+            info.field_type = _ti_core.FieldType.Matrix
             info.matrix_rows = field.n
             info.matrix_cols = field.m
         else:
-            info.field_type = _ti_core.FIELD_TYPE_FIELD
+            info.field_type = _ti_core.FieldType.Scalar
         return info
 
     class Canvas:
@@ -165,20 +165,20 @@ if _ti_core.GGUI_AVAILABLE:
 
         def get_events(self, tag=None):
             if tag == None:
-                return super().get_events(_ti_core.EventType.EVENT_NONE)
+                return super().get_events(_ti_core.EventType.Any)
             elif tag == PRESS:
-                return super().get_events(_ti_core.EventType.EVENT_PRESS)
+                return super().get_events(_ti_core.EventType.Press)
             elif tag == RELEASE:
-                return super().get_events(_ti_core.EventType.EVENT_RELEASE)
+                return super().get_events(_ti_core.EventType.Release)
             raise Exception("unrecognized event tag")
 
         def get_event(self, tag=None):
             if tag == None:
-                return super().get_event(_ti_core.EventType.EVENT_NONE)
+                return super().get_event(_ti_core.EventType.Any)
             elif tag == PRESS:
-                return super().get_event(_ti_core.EventType.EVENT_PRESS)
+                return super().get_event(_ti_core.EventType.Press)
             elif tag == RELEASE:
-                return super().get_events(_ti_core.EventType.EVENT_RELEASE)
+                return super().get_events(_ti_core.EventType.Release)
             raise Exception("unrecognized event tag")
 
         def is_pressed(self, *keys):

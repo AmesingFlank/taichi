@@ -374,16 +374,22 @@ void export_ggui(py::module &m) {
 
   
   py::enum_<EventType>(m, "EventType")
-    .value("EVENT_NONE", EventType::EVENT_NONE)
-    .value("EVENT_PRESS", EventType::EVENT_PRESS)
-    .value("EVENT_RELEASE", EventType::EVENT_RELEASE)
+    .value("Any", EventType::Any)
+    .value("Press", EventType::Press)
+    .value("Release", EventType::Release)
     .export_values();
     
-  m.attr("FIELD_SOURCE_X64") = py::int_(FIELD_SOURCE_X64);
-  m.attr("FIELD_SOURCE_CUDA") = py::int_(FIELD_SOURCE_CUDA);
+  py::enum_<FieldSource>(m, "FieldSource")
+    .value("TaichiCuda", FieldSource::TaichiCuda)
+    .value("TaichiX64", FieldSource::TaichiX64)
+    .export_values();
 
-  m.attr("FIELD_TYPE_FIELD") = py::int_(FIELD_TYPE_FIELD);
-  m.attr("FIELD_TYPE_MATRIX") = py::int_(FIELD_TYPE_MATRIX);
+  py::enum_<FieldType>(m, "FieldType")
+    .value("Scalar", FieldType::Scalar)
+    .value("Matrix", FieldType::Matrix)
+    .export_values();
+
+
   m.attr("PROJECTION_ORTHOGONAL") = py::int_(PROJECTION_ORTHOGONAL);
   m.attr("PROJECTION_PERSPECTIVE") = py::int_(PROJECTION_PERSPECTIVE);
 }

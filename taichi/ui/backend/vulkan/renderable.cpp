@@ -64,7 +64,7 @@ void Renderable::update_data(const RenderableInfo &info) {
 
   int num_components = info.vertices.matrix_rows;
 
-  if (info.vertices.field_source == FIELD_SOURCE_CUDA) {
+  if (info.vertices.field_source == FieldSource::TaichiCuda) {
     update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
                                      (float *)info.vertices.data, num_vertices,
                                      num_components);
@@ -96,7 +96,7 @@ void Renderable::update_data(const RenderableInfo &info) {
       indexed_ = false;
     }
 
-  } else if (info.vertices.field_source == FIELD_SOURCE_X64) {
+  } else if (info.vertices.field_source == FieldSource::TaichiX64) {
     {
       MappedMemory mapped_vbo(app_context_->device(),
                               staging_vertex_buffer_memory_,

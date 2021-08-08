@@ -37,7 +37,7 @@ void SetImage::update_data(const SetImageInfo &info) {
 
   int pixels = width * height;
 
-  if (img.field_source == FIELD_SOURCE_CUDA) {
+  if (img.field_source == FieldSource::TaichiCuda) {
     if (img.dtype == PrimitiveType::u8) {
       copy_to_texture_fuffer_cuda((unsigned char *)img.data,
                                   (uint64_t)texture_surface_, width, height,
@@ -49,7 +49,7 @@ void SetImage::update_data(const SetImageInfo &info) {
     } else {
       throw std::runtime_error("for set image, dtype must be u8 or f32");
     }
-  } else if (img.field_source == FIELD_SOURCE_X64) {
+  } else if (img.field_source == FieldSource::TaichiX64) {
     transition_image_layout(
         texture_image_, VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

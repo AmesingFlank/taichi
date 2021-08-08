@@ -53,7 +53,7 @@ class WindowBase {
   int frames_since_last_record_{0};
 
   std::list<Event> events_;
-  Event current_event_{EventType::EVENT_NONE, ""};
+  Event current_event_{EventType::Any, ""};
 
  protected:
   WindowBase(AppConfig config);

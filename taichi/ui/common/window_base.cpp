@@ -17,19 +17,19 @@ void WindowBase::set_callbacks() {
 
   input_handler_.user_key_callbacks.push_back([&](int key, int action) {
     if (action == GLFW_PRESS) {
-      events_.push_back({EventType::EVENT_PRESS, button_id_to_name(key)});
+      events_.push_back({EventType::Press, button_id_to_name(key)});
     }
     else if(action == GLFW_RELEASE){
-      events_.push_back({EventType::EVENT_RELEASE, button_id_to_name(key)});
+      events_.push_back({EventType::Release, button_id_to_name(key)});
     }
   });
   input_handler_.user_mouse_button_callbacks.push_back(
       [&](int key, int action) {
         if (action == GLFW_PRESS) {
-          events_.push_back({EventType::EVENT_PRESS, button_id_to_name(key)});
+          events_.push_back({EventType::Press, button_id_to_name(key)});
         }
         else if(action == GLFW_RELEASE){
-          events_.push_back({EventType::EVENT_RELEASE, button_id_to_name(key)});
+          events_.push_back({EventType::Release, button_id_to_name(key)});
         }
       });
 }
@@ -84,7 +84,7 @@ std::vector<Event> WindowBase::get_events(EventType tag) {
   std::vector<Event> result;
   std::list<Event>::iterator i = events_.begin();
   while (i != events_.end()) {
-    if (i->tag == tag || tag == EventType::EVENT_NONE) {
+    if (i->tag == tag || tag == EventType::Any) {
       result.push_back(*i);
       i = events_.erase(i);
     } else {
@@ -99,7 +99,7 @@ bool WindowBase::get_event(EventType tag) {
   if (events_.size() == 0) {
     return false;
   }
-  if (tag == EventType::EVENT_NONE) {
+  if (tag == EventType::Any) {
     current_event_ = events_.front();
     events_.pop_front();
     return true;

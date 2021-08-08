@@ -5,9 +5,9 @@ TI_UI_NAMESPACE_BEGIN
 
 
 enum class EventType: int{
-    EVENT_NONE = 0,
-    EVENT_PRESS = 1,
-    EVENT_RELEASE = 2
+    Any = 0,
+    Press = 1,
+    Release = 2
 };
 
 struct Event {
