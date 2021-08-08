@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include "field_info.h"
-#include "renderable_info.h"
-#include "camera.h"
-#include "../utils/utils.h"
+#include "taichi/ui/common/field_info.h"
+#include "taichi/ui/common/renderable_info.h"
+#include "taichi/ui/common/camera.h"
+#include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
 

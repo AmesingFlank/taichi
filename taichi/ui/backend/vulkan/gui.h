@@ -10,7 +10,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 #include "taichi/ui/backend/vulkan/app_context.h"
-#include "../../common/gui_base.h"
+#include "taichi/ui/common/gui_base.h"
 
 TI_UI_NAMESPACE_BEGIN
 

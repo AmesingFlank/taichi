@@ -1,6 +1,6 @@
 #pragma once
-#include "field_info.h"
-#include "../utils/utils.h"
+#include "taichi/ui/common/field_info.h"
+#include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
 

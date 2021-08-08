@@ -1,8 +1,8 @@
 #pragma once
-#include "field_info.h"
-#include "scene_base.h"
-#include "renderable_info.h"
-#include "../utils/utils.h"
+#include "taichi/ui/common/field_info.h"
+#include "taichi/ui/common/scene_base.h"
+#include "taichi/ui/common/renderable_info.h"
+#include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
 

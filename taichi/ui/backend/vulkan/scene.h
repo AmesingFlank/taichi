@@ -1,5 +1,5 @@
 #pragma once
-#include "../../common/scene_base.h"
+#include "taichi/ui/common/scene_base.h"
 
 TI_UI_NAMESPACE_BEGIN
 

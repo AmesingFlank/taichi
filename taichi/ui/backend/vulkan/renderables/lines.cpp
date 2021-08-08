@@ -1,6 +1,6 @@
 #include "lines.h"
-#include "../vulkan_cuda_interop.h"
-#include "../../../utils/utils.h"
+#include "taichi/ui/backend/vulkan/vulkan_cuda_interop.h"
+#include "taichi/ui/utils/utils.h"
 
 #include "kernels.h"
 

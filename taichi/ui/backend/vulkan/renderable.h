@@ -17,7 +17,7 @@
 #include "taichi/ui/backend/vulkan/vulkan_utils.h"
 #include "taichi/ui/backend/vulkan/app_context.h"
 #include "taichi/ui/backend/vulkan/swap_chain.h"
-#include "../../common/renderable_info.h"
+#include "taichi/ui/common/renderable_info.h"
 
 TI_UI_NAMESPACE_BEGIN
 

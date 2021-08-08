@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../utils/utils.h"
+#include "taichi/ui/utils/utils.h"
 #include "input_handler.h"
 
 #include <vector>
@@ -10,10 +10,10 @@
 #include <list>
 #include <tuple>
 
-#include "canvas_base.h"
-#include "event.h"
-#include "gui_base.h"
-#include "app_config.h"
+#include "taichi/ui/common/canvas_base.h"
+#include "taichi/ui/common/event.h"
+#include "taichi/ui/common/gui_base.h"
+#include "taichi/ui/common/app_config.h"
 
 TI_UI_NAMESPACE_BEGIN
 
