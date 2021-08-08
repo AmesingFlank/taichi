@@ -1,10 +1,6 @@
 #pragma once
 
-enum class EventType: int{
-    EVENT_NONE = 0,
-    EVENT_PRESS = 1,
-    EVENT_RELEASE = 2
-};
+
 
 
 #define FIELD_SOURCE_X64 0
