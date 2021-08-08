@@ -1,6 +1,6 @@
 #include "canvas.h"
 #include "../../utils/utils.h"
-#include "../../common/constants.h"
+
 #include "vulkan_cuda_interop.h"
 #include "vulkan_cuda_interop.h"
 

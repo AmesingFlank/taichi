@@ -9,7 +9,7 @@
 #include <queue>
 #include <list>
 #include <tuple>
-#include "constants.h"
+
 #include "canvas_base.h"
 #include "event.h"
 #include "gui_base.h"

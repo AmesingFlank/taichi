@@ -1,7 +1,7 @@
 #include "lines.h"
 #include "../vulkan_cuda_interop.h"
 #include "../../../utils/utils.h"
-#include "../../../common/constants.h"
+
 #include "kernels.h"
 
 TI_UI_NAMESPACE_BEGIN

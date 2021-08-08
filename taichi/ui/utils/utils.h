@@ -42,7 +42,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../common/constants.h"
 
 #define TI_UI_NAMESPACE_BEGIN \
   namespace taichi {          \

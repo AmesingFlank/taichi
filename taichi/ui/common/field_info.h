@@ -1,6 +1,6 @@
 #pragma once
 #include "../utils/utils.h"
-#include "constants.h"
+
 #include "taichi/ir/type_utils.h"
 
 TI_UI_NAMESPACE_BEGIN
