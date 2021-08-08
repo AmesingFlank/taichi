@@ -131,18 +131,15 @@ if _ti_core.GGUI_AVAILABLE:
     RETURN = 'Return'
     TAB = 'Tab'
     BACKSPACE = 'BackSpace'
-    SPACE = ' '
+    SPACE = 'Space'
     UP = 'Up'
     DOWN = 'Down'
     LEFT = 'Left'
     RIGHT = 'Right'
-    CAPSLOCK = 'Caps_Lock'
+    CAPSLOCK = 'CapsLock'
     LMB = 'LMB'
     MMB = 'MMB'
     RMB = 'RMB'
-    EXIT = 'WMClose'
-    WHEEL = 'Wheel'
-    MOVE = 'Motion'
 
     # Event types
     PRESS = "Press"

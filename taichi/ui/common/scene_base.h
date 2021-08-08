@@ -26,6 +26,8 @@ struct ParticlesInfo {
   float shininess;
 };
 
+#define MAX_POINTLIGHTS 16
+
 class SceneBase {
  public:
   virtual void set_camera(Camera &camera) {

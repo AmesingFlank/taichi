@@ -152,7 +152,7 @@ gravity[None] = [0, -1]
 while window.running:
     if window.get_event(ti.ui.PRESS):
         if window.event.key == 'r': reset()
-        elif window.event.key in [ti.ui.ESCAPE, ti.ui.EXIT]: break
+        elif window.event.key in [ti.ui.ESCAPE]: break
     if window.event is not None: gravity[None] = [0, 0]  # if had any event
     if window.is_pressed(ti.ui.LEFT, 'a'): gravity[None][0] = -1
     if window.is_pressed(ti.ui.RIGHT, 'd'): gravity[None][0] = 1

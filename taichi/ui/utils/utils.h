@@ -86,24 +86,52 @@ inline GLFWwindow *create_glfw_window_(const std::string &name,
   return window;
 }
 
+
+struct Keys{
+#define DEFINE_KEY(name) \
+    static inline const std::string name = #name
+
+  DEFINE_KEY(Shift);
+  DEFINE_KEY(Alt);
+  DEFINE_KEY(Control);
+  DEFINE_KEY(Escape);
+  DEFINE_KEY(Return);
+  DEFINE_KEY(Tab);
+  DEFINE_KEY(BackSpace);
+  DEFINE_KEY(Space);
+  DEFINE_KEY(Up);
+  DEFINE_KEY(Down);
+  DEFINE_KEY(Left);
+  DEFINE_KEY(Right);
+  DEFINE_KEY(CapsLock);
+  DEFINE_KEY(LMB);
+  DEFINE_KEY(MMB);
+  DEFINE_KEY(RMB);
+#undef DEFINE_KEY
+
+};
+
+
+
 inline std::unordered_map<std::string, int> get_keys_map() {
   std::unordered_map<std::string, int> keys;
-  keys[KEY_SHIFT] = GLFW_KEY_LEFT_SHIFT;
-  keys[KEY_ALT] = GLFW_KEY_LEFT_ALT;
-  keys[KEY_CTRL] = GLFW_KEY_LEFT_CONTROL;
-  keys[KEY_ESCAPE] = GLFW_KEY_ESCAPE;
-  keys[KEY_RETURN] = GLFW_KEY_ENTER;
-  keys[KEY_TAB] = GLFW_KEY_TAB;
-  keys[KEY_BACKSPACE] = GLFW_KEY_BACKSPACE;
-  keys[KEY_SPACE] = GLFW_KEY_SPACE;
-  keys[KEY_UP] = GLFW_KEY_UP;
-  keys[KEY_DOWN] = GLFW_KEY_DOWN;
-  keys[KEY_LEFT] = GLFW_KEY_LEFT;
-  keys[KEY_RIGHT] = GLFW_KEY_RIGHT;
-  keys[KEY_CAPSLOCK] = GLFW_KEY_CAPS_LOCK;
-  keys[KEY_LMB] = GLFW_MOUSE_BUTTON_LEFT;
-  keys[KEY_MMB] = GLFW_MOUSE_BUTTON_MIDDLE;
-  keys[KEY_RMB] = GLFW_MOUSE_BUTTON_RIGHT;
+  keys[Keys::Shift] = GLFW_KEY_LEFT_SHIFT;
+  keys[Keys::Alt] = GLFW_KEY_LEFT_ALT;
+  keys[Keys::Control] = GLFW_KEY_LEFT_CONTROL;
+  keys[Keys::Escape] = GLFW_KEY_ESCAPE;
+  keys[Keys::Return] = GLFW_KEY_ENTER;
+  keys[Keys::Tab] = GLFW_KEY_TAB;
+  keys[Keys::BackSpace] = GLFW_KEY_BACKSPACE;
+  keys[Keys::Space] = GLFW_KEY_SPACE;
+  keys[" "] = GLFW_KEY_SPACE;
+  keys[Keys::Up] = GLFW_KEY_UP;
+  keys[Keys::Down] = GLFW_KEY_DOWN;
+  keys[Keys::Left] = GLFW_KEY_LEFT;
+  keys[Keys::Right] = GLFW_KEY_RIGHT;
+  keys[Keys::CapsLock] = GLFW_KEY_CAPS_LOCK;
+  keys[Keys::LMB] = GLFW_MOUSE_BUTTON_LEFT;
+  keys[Keys::MMB] = GLFW_MOUSE_BUTTON_MIDDLE;
+  keys[Keys::RMB] = GLFW_MOUSE_BUTTON_RIGHT;
   return keys;
 }
 
@@ -113,9 +141,9 @@ inline std::unordered_map<int, std::string> get_inv_keys_map() {
   for (auto kv : keys) {
     keys_inv[kv.second] = kv.first;
   }
-  keys_inv[GLFW_KEY_RIGHT_SHIFT] = KEY_SHIFT;
-  keys_inv[GLFW_KEY_RIGHT_CONTROL] = KEY_CTRL;
-  keys_inv[GLFW_KEY_RIGHT_ALT] = KEY_ALT;
+  keys_inv[GLFW_KEY_RIGHT_SHIFT] = Keys::Shift;
+  keys_inv[GLFW_KEY_RIGHT_CONTROL] = Keys::Control;
+  keys_inv[GLFW_KEY_RIGHT_ALT] = Keys::Alt;
   return keys_inv;
 }
 
