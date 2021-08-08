@@ -2,10 +2,12 @@ import numpy as np
 import pywavefront
 
 import taichi as ti
+import pathlib
 
 ti.init(ti.cuda)
 
-scene = pywavefront.Wavefront('examples/bunny.obj', collect_faces=True)
+scene = pywavefront.Wavefront(str(pathlib.Path(__file__).parent) +
+                              "/bunny.obj", collect_faces=True)
 
 vertices_imported = scene.vertices
 normals_imported = scene.parser.normals
@@ -90,7 +92,7 @@ while window.running:
     camera.up(0, 1, 0)
     scene.set_camera(camera)
     if show_mesh:
-        scene.mesh(vertices, normals, indices, mesh_color)
+        scene.mesh(vertices=vertices, normals=normals, indices=indices, color=mesh_color)
     scene.point_light(pos=(0, 5, 0), color=(1, 1, 1))
 
     canvas.scene(scene)

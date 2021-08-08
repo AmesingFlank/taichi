@@ -1,7 +1,7 @@
 import taichi as ti
 
 res = (600, 400)
-ti.init(arch=ti.cpu)
+ti.init(arch=ti.cuda)
 
 N = 100
 

@@ -4,48 +4,6 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-void check_vulkan_result(VkResult err) {
-  if (err == 0)
-    return;
-  fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
-  if (err < 0)
-    abort();
-}
-
-QueueFamilyIndices find_queue_families(VkPhysicalDevice device,
-                                       VkSurfaceKHR surface) {
-  QueueFamilyIndices indices;
-
-  uint32_t queue_family_count = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count,
-                                           nullptr);
-
-  std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count,
-                                           queue_families.data());
-
-  int i = 0;
-  for (const auto &queue_family : queue_families) {
-    if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-      indices.graphics_family = i;
-    }
-
-    VkBool32 present_support = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
-
-    if (present_support) {
-      indices.present_family = i;
-    }
-
-    if (indices.is_complete()) {
-      break;
-    }
-
-    i++;
-  }
-
-  return indices;
-}
 
 SwapChainSupportDetails query_swap_chain_support(
     VkPhysicalDevice physical_device,
