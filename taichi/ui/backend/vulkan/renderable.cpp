@@ -86,11 +86,11 @@ void Renderable::update_data(const RenderableInfo &info) {
     }
 
     if (info.indices.valid) {
+      indexed_ = true;
       update_renderables_indices_cuda(index_buffer_device_ptr_,
                                       (int *)info.indices.data, num_indices);
     } else {
-      update_renderables_indices_unindexed_cuda(index_buffer_device_ptr_,
-                                                num_indices);
+      indexed_ = false;
     }
 
   } else if (info.vertices.field_source == FIELD_SOURCE_X64) {
@@ -124,11 +124,11 @@ void Renderable::update_data(const RenderableInfo &info) {
                                        num_vertices);
       }
       if (info.indices.valid) {
+        indexed_ = true;
         update_renderables_indices_x64((int *)mapped_ibo.data,
                                        (int *)info.indices.data, num_indices);
       } else {
-        update_renderables_indices_unindexed_x64((int *)mapped_ibo.data,
-                                                 num_indices);
+        indexed_ = false;
       }
     }
 
@@ -450,7 +450,13 @@ void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer) {
       command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1,
       &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
 
-  vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
+  if(indexed_){
+    vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
+  }
+  else{
+    vkCmdDraw(command_buffer, config_.vertices_count, 1, 0, 0);
+  }
+  
 }
 
 void Renderable::create_descriptor_set_layout() {

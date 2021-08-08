@@ -76,27 +76,7 @@ void update_renderables_indices_x64(int *ibo, int *indices, int num_indices) {
   for (int i = 0; i < num_indices; ++i) {
     ibo[i] = indices[i];
   }
-}
-
-__global__ void update_renderables_indices_unindexed_cuda_impl(
-    int *ibo,
-    int num_indices) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i >= num_indices)
-    return;
-  ibo[i] = i;
-}
-void update_renderables_indices_unindexed_cuda(int *ibo, int num_indices) {
-  int num_blocks, num_threads;
-  set_num_blocks_threads(num_indices, num_blocks, num_threads);
-  update_renderables_indices_unindexed_cuda_impl<<<num_blocks, num_threads>>>(
-      ibo, num_indices);
-}
-void update_renderables_indices_unindexed_x64(int *ibo, int num_indices) {
-  for (int i = 0; i < num_indices; ++i) {
-    ibo[i] = i;
-  }
-}
+} 
 
 __global__ void update_renderables_colors_cuda_impl(Vertex *vbo,
                                                     float *colors,

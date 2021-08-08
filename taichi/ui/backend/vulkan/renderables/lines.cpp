@@ -33,6 +33,8 @@ void Lines::update_data(const LinesInfo &info) {
 
   bool use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
 
+  indexed_ = true;
+
   if (info.renderable_info.vertices.field_source == FIELD_SOURCE_CUDA) {
     update_lines_vbo_cuda(vertex_buffer_device_ptr_, index_buffer_device_ptr_,
                           (float *)info.renderable_info.vertices.data, N,

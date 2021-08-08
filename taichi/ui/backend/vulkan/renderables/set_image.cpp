@@ -221,10 +221,11 @@ void SetImage::update_index_buffer_() {
     memcpy(mapped_ibo.data, indices.data(),
            (size_t)config_.indices_count * sizeof(int));
   }
-
+  
   copy_buffer(staging_index_buffer_, index_buffer_,
               config_.indices_count * sizeof(int), app_context_->command_pool(),
               app_context_->device(), app_context_->graphics_queue());
+  indexed_ = true;
 }
 
 void SetImage::create_descriptor_set_layout() {

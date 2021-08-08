@@ -80,6 +80,8 @@ class Renderable {
   Vertex *vertex_buffer_device_ptr_;
   int *index_buffer_device_ptr_;
 
+  bool indexed_{false};
+
  protected:
   void init(const RenderableConfig &config_, AppContext *app_context_);
 

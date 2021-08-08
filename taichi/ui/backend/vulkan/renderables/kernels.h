@@ -14,9 +14,6 @@ void update_renderables_vertices_x64(Vertex *vbo,
 void update_renderables_indices_cuda(int *ibo, int *indices, int num_indices);
 void update_renderables_indices_x64(int *ibo, int *indices, int num_indices);
 
-void update_renderables_indices_unindexed_cuda(int *ibo, int num_indices);
-void update_renderables_indices_unindexed_x64(int *ibo, int num_indices);
-
 void update_renderables_colors_cuda(Vertex *vbo,
                                     float *colors,
                                     int num_vertices);
