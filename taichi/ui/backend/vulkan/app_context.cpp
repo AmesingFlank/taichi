@@ -3,6 +3,8 @@
 #include "app_context.h"
 #include "swap_chain.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 using namespace taichi::lang::vulkan;
@@ -189,3 +191,6 @@ VkRenderPass AppContext::render_pass() const {
 }
 
 }  // namespace vulkan
+
+
+TI_UI_NAMESPACE_END

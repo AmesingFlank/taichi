@@ -1,4 +1,5 @@
 #pragma once
+TI_UI_NAMESPACE_BEGIN
 namespace vulkan {
 
 struct SwapChain {
@@ -58,3 +59,5 @@ struct SwapChain {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

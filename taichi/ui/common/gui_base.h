@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include "../utils/utils.h"
+
+TI_UI_NAMESPACE_BEGIN
 
 class GuiBase {
  public:
@@ -29,3 +32,5 @@ class GuiBase {
     return false;
   }
 };
+
+TI_UI_NAMESPACE_END

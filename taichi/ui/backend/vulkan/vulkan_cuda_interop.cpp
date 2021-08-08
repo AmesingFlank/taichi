@@ -1,8 +1,11 @@
 #include "vulkan_cuda_interop.h"
 
-using namespace taichi::lang;
+TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
+
+using namespace taichi::lang;
+
 
 #ifdef _WIN64  // For windows
 HANDLE get_device_mem_handle(VkDeviceMemory &mem, VkDevice device) {
@@ -275,3 +278,5 @@ CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

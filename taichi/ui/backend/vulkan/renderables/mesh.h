@@ -21,6 +21,8 @@
 #include "../../../common/field_info.h"
 #include "../scene.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Mesh final : public Renderable {
@@ -50,3 +52,5 @@ class Mesh final : public Renderable {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

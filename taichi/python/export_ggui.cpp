@@ -20,7 +20,7 @@ namespace py = pybind11;
 #include "taichi/ui/common/field_info.h"
 #include "taichi/ui/common/gui_base.h"
 
-TI_NAMESPACE_BEGIN
+TI_UI_NAMESPACE_BEGIN
 
 inline glm::vec3 tuple_to_vec3(pybind11::tuple t) {
   return glm::vec3(t[0].cast<float>(), t[1].cast<float>(), t[2].cast<float>());
@@ -394,6 +394,14 @@ void export_ggui(py::module &m) {
   m.attr("FIELD_TYPE_MATRIX") = py::int_(FIELD_TYPE_MATRIX);
   m.attr("PROJECTION_ORTHOGONAL") = py::int_(PROJECTION_ORTHOGONAL);
   m.attr("PROJECTION_PERSPECTIVE") = py::int_(PROJECTION_PERSPECTIVE);
+}
+
+TI_UI_NAMESPACE_END
+
+TI_NAMESPACE_BEGIN
+
+void export_ggui(py::module &m) {
+  ui::export_ggui(m);
 }
 
 TI_NAMESPACE_END

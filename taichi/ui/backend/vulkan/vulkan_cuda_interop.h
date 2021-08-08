@@ -4,6 +4,8 @@
 #include "vulkan_utils.h"
 #include "taichi/backends/cuda/cuda_driver.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 #ifdef _WIN64  // For windows
@@ -50,3 +52,5 @@ void cuda_vk_semaphore_wait(CUexternalSemaphore ext_smaphore,
                             CUstream stream = 0);
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

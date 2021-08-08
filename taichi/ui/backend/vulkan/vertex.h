@@ -3,6 +3,9 @@
 #include <array>
 #include <volk.h>
 
+namespace taichi{
+namespace ui{
+
 struct Vertex {
   struct vec3{
     float x;
@@ -54,3 +57,6 @@ struct Vertex {
     return attribute_descriptions;
   }
 };
+
+} // ui
+} // taichi

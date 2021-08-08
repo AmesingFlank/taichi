@@ -1,5 +1,7 @@
 #include "vulkan_utils.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void check_vulkan_result(VkResult err) {
@@ -515,3 +517,5 @@ void transition_image_layout(VkImage image,
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

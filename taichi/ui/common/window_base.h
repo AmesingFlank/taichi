@@ -15,6 +15,8 @@
 #include "gui_base.h"
 #include "app_config.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 class WindowBase {
  public:
   bool is_pressed(std::string button);
@@ -73,3 +75,5 @@ class WindowBase {
                                     int action,
                                     int modifier);
 };
+
+TI_UI_NAMESPACE_END

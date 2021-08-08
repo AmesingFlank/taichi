@@ -19,6 +19,8 @@
 #include "swap_chain.h"
 #include "../../common/renderable_info.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 enum class TopologyType : int { TriangleList = 0, Points = 1 };
@@ -99,3 +101,5 @@ class Renderable {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

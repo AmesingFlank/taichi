@@ -4,6 +4,9 @@
 #include <vector>
 #include "../utils/utils.h"
 
+TI_UI_NAMESPACE_BEGIN
+
+
 class InputHandler {
  public:
   std::vector<bool> keys;
@@ -76,3 +79,6 @@ class InputHandler {
 
   bool left_mouse_down_ = false;
 };
+
+
+TI_UI_NAMESPACE_END

@@ -21,6 +21,8 @@
 #include "../../../common/field_info.h"
 #include "../../../common/canvas_base.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Lines final : public Renderable {
@@ -49,3 +51,5 @@ class Lines final : public Renderable {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

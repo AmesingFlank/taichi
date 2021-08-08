@@ -4,6 +4,8 @@
 #include "../../../common/constants.h"
 #include "kernels.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void Lines::update_data(const LinesInfo &info) {
@@ -161,3 +163,5 @@ void Lines::cleanup() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

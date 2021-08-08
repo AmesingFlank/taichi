@@ -1,5 +1,7 @@
 #include "window.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 Window::Window(AppConfig config) : WindowBase(config) {
@@ -104,3 +106,5 @@ Window::~Window() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

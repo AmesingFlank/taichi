@@ -3,6 +3,8 @@
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 Mesh::Mesh(AppContext *app_context) {
@@ -114,3 +116,5 @@ void Mesh::create_descriptor_sets() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

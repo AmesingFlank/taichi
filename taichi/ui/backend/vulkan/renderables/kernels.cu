@@ -1,6 +1,9 @@
 #include <device_launch_parameters.h>
 #include "taichi/ui/backend/vulkan/vertex.h"
 
+namespace taichi{
+namespace ui{
+
 int div_up(int a, int b) {
   if (b == 0) {
     return 1;
@@ -415,3 +418,6 @@ template void copy_to_texture_fuffer_x64<unsigned char>(unsigned char *src,
                                                         int actual_width,
                                                         int actual_height,
                                                         int channels);
+
+} // ui
+} // taichi

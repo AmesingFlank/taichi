@@ -3,6 +3,8 @@
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 Particles::Particles(AppContext *app_context) {
@@ -120,3 +122,6 @@ void Particles::create_descriptor_sets() {
 }
 
 }  // namespace vulkan
+
+
+TI_UI_NAMESPACE_END

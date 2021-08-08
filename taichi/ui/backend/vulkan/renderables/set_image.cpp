@@ -5,6 +5,8 @@
 #include "../../../common/constants.h"
 #include "kernels.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void SetImage::update_data(const SetImageInfo &info) {
@@ -321,3 +323,5 @@ void SetImage::cleanup() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

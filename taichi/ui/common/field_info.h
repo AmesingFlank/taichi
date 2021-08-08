@@ -1,6 +1,8 @@
 #pragma once
 #include "../utils/utils.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 struct FieldInfo {
   DEFINE_PROPERTY(bool, valid)
   DEFINE_PROPERTY(int, field_type);
@@ -15,3 +17,5 @@ struct FieldInfo {
     valid = false;
   }
 };
+
+TI_UI_NAMESPACE_END

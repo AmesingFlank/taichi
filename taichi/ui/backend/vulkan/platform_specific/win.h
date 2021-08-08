@@ -1,5 +1,5 @@
 #pragma once
-
+TI_UI_NAMESPACE_BEGIN
 class WindowsSecurityAttributes {
  protected:
   SECURITY_ATTRIBUTES security_attributes;
@@ -62,3 +62,5 @@ inline WindowsSecurityAttributes::~WindowsSecurityAttributes() {
   }
   free(security_descriptor);
 }
+
+TI_UI_NAMESPACE_END

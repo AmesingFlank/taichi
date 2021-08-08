@@ -12,6 +12,8 @@
 #include "app_context.h"
 #include "../../common/gui_base.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Gui final : public GuiBase {
@@ -54,3 +56,5 @@ class Gui final : public GuiBase {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

@@ -6,6 +6,8 @@
 #include "taichi/backends/vulkan/loader.h"
 #include "swap_chain.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class AppContext {
@@ -43,3 +45,6 @@ class AppContext {
 };
 
 }  // namespace vulkan
+
+
+TI_UI_NAMESPACE_END

@@ -3,6 +3,8 @@
 #include "app_context.h"
 #include "swap_chain.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 using namespace taichi::lang::vulkan;
@@ -290,3 +292,5 @@ VkExtent2D SwapChain::choose_swap_extent(
   }
 }
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

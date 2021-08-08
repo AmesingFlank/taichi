@@ -21,6 +21,8 @@
 #include "../../common/window_base.h"
 #include "gui.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Window final : public WindowBase {
@@ -65,3 +67,6 @@ class Window final : public WindowBase {
 };
 
 }  // namespace vulkan
+
+
+TI_UI_NAMESPACE_END

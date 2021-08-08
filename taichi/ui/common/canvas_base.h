@@ -2,6 +2,9 @@
 #include "field_info.h"
 #include "scene_base.h"
 #include "renderable_info.h"
+#include "../utils/utils.h"
+
+TI_UI_NAMESPACE_BEGIN
 
 struct SetImageInfo {
   FieldInfo img;
@@ -38,3 +41,6 @@ struct CanvasBase {
   virtual void scene(SceneBase *scene) {
   }
 };
+
+
+TI_UI_NAMESPACE_END

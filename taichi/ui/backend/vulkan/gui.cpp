@@ -3,6 +3,8 @@
 
 using namespace taichi::lang::vulkan;
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 PFN_vkVoidFunction load_vk_function_for_gui(const char *name, void *userData) {
@@ -183,3 +185,5 @@ void Gui::cleanup() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

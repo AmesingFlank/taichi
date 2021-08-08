@@ -30,6 +30,8 @@
 #include "renderables/circles.h"
 #include "renderables/lines.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Canvas final : public CanvasBase {
@@ -89,3 +91,5 @@ class Canvas final : public CanvasBase {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

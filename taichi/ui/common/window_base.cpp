@@ -1,5 +1,6 @@
 #include "window_base.h"
 
+TI_UI_NAMESPACE_BEGIN
 
 WindowBase ::WindowBase(AppConfig config) : config_(config) {
   glfw_window_ = create_glfw_window_(config_.name, config_.width,
@@ -152,3 +153,6 @@ void WindowBase::mouse_button_callback(GLFWwindow *glfw_window,
   window->input_handler_.mouse_button_callback(glfw_window, button, action,
                                                modifier);
 }
+
+
+TI_UI_NAMESPACE_END

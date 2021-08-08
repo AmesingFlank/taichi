@@ -4,6 +4,8 @@
 #include "vulkan_cuda_interop.h"
 #include "vulkan_cuda_interop.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 Canvas::Canvas(AppContext *app_context) : app_context_(app_context) {
@@ -272,3 +274,5 @@ void Canvas::draw_frame(Gui *gui) {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

@@ -21,6 +21,8 @@
 #include "../../../common/field_info.h"
 #include "../../../common/canvas_base.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Circles final : public Renderable {
@@ -45,3 +47,5 @@ class Circles final : public Renderable {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include "../utils/utils.h"
+
+TI_UI_NAMESPACE_BEGIN
 
 struct AppConfig {
   std::string name;
@@ -10,3 +13,6 @@ struct AppConfig {
   std::string package_path;
   int ti_arch;
 };
+
+
+TI_UI_NAMESPACE_END

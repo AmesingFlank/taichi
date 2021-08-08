@@ -3,6 +3,8 @@
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void Circles::update_data(const CirclesInfo &info) {
@@ -112,3 +114,5 @@ void Circles::create_descriptor_sets() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

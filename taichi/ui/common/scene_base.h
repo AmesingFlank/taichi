@@ -4,6 +4,9 @@
 #include "field_info.h"
 #include "renderable_info.h"
 #include "camera.h"
+#include "../utils/utils.h"
+
+TI_UI_NAMESPACE_BEGIN
 
 struct PointLight {
   glm::vec3 pos;
@@ -54,3 +57,5 @@ class SceneBase {
   std::vector<MeshInfo> mesh_infos_;
   std::vector<ParticlesInfo> particles_infos_;
 };
+
+TI_UI_NAMESPACE_END

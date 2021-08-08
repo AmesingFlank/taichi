@@ -5,6 +5,8 @@
 #include "vulkan_cuda_interop.h"
 #include "renderables/kernels.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void Renderable::init(const RenderableConfig &config, AppContext *app_context) {
@@ -462,3 +464,6 @@ Renderable::~Renderable(){
 }
 
 }  // namespace vulkan
+
+
+TI_UI_NAMESPACE_END

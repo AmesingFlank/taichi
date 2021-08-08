@@ -6,6 +6,8 @@
 #include "taichi/backends/vulkan/vulkan_api.h"
 #include "taichi/backends/vulkan/loader.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 struct MappedMemory {
@@ -129,3 +131,5 @@ void transition_image_layout(VkImage image,
                              VkQueue graphics_queue);
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

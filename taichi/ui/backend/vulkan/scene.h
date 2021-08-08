@@ -1,6 +1,8 @@
 #pragma once
 #include "../../common/scene_base.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 class Scene final : public SceneBase {
@@ -37,3 +39,5 @@ class Scene final : public SceneBase {
 };
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

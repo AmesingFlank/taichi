@@ -44,6 +44,16 @@
 
 #include "../common/constants.h"
 
+#define TI_UI_NAMESPACE_BEGIN \
+  namespace taichi {          \
+  namespace ui {
+
+#define TI_UI_NAMESPACE_END \
+  }                         \
+  }
+
+TI_UI_NAMESPACE_BEGIN
+
 inline void initGLFW() {
   if (!glfwInit()) {
     printf("cannot initialize GLFW\n");
@@ -184,3 +194,5 @@ inline std::vector<char> read_file(const std::string &filename) {
 
   return buffer;
 }
+
+TI_UI_NAMESPACE_END

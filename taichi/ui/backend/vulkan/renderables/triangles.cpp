@@ -3,6 +3,8 @@
 #include "../../../utils/utils.h"
 #include "../../../common/constants.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 namespace vulkan {
 
 void Triangles::update_data(const TrianglesInfo &info) {
@@ -109,3 +111,5 @@ void Triangles::create_descriptor_sets() {
 }
 
 }  // namespace vulkan
+
+TI_UI_NAMESPACE_END

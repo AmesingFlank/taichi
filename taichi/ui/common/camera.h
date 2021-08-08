@@ -3,6 +3,8 @@
 #include "../utils/utils.h"
 #include "constants.h"
 
+TI_UI_NAMESPACE_BEGIN
+
 struct Camera {
   glm::vec3 position;
   glm::vec3 lookat;
@@ -25,3 +27,6 @@ struct Camera {
     }
   }
 };
+
+
+TI_UI_NAMESPACE_END
