@@ -371,19 +371,6 @@ void export_ggui(py::module &m) {
       .def_property("valid", &FieldInfo::get_valid, &FieldInfo::set_valid);
 
   
-  py::enum_<DType>(m, "DType")
-    .value("DType_I8", DType::DType_I8)
-    .value("DType_I16", DType::DType_I16)
-    .value("DType_I32", DType::DType_I32)
-    .value("DType_I64", DType::DType_I64)
-    .value("DType_U8", DType::DType_U8)
-    .value("DType_U16", DType::DType_U16)
-    .value("DType_U32", DType::DType_U32)
-    .value("DType_U64", DType::DType_U64)
-    .value("DType_F32", DType::DType_F32)
-    .value("DType_F64", DType::DType_F64)
-    .export_values();
-
   py::enum_<EventType>(m, "EventType")
     .value("EVENT_NONE", EventType::EVENT_NONE)
     .value("EVENT_PRESS", EventType::EVENT_PRESS)

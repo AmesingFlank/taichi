@@ -42,30 +42,7 @@ if _ti_core.GGUI_AVAILABLE:
             raise Exception("unsupported ti compute backend")
         info.shape = [n for n in field.shape]
 
-        if field.dtype == i8:
-            dtype = _ti_core.DType.DType_I8
-        elif field.dtype == i16:
-            dtype = _ti_core.DType.DType_I16
-        elif field.dtype == i32:
-            dtype = _ti_core.DType.DType_I32
-        elif field.dtype == i64:
-            dtype = _ti_core.DType.DType_I64
-        elif field.dtype == u8:
-            dtype = _ti_core.DType.DType_U8
-        elif field.dtype == u16:
-            dtype = _ti_core.DType.DType_U16
-        elif field.dtype == u32:
-            dtype = _ti_core.DType.DType_U32
-        elif field.dtype == u64:
-            dtype = _ti_core.DType.DType_U64
-        elif field.dtype == f32:
-            dtype = _ti_core.DType.DType_F32
-        elif field.dtype == f64:
-            dtype = _ti_core.DType.DType_F64
-        else:
-            raise Exception("unsupported dtype")
-
-        info.dtype = dtype
+        info.dtype = field.dtype
         info.data = get_field_addr(field)
 
         if hasattr(field, 'n'):

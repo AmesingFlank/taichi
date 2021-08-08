@@ -9,6 +9,9 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
+
+using namespace taichi::lang;
+
 void Renderable::init(const RenderableConfig &config, AppContext *app_context) {
   config_ = config;
   app_context_ = app_context;
@@ -39,7 +42,7 @@ void Renderable::update_data(const RenderableInfo &info) {
   int num_indices;
   if (info.indices.valid) {
     num_indices = info.indices.shape[0];
-    if (info.indices.dtype != DType::DType_I32 && info.indices.dtype != DType::DType_U32) {
+    if (info.indices.dtype != PrimitiveType::i32 && info.indices.dtype != PrimitiveType::u32) {
       throw std::runtime_error(
           "dtype needs to be 32-bit ints for indices");
     }
@@ -55,7 +58,7 @@ void Renderable::update_data(const RenderableInfo &info) {
     init_render_resources();
   }
 
-  if (info.vertices.dtype != DType::DType_F32) {
+  if (info.vertices.dtype != PrimitiveType::f32) {
     throw std::runtime_error("dtype needs to be f32 for vertices");
   }
 
