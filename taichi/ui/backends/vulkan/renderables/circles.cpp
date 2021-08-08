@@ -1,5 +1,5 @@
-#include "mesh.h"
-#include "taichi/ui/backend/vulkan/vulkan_cuda_interop.h"
+#include "circles.h"
+#include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
 
 
@@ -7,17 +7,43 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-Mesh::Mesh(AppContext *app_context) {
-  init_mesh(app_context, 3, 3);
+void Circles::update_data(const CirclesInfo &info) {
+  if (info.renderable_info.vertices.matrix_rows != 2 ||
+      info.renderable_info.vertices.matrix_cols != 1) {
+    throw std::runtime_error("Circles vertices requres 2-d vector fields");
+  }
+
+  Renderable::update_data(info.renderable_info);
+
+  update_ubo(info.color, info.renderable_info.per_vertex_color.valid,
+             info.radius);
 }
 
-void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
-  UniformBufferObject ubo;
-  ubo.scene = scene.current_ubo_;
-  ubo.color = info.color;
-  ubo.use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
-  ubo.shininess = info.shininess;
-  ubo.need_normal_generation = !info.renderable_info.normals.valid;
+void Circles::init_circles(AppContext *app_context, int vertices_count) {
+  RenderableConfig config = {
+      vertices_count,
+      1,
+      sizeof(UniformBufferObject),
+      app_context->config.package_path + "/shaders/Circles_vk_vert.spv",
+      "",
+      app_context->config.package_path + "/shaders/Circles_vk_frag.spv",
+      TopologyType::Points,
+  };
+
+  Renderable::init(config, app_context);
+  Renderable::init_render_resources();
+}
+
+Circles::Circles(AppContext *app_context) {
+  init_circles(app_context, 1);
+}
+
+void Circles::update_ubo(glm::vec3 color,
+                         bool use_per_vertex_color,
+                         float radius) {
+  UniformBufferObject ubo{
+      color, (int)use_per_vertex_color,
+      radius * app_context_->swap_chain.swap_chain_extent.height};
 
   MappedMemory mapped(
       app_context_->device(),
@@ -26,35 +52,7 @@ void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
   memcpy(mapped.data, &ubo, sizeof(ubo));
 }
 
-void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
-  if (info.renderable_info.vertices.matrix_rows != 3 ||
-      info.renderable_info.vertices.matrix_cols != 1) {
-    throw std::runtime_error("Mesh vertices requres 3-d vector fields");
-  }
-
-  Renderable::update_data(info.renderable_info);
-
-  update_ubo(info, scene);
-}
-
-void Mesh::init_mesh(AppContext *app_context,
-                     int vertices_count,
-                     int indices_count) {
-  RenderableConfig config = {
-      vertices_count,
-      indices_count,
-      sizeof(UniformBufferObject),
-      app_context->config.package_path + "/shaders/Mesh_vk_vert.spv",
-      app_context->config.package_path + "/shaders/Mesh_vk_geom.spv",
-      app_context->config.package_path + "/shaders/Mesh_vk_frag.spv",
-      TopologyType::Triangles,
-  };
-
-  Renderable::init(config, app_context);
-  Renderable::init_render_resources();
-}
-
-void Mesh::create_descriptor_set_layout() {
+void Circles::create_descriptor_set_layout() {
   VkDescriptorSetLayoutBinding ubo_layout_binding{};
   ubo_layout_binding.binding = 0;
   ubo_layout_binding.descriptorCount = 1;
@@ -76,7 +74,7 @@ void Mesh::create_descriptor_set_layout() {
   }
 }
 
-void Mesh::create_descriptor_sets() {
+void Circles::create_descriptor_sets() {
   std::vector<VkDescriptorSetLayout> layouts(
       app_context_->get_swap_chain_size(), descriptor_set_layout_);
 

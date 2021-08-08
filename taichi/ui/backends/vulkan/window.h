@@ -15,8 +15,8 @@
 #include "taichi/ui/utils/utils.h"
 #include <memory>
 
-#include "taichi/ui/backend/vulkan/swap_chain.h"
-#include "taichi/ui/backend/vulkan/app_context.h"
+#include "taichi/ui/backends/vulkan/swap_chain.h"
+#include "taichi/ui/backends/vulkan/app_context.h"
 #include "canvas.h"
 #include "taichi/ui/common/window_base.h"
 #include "gui.h"

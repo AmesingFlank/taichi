@@ -12,11 +12,11 @@ namespace py = pybind11;
 
 #include "taichi/ui/utils/utils.h"
 #include "taichi/ui/common/window_base.h"
-#include "taichi/ui/backend/vulkan/window.h"
+#include "taichi/ui/backends/vulkan/window.h"
 #include "taichi/ui/common/canvas_base.h"
 #include "taichi/ui/common/camera.h"
-#include "taichi/ui/backend/vulkan/canvas.h"
-#include "taichi/ui/backend/vulkan/scene.h"
+#include "taichi/ui/backends/vulkan/canvas.h"
+#include "taichi/ui/backends/vulkan/scene.h"
 #include "taichi/ui/common/field_info.h"
 #include "taichi/ui/common/gui_base.h"
 

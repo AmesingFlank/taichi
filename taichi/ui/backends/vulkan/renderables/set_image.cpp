@@ -1,6 +1,6 @@
 #include "set_image.h"
-#include "taichi/ui/backend/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backend/vulkan/vulkan_cuda_interop.h"
+#include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
+#include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
 
 #include "kernels.h"

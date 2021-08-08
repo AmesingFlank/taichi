@@ -13,11 +13,11 @@
 #include <optional>
 #include <set>
 #include "taichi/ui/utils/utils.h"
-#include "taichi/ui/backend/vulkan/vertex.h"
-#include "taichi/ui/backend/vulkan/vulkan_utils.h"
-#include "taichi/ui/backend/vulkan/app_context.h"
-#include "taichi/ui/backend/vulkan/swap_chain.h"
-#include "taichi/ui/backend/vulkan/renderable.h"
+#include "taichi/ui/backends/vulkan/vertex.h"
+#include "taichi/ui/backends/vulkan/vulkan_utils.h"
+#include "taichi/ui/backends/vulkan/app_context.h"
+#include "taichi/ui/backends/vulkan/swap_chain.h"
+#include "taichi/ui/backends/vulkan/renderable.h"
 #include "taichi/ui/common/field_info.h"
 #include "taichi/ui/common/canvas_base.h"
 
@@ -25,13 +25,11 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-class Lines final : public Renderable {
+class Triangles final : public Renderable {
  public:
-  Lines(AppContext *app_context);
+  Triangles(AppContext *app_context);
 
-  void update_data(const LinesInfo &info);
-
-  virtual void record_this_frame_commands(VkCommandBuffer command_buffer) override;
+  void update_data(const TrianglesInfo &info);
 
  private:
   struct UniformBufferObject {
@@ -39,19 +37,15 @@ class Lines final : public Renderable {
     int use_per_vertex_color;
   };
 
-  void init_lines(AppContext *app_context,
-                  int vertices_count,
-                  int indices_count);
+  void init_triangles(AppContext *app_context,
+                      int vertices_count,
+                      int indices_count);
 
   void update_ubo(glm::vec3 color, bool use_per_vertex_color);
 
   virtual void create_descriptor_set_layout() override;
 
   virtual void create_descriptor_sets() override;
-
-  virtual void cleanup() override;
-
-  float curr_width_;
 };
 
 }  // namespace vulkan

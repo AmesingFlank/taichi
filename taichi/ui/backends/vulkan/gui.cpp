@@ -1,5 +1,5 @@
 #include "gui.h"
-#include "taichi/ui/backend/vulkan/swap_chain.h"
+#include "taichi/ui/backends/vulkan/swap_chain.h"
 
 using namespace taichi::lang::vulkan;
 

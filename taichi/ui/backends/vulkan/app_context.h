@@ -1,10 +1,10 @@
 #pragma once
-#include "taichi/ui/backend/vulkan/vulkan_utils.h"
+#include "taichi/ui/backends/vulkan/vulkan_utils.h"
 #include "taichi/ui/common/app_config.h"
 #include <memory>
 #include "taichi/backends/vulkan/vulkan_api.h"
 #include "taichi/backends/vulkan/loader.h"
-#include "taichi/ui/backend/vulkan/swap_chain.h"
+#include "taichi/ui/backends/vulkan/swap_chain.h"
 
 TI_UI_NAMESPACE_BEGIN
 
