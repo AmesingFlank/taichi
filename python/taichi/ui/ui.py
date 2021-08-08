@@ -43,25 +43,25 @@ if _ti_core.GGUI_AVAILABLE:
         info.shape = [n for n in field.shape]
 
         if field.dtype == i8:
-            dtype = _ti_core.DTYPE_I8
+            dtype = _ti_core.DType.DType_I8
         elif field.dtype == i16:
-            dtype = _ti_core.DTYPE_I16
+            dtype = _ti_core.DType.DType_I16
         elif field.dtype == i32:
-            dtype = _ti_core.DTYPE_I32
+            dtype = _ti_core.DType.DType_I32
         elif field.dtype == i64:
-            dtype = _ti_core.DTYPE_I64
+            dtype = _ti_core.DType.DType_I64
         elif field.dtype == u8:
-            dtype = _ti_core.DTYPE_U8
+            dtype = _ti_core.DType.DType_U8
         elif field.dtype == u16:
-            dtype = _ti_core.DTYPE_U16
+            dtype = _ti_core.DType.DType_U16
         elif field.dtype == u32:
-            dtype = _ti_core.DTYPE_U32
+            dtype = _ti_core.DType.DType_U32
         elif field.dtype == u64:
-            dtype = _ti_core.DTYPE_U64
+            dtype = _ti_core.DType.DType_U64
         elif field.dtype == f32:
-            dtype = _ti_core.DTYPE_F32
+            dtype = _ti_core.DType.DType_F32
         elif field.dtype == f64:
-            dtype = _ti_core.DTYPE_F64
+            dtype = _ti_core.DType.DType_F64
         else:
             raise Exception("unsupported dtype")
 
@@ -168,7 +168,6 @@ if _ti_core.GGUI_AVAILABLE:
     MOVE = 'Motion'
 
     # Event types
-    MOTION = "Motion"
     PRESS = "Press"
     RELEASE = "Release"
 
@@ -192,16 +191,20 @@ if _ti_core.GGUI_AVAILABLE:
 
         def get_events(self, tag=None):
             if tag == None:
-                return super().get_events(_ti_core.EVENT_NONE)
+                return super().get_events(_ti_core.EventType.EVENT_NONE)
             elif tag == PRESS:
-                return super().get_events(_ti_core.EVENT_PRESS)
+                return super().get_events(_ti_core.EventType.EVENT_PRESS)
+            elif tag == RELEASE:
+                return super().get_events(_ti_core.EventType.EVENT_RELEASE)
             raise Exception("unrecognized event tag")
 
         def get_event(self, tag=None):
             if tag == None:
-                return super().get_event(_ti_core.EVENT_NONE)
+                return super().get_event(_ti_core.EventType.EVENT_NONE)
             elif tag == PRESS:
-                return super().get_event(_ti_core.EVENT_PRESS)
+                return super().get_event(_ti_core.EventType.EVENT_PRESS)
+            elif tag == RELEASE:
+                return super().get_events(_ti_core.EventType.EVENT_RELEASE)
             raise Exception("unrecognized event tag")
 
         def is_pressed(self, *keys):

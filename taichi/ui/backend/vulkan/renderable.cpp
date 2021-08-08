@@ -39,9 +39,9 @@ void Renderable::update_data(const RenderableInfo &info) {
   int num_indices;
   if (info.indices.valid) {
     num_indices = info.indices.shape[0];
-    if (info.indices.dtype != DTYPE_I32 && info.indices.dtype != DTYPE_U32) {
+    if (info.indices.dtype != DType::DType_I32 && info.indices.dtype != DType::DType_U32) {
       throw std::runtime_error(
-          "dtype needs to be 32-bit ints for Mesh indices");
+          "dtype needs to be 32-bit ints for indices");
     }
   } else {
     num_indices = num_vertices;
@@ -55,8 +55,8 @@ void Renderable::update_data(const RenderableInfo &info) {
     init_render_resources();
   }
 
-  if (info.vertices.dtype != DTYPE_F32) {
-    throw std::runtime_error("dtype needs to be f32 for Mesh vertices");
+  if (info.vertices.dtype != DType::DType_F32) {
+    throw std::runtime_error("dtype needs to be f32 for vertices");
   }
 
   int num_components = info.vertices.matrix_rows;

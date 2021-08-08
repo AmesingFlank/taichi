@@ -1,5 +1,6 @@
 #pragma once
 #include "../utils/utils.h"
+#include "constants.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -10,7 +11,7 @@ struct FieldInfo {
   DEFINE_PROPERTY(int, matrix_cols);
   DEFINE_PROPERTY(std::vector<int>, shape);
   DEFINE_PROPERTY(int, field_source);
-  DEFINE_PROPERTY(int, dtype);
+  DEFINE_PROPERTY(DType, dtype);
   DEFINE_PROPERTY(uint64_t, data);
 
   FieldInfo() {

@@ -17,13 +17,19 @@ void WindowBase::set_callbacks() {
 
   input_handler_.user_key_callbacks.push_back([&](int key, int action) {
     if (action == GLFW_PRESS) {
-      events_.push_back({EVENT_PRESS, button_id_to_name(key)});
+      events_.push_back({EventType::EVENT_PRESS, button_id_to_name(key)});
+    }
+    else if(action == GLFW_RELEASE){
+      events_.push_back({EventType::EVENT_RELEASE, button_id_to_name(key)});
     }
   });
   input_handler_.user_mouse_button_callbacks.push_back(
       [&](int key, int action) {
         if (action == GLFW_PRESS) {
-          events_.push_back({EVENT_PRESS, button_id_to_name(key)});
+          events_.push_back({EventType::EVENT_PRESS, button_id_to_name(key)});
+        }
+        else if(action == GLFW_RELEASE){
+          events_.push_back({EventType::EVENT_RELEASE, button_id_to_name(key)});
         }
       });
 }
@@ -73,12 +79,12 @@ std::tuple<float, float> WindowBase::get_cursor_pos() {
   return std::make_tuple(x, y);
 }
 
-std::vector<Event> WindowBase::get_events(int tag) {
+std::vector<Event> WindowBase::get_events(EventType tag) {
   glfwPollEvents();
   std::vector<Event> result;
   std::list<Event>::iterator i = events_.begin();
   while (i != events_.end()) {
-    if (i->tag == tag || tag == EVENT_NONE) {
+    if (i->tag == tag || tag == EventType::EVENT_NONE) {
       result.push_back(*i);
       i = events_.erase(i);
     } else {
@@ -88,12 +94,12 @@ std::vector<Event> WindowBase::get_events(int tag) {
   return result;
 }
 
-bool WindowBase::get_event(int tag) {
+bool WindowBase::get_event(EventType tag) {
   glfwPollEvents();
   if (events_.size() == 0) {
     return false;
   }
-  if (tag == EVENT_NONE) {
+  if (tag == EventType::EVENT_NONE) {
     current_event_ = events_.front();
     events_.pop_front();
     return true;

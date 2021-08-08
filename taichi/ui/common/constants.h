@@ -1,18 +1,25 @@
 #pragma once
 
-#define DTYPE_I8 0
-#define DTYPE_I16 1
-#define DTYPE_I32 2
-#define DTYPE_I64 3
-#define DTYPE_U8 4
-#define DTYPE_U16 5
-#define DTYPE_U32 6
-#define DTYPE_U64 7
-#define DTYPE_F32 8
-#define DTYPE_F64 9
+enum class DType: int{
+    DType_I8 = 0,
+    DType_I16 = 1,
+    DType_I32 = 2,
+    DType_I64 = 3,
+    DType_U8 = 4,
+    DType_U16 = 5,
+    DType_U32 = 6,
+    DType_U64 = 7,
+    DType_F32 = 8,
+    DType_F64 = 9
+};
 
-#define EVENT_NONE 0
-#define EVENT_PRESS 1
+
+enum class EventType: int{
+    EVENT_NONE = 0,
+    EVENT_PRESS = 1,
+    EVENT_RELEASE = 2
+};
+
 
 #define FIELD_SOURCE_X64 0
 #define FIELD_SOURCE_CUDA 1
@@ -26,7 +33,6 @@
 #define PROJECTION_ORTHOGONAL 0
 #define PROJECTION_PERSPECTIVE 1
 
-#define GGUI_DEBUG 1
 
 #define MAX_POINTLIGHTS 16
 

@@ -36,11 +36,11 @@ void SetImage::update_data(const SetImageInfo &info) {
   int pixels = width * height;
 
   if (img.field_source == FIELD_SOURCE_CUDA) {
-    if (img.dtype == DTYPE_U8) {
+    if (img.dtype == DType::DType_U8) {
       copy_to_texture_fuffer_cuda((unsigned char *)img.data,
                                   (uint64_t)texture_surface_, width, height,
                                   actual_width, actual_height, img.matrix_rows);
-    } else if (img.dtype == DTYPE_F32) {
+    } else if (img.dtype == DType::DType_F32) {
       copy_to_texture_fuffer_cuda((float *)img.data, (uint64_t)texture_surface_,
                                   width, height, actual_width, actual_height,
                                   img.matrix_rows);
@@ -57,11 +57,11 @@ void SetImage::update_data(const SetImageInfo &info) {
     MappedMemory mapped_buffer(app_context_->device(), staging_buffer_memory_,
                                pixels * 4);
 
-    if (img.dtype == DTYPE_U8) {
+    if (img.dtype == DType::DType_U8) {
       copy_to_texture_fuffer_x64(
           (unsigned char *)img.data, (unsigned char *)mapped_buffer.data, width,
           height, actual_width, actual_height, img.matrix_rows);
-    } else if (img.dtype == DTYPE_F32) {
+    } else if (img.dtype == DType::DType_F32) {
       copy_to_texture_fuffer_x64(
           (float *)img.data, (unsigned char *)mapped_buffer.data, width, height,
           actual_width, actual_height, img.matrix_rows);

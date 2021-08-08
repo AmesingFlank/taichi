@@ -4,7 +4,7 @@
 TI_UI_NAMESPACE_BEGIN
 
 struct Event {
-  int tag;
+  EventType tag;
 
   DEFINE_PROPERTY(std::string, key);
 };

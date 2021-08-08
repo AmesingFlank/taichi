@@ -27,9 +27,9 @@ class WindowBase {
 
   std::tuple<float, float> get_cursor_pos();
 
-  std::vector<Event> get_events(int tag);
+  std::vector<Event> get_events(EventType tag);
 
-  bool get_event(int tag);
+  bool get_event(EventType tag);
 
   Event get_current_event();
 
@@ -53,7 +53,7 @@ class WindowBase {
   int frames_since_last_record_{0};
 
   std::list<Event> events_;
-  Event current_event_{EVENT_NONE, ""};
+  Event current_event_{EventType::EVENT_NONE, ""};
 
  protected:
   WindowBase(AppConfig config);
