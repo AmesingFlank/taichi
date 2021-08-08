@@ -8,6 +8,8 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
+using namespace taichi::lang;
+
 Canvas::Canvas(AppContext *app_context) : app_context_(app_context) {
   create_semaphores();
   import_semaphores();
@@ -143,7 +145,7 @@ void Canvas::recreate_swap_chain() {
 }
 
 void Canvas::import_semaphores() {
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     prev_draw_finished_cuda_ = (uint64_t)cuda_vk_import_semaphore(
         prev_draw_finished_vk_, app_context_->device());
     this_draw_data_ready_cuda_ = (uint64_t)cuda_vk_import_semaphore(
@@ -155,7 +157,7 @@ void Canvas::import_semaphores() {
 
 void Canvas::prepare_for_next_frame() {
   next_renderable_ = 0;
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     cuda_vk_semaphore_wait((CUexternalSemaphore)prev_draw_finished_cuda_);
   }
 }
@@ -173,7 +175,7 @@ void Canvas::draw_frame(Gui *gui) {
       app_context_->swap_chain
           .in_flight_scenes[app_context_->swap_chain.current_frame];
 
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     cuda_vk_semaphore_signal((CUexternalSemaphore)this_draw_data_ready_cuda_);
   }
 
@@ -241,7 +243,7 @@ void Canvas::draw_frame(Gui *gui) {
       app_context_->swap_chain
           .render_finished_semaphores[app_context_->swap_chain.current_frame]};
 
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     wait_semaphores.push_back(this_draw_data_ready_vk_);
     wait_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     signal_semaphores.push_back(prev_draw_finished_vk_);

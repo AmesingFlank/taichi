@@ -27,7 +27,7 @@ void Renderable::init_render_resources() {
   create_uniform_buffers();
   create_descriptor_sets();
 
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     vertex_buffer_device_ptr_ = (Vertex *)get_memory_pointer(
         vertex_buffer_memory_, config_.vertices_count * sizeof(Vertex),
         app_context_->device());

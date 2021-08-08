@@ -152,10 +152,7 @@ if _ti_core.GGUI_AVAILABLE:
         def __init__(self, name, res, vsync=False):
             package_path = str(pathlib.Path(__file__).parent.parent)
 
-            if default_cfg().arch == _ti_core.cuda:
-                ti_arch = _ti_core.ARCH_CUDA
-            elif default_cfg().arch == _ti_core.x64:
-                ti_arch = _ti_core.ARCH_X64
+            ti_arch = default_cfg().arch
             super().__init__(name, res, vsync, package_path, ti_arch)
 
         @property

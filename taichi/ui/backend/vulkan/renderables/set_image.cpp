@@ -136,7 +136,7 @@ void SetImage::create_texture_image_(int width, int height) {
                           app_context_->command_pool(), app_context_->device(),
                           app_context_->graphics_queue());
 
-  if (app_context_->config.ti_arch == ARCH_CUDA) {
+  if (app_context_->config.ti_arch == Arch::cuda) {
     VkMemoryRequirements mem_requirements;
     vkGetImageMemoryRequirements(app_context_->device(), texture_image_,
                                  &mem_requirements);

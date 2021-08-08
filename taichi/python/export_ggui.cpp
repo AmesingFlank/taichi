@@ -22,6 +22,8 @@ namespace py = pybind11;
 
 TI_UI_NAMESPACE_BEGIN
 
+using namespace taichi::lang;
+
 inline glm::vec3 tuple_to_vec3(pybind11::tuple t) {
   return glm::vec3(t[0].cast<float>(), t[1].cast<float>(), t[2].cast<float>());
 }
@@ -236,7 +238,7 @@ struct PyWindow {
            py::tuple res,
            bool vsync,
            std::string package_path,
-           int ti_arch) {
+           Arch ti_arch) {
     AppConfig config = {name,  res[0].cast<int>(), res[1].cast<int>(),
                         vsync, package_path,       ti_arch};
     window = new vulkan::Window(config);
@@ -300,7 +302,7 @@ void export_ggui(py::module &m) {
   m.attr("GGUI_AVAILABLE") = py::bool_(true);
 
   py::class_<PyWindow>(m, "PyWindow")
-      .def(py::init<std::string, py::tuple, bool, std::string, int>())
+      .def(py::init<std::string, py::tuple, bool, std::string, Arch>())
       .def("get_canvas", &PyWindow::get_canvas)
       .def("show", &PyWindow::show)
       .def("is_pressed", &PyWindow::is_pressed)
@@ -379,9 +381,6 @@ void export_ggui(py::module &m) {
     
   m.attr("FIELD_SOURCE_X64") = py::int_(FIELD_SOURCE_X64);
   m.attr("FIELD_SOURCE_CUDA") = py::int_(FIELD_SOURCE_CUDA);
-
-  m.attr("ARCH_X64") = py::int_(ARCH_X64);
-  m.attr("ARCH_CUDA") = py::int_(ARCH_CUDA);
 
   m.attr("FIELD_TYPE_FIELD") = py::int_(FIELD_TYPE_FIELD);
   m.attr("FIELD_TYPE_MATRIX") = py::int_(FIELD_TYPE_MATRIX);

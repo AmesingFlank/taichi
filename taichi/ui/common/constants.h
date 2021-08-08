@@ -6,9 +6,6 @@
 #define FIELD_SOURCE_X64 0
 #define FIELD_SOURCE_CUDA 1
 
-#define ARCH_X64 0
-#define ARCH_CUDA 1
-
 #define FIELD_TYPE_FIELD 0
 #define FIELD_TYPE_MATRIX 1
 

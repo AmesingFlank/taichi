@@ -2,6 +2,7 @@
 
 #include <string>
 #include "../utils/utils.h"
+#include "taichi/program/arch.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -11,7 +12,7 @@ struct AppConfig {
   int height;
   bool vsync;
   std::string package_path;
-  int ti_arch;
+  taichi::lang::Arch ti_arch;
 };
 
 
