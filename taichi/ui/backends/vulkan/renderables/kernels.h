@@ -1,6 +1,6 @@
 #include "taichi/ui/backends/vulkan/vertex.h"
-namespace taichi{
-namespace ui{
+namespace taichi {
+namespace ui {
 
 void update_renderables_vertices_cuda(Vertex *vbo,
                                       float *vertices,
@@ -46,5 +46,5 @@ void copy_to_texture_fuffer_x64(T *src,
                                 int actual_height,
                                 int channels);
 
-} // ui
-} // taichi
+}  // namespace ui
+}  // namespace taichi

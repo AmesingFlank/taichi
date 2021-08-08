@@ -4,7 +4,6 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-
 SwapChainSupportDetails query_swap_chain_support(
     VkPhysicalDevice physical_device,
     VkSurfaceKHR surface) {
@@ -309,8 +308,7 @@ VkShaderModule create_shader_module(const std::vector<char> &code,
   return shader_module;
 }
 
-void create_image(
-                  int dim,
+void create_image(int dim,
                   uint32_t width,
                   uint32_t height,
                   uint32_t depth,
@@ -324,16 +322,13 @@ void create_image(
                   VkPhysicalDevice physical_device) {
   VkImageCreateInfo image_info{};
   image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  if(dim==1){
+  if (dim == 1) {
     image_info.imageType = VK_IMAGE_TYPE_1D;
-  }
-  else if(dim==2){
+  } else if (dim == 2) {
     image_info.imageType = VK_IMAGE_TYPE_2D;
-  }
-  else if(dim==3){
+  } else if (dim == 3) {
     image_info.imageType = VK_IMAGE_TYPE_3D;
-  }
-  else{
+  } else {
     throw std::runtime_error("dim can only be 1 2 3");
   }
   image_info.extent.width = width;
@@ -376,26 +371,24 @@ void create_image(
   vkBindImageMemory(device, image, image_mem, 0);
 }
 
-VkImageView create_image_view(int dim,VkImage image,
+VkImageView create_image_view(int dim,
+                              VkImage image,
                               VkFormat format,
                               VkImageAspectFlags aspect_flags,
                               VkDevice device) {
   VkImageViewCreateInfo view_info{};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   view_info.image = image;
-  if(dim==1){
+  if (dim == 1) {
     view_info.viewType = VK_IMAGE_VIEW_TYPE_1D;
-  }
-  else if(dim==2){
+  } else if (dim == 2) {
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-  }
-  else if(dim==3){
+  } else if (dim == 3) {
     view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
-  }
-  else{
+  } else {
     throw std::runtime_error("dim can only be 1 2 3");
   }
-  
+
   view_info.format = format;
   view_info.subresourceRange.aspectMask = aspect_flags;
   view_info.subresourceRange.baseMipLevel = 0;

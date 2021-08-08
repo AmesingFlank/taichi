@@ -5,18 +5,13 @@
 
 TI_UI_NAMESPACE_BEGIN
 
-
-enum class FieldSource : int{
+enum class FieldSource : int {
   TaichiCuda = 0,
   TaichiX64 = 1
   // support np array / torch tensor in the future?
 };
 
-enum class FieldType: int {
-  Scalar = 0,
-  Matrix = 1
-};
-
+enum class FieldType : int { Scalar = 0, Matrix = 1 };
 
 struct FieldInfo {
   DEFINE_PROPERTY(bool, valid)

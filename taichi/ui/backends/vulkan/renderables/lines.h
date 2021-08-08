@@ -31,7 +31,8 @@ class Lines final : public Renderable {
 
   void update_data(const LinesInfo &info);
 
-  virtual void record_this_frame_commands(VkCommandBuffer command_buffer) override;
+  virtual void record_this_frame_commands(
+      VkCommandBuffer command_buffer) override;
 
  private:
   struct UniformBufferObject {

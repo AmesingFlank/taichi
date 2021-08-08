@@ -1,8 +1,8 @@
 #include <device_launch_parameters.h>
 #include "taichi/ui/backends/vulkan/vertex.h"
 
-namespace taichi{
-namespace ui{
+namespace taichi {
+namespace ui {
 
 int div_up(int a, int b) {
   if (b == 0) {
@@ -76,7 +76,7 @@ void update_renderables_indices_x64(int *ibo, int *indices, int num_indices) {
   for (int i = 0; i < num_indices; ++i) {
     ibo[i] = indices[i];
   }
-} 
+}
 
 __global__ void update_renderables_colors_cuda_impl(Vertex *vbo,
                                                     float *colors,
@@ -137,7 +137,6 @@ void update_renderables_normals_x64(Vertex *vbo,
   }
 }
 
-
 template <typename T>
 __device__ __host__ inline unsigned char get_color_value(T x);
 
@@ -176,7 +175,7 @@ __global__ void copy_to_texture_fuffer_cuda_impl(T *src,
   data.z = get_color_value<T>(src_base_addr[2]);
   data.w = 255;
 
-  surf3Dwrite(data, surface, x * sizeof(uchar4), y,0);
+  surf3Dwrite(data, surface, x * sizeof(uchar4), y, 0);
 }
 
 template <typename T>
@@ -248,5 +247,5 @@ template void copy_to_texture_fuffer_x64<unsigned char>(unsigned char *src,
                                                         int actual_height,
                                                         int channels);
 
-} // ui
-} // taichi
+}  // namespace ui
+}  // namespace taichi

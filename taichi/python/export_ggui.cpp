@@ -372,27 +372,26 @@ void export_ggui(py::module &m) {
       .def_property("shape", &FieldInfo::get_shape, &FieldInfo::set_shape)
       .def_property("valid", &FieldInfo::get_valid, &FieldInfo::set_valid);
 
-  
   py::enum_<EventType>(m, "EventType")
-    .value("Any", EventType::Any)
-    .value("Press", EventType::Press)
-    .value("Release", EventType::Release)
-    .export_values();
-    
+      .value("Any", EventType::Any)
+      .value("Press", EventType::Press)
+      .value("Release", EventType::Release)
+      .export_values();
+
   py::enum_<FieldSource>(m, "FieldSource")
-    .value("TaichiCuda", FieldSource::TaichiCuda)
-    .value("TaichiX64", FieldSource::TaichiX64)
-    .export_values();
+      .value("TaichiCuda", FieldSource::TaichiCuda)
+      .value("TaichiX64", FieldSource::TaichiX64)
+      .export_values();
 
   py::enum_<FieldType>(m, "FieldType")
-    .value("Scalar", FieldType::Scalar)
-    .value("Matrix", FieldType::Matrix)
-    .export_values();
+      .value("Scalar", FieldType::Scalar)
+      .value("Matrix", FieldType::Matrix)
+      .export_values();
 
   py::enum_<ProjectionMode>(m, "ProjectionMode")
-    .value("Perspective", ProjectionMode::Perspective)
-    .value("Orthogonal", ProjectionMode::Orthogonal)
-    .export_values();
+      .value("Perspective", ProjectionMode::Perspective)
+      .value("Orthogonal", ProjectionMode::Orthogonal)
+      .export_values();
 }
 
 TI_UI_NAMESPACE_END

@@ -68,5 +68,4 @@ class Window final : public WindowBase {
 
 }  // namespace vulkan
 
-
 TI_UI_NAMESPACE_END

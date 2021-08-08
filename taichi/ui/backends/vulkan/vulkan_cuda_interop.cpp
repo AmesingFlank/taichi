@@ -6,7 +6,6 @@ namespace vulkan {
 
 using namespace taichi::lang;
 
-
 #ifdef _WIN64  // For windows
 HANDLE get_device_mem_handle(VkDeviceMemory &mem, VkDevice device) {
   HANDLE handle;
@@ -141,13 +140,13 @@ CUsurfObject get_image_surface_object_of_external_memory(
 
   external_mem_mipmapped_array_desc.offset = 0;
   external_mem_mipmapped_array_desc.numLevels = 1;
-  external_mem_mipmapped_array_desc.arrayDesc.Width = width ;
-  external_mem_mipmapped_array_desc.arrayDesc.Height = height ;
+  external_mem_mipmapped_array_desc.arrayDesc.Width = width;
+  external_mem_mipmapped_array_desc.arrayDesc.Height = height;
   external_mem_mipmapped_array_desc.arrayDesc.Depth = depth;
-  external_mem_mipmapped_array_desc.arrayDesc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
+  external_mem_mipmapped_array_desc.arrayDesc.Format =
+      CU_AD_FORMAT_UNSIGNED_INT8;
   external_mem_mipmapped_array_desc.arrayDesc.NumChannels = 4;
   external_mem_mipmapped_array_desc.arrayDesc.Flags = CUDA_ARRAY3D_SURFACE_LDST;
-
 
   CUmipmappedArray cuda_mipmapped_image_array;
 

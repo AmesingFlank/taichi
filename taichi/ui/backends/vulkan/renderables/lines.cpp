@@ -35,15 +35,15 @@ void Lines::record_this_frame_commands(VkCommandBuffer command_buffer) {
       command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1,
       &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
 
-  vkCmdSetLineWidth(command_buffer,curr_width_ * app_context_->swap_chain.swap_chain_extent.height);
+  vkCmdSetLineWidth(
+      command_buffer,
+      curr_width_ * app_context_->swap_chain.swap_chain_extent.height);
 
-  if(indexed_){
+  if (indexed_) {
     vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
-  }
-  else{
+  } else {
     vkCmdDraw(command_buffer, config_.vertices_count, 1, 0, 0);
   }
-  
 }
 
 void Lines::init_lines(AppContext *app_context,

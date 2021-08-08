@@ -116,7 +116,7 @@ void SwapChain::create_image_views() {
 
   for (uint32_t i = 0; i < swap_chain_images.size(); i++) {
     swap_chain_image_views[i] =
-        create_image_view(2,swap_chain_images[i], swap_chain_image_format,
+        create_image_view(2, swap_chain_images[i], swap_chain_image_format,
                           VK_IMAGE_ASPECT_COLOR_BIT, app_context->device());
   }
 }
@@ -149,12 +149,12 @@ void SwapChain::create_depth_resources() {
   VkFormat depth_format = find_depth_format(app_context->physical_device());
 
   create_image(
-      2,swap_chain_extent.width, swap_chain_extent.height, 1,depth_format,
+      2, swap_chain_extent.width, swap_chain_extent.height, 1, depth_format,
       VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory,
       app_context->device(), app_context->physical_device());
   depth_image_view =
-      create_image_view(2,depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT,
+      create_image_view(2, depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT,
                         app_context->device());
 }
 

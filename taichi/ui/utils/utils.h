@@ -36,12 +36,10 @@
 
 #include <stdarg.h>
 
-
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 
 #define TI_UI_NAMESPACE_BEGIN \
   namespace taichi {          \
@@ -85,10 +83,8 @@ inline GLFWwindow *create_glfw_window_(const std::string &name,
   return window;
 }
 
-
-struct Keys{
-#define DEFINE_KEY(name) \
-    static inline const std::string name = #name
+struct Keys {
+#define DEFINE_KEY(name) static inline const std::string name = #name
 
   DEFINE_KEY(Shift);
   DEFINE_KEY(Alt);
@@ -107,10 +103,7 @@ struct Keys{
   DEFINE_KEY(MMB);
   DEFINE_KEY(RMB);
 #undef DEFINE_KEY
-
 };
-
-
 
 inline std::unordered_map<std::string, int> get_keys_map() {
   std::unordered_map<std::string, int> keys;

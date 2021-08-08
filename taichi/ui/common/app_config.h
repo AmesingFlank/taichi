@@ -15,5 +15,4 @@ struct AppConfig {
   taichi::lang::Arch ti_arch;
 };
 
-
 TI_UI_NAMESPACE_END

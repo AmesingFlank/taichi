@@ -3,16 +3,16 @@
 #include <array>
 #include <volk.h>
 
-namespace taichi{
-namespace ui{
+namespace taichi {
+namespace ui {
 
 struct Vertex {
-  struct vec3{
+  struct vec3 {
     float x;
     float y;
     float z;
   };
-  struct vec2{
+  struct vec2 {
     float x;
     float y;
   };
@@ -58,5 +58,5 @@ struct Vertex {
   }
 };
 
-} // ui
-} // taichi
+}  // namespace ui
+}  // namespace taichi

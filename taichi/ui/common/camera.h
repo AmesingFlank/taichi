@@ -2,13 +2,9 @@
 
 #include "taichi/ui/utils/utils.h"
 
-
 TI_UI_NAMESPACE_BEGIN
 
-enum class ProjectionMode: int{
-  Perspective = 0,
-  Orthogonal = 1
-};
+enum class ProjectionMode : int { Perspective = 0, Orthogonal = 1 };
 
 struct Camera {
   glm::vec3 position;
@@ -32,6 +28,5 @@ struct Camera {
     }
   }
 };
-
 
 TI_UI_NAMESPACE_END

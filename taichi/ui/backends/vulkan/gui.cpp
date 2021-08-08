@@ -84,8 +84,7 @@ void Gui::init(AppContext *app_context, GLFWwindow *window) {
     end_info.commandBufferCount = 1;
     end_info.pCommandBuffers = &command_buffer;
     vkEndCommandBuffer(command_buffer);
-    vkQueueSubmit(app_context->graphics_queue(), 1, &end_info,
-                        VK_NULL_HANDLE);
+    vkQueueSubmit(app_context->graphics_queue(), 1, &end_info, VK_NULL_HANDLE);
 
     vkDeviceWaitIdle(app_context->device());
     vkFreeCommandBuffers(app_context->device(), app_context->command_pool(), 1,

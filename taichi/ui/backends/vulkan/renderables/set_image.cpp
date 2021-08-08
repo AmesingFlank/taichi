@@ -120,7 +120,8 @@ void SetImage::init_set_image(AppContext *app_context,
 void SetImage::create_texture_image_(int width, int height) {
   VkDeviceSize image_size = (int)(width * height * 4);
 
-  create_image(3,width, height,1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+  create_image(3, width, height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+               VK_IMAGE_TILING_OPTIMAL,
                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image_,
                texture_image_memory_, app_context_->device(),
@@ -147,7 +148,7 @@ void SetImage::create_texture_image_(int width, int height) {
         handle, mem_requirements.size, true);
 
     texture_surface_ = (uint64_t)get_image_surface_object_of_external_memory(
-        external_mem, width, height,1);
+        external_mem, width, height, 1);
   }
   create_buffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -158,7 +159,7 @@ void SetImage::create_texture_image_(int width, int height) {
 
 void SetImage::create_texture_image_view() {
   texture_image_view_ =
-      create_image_view(3,texture_image_, VK_FORMAT_R8G8B8A8_UNORM,
+      create_image_view(3, texture_image_, VK_FORMAT_R8G8B8A8_UNORM,
                         VK_IMAGE_ASPECT_COLOR_BIT, app_context_->device());
 }
 
@@ -223,7 +224,7 @@ void SetImage::update_index_buffer_() {
     memcpy(mapped_ibo.data, indices.data(),
            (size_t)config_.indices_count * sizeof(int));
   }
-  
+
   copy_buffer(staging_index_buffer_, index_buffer_,
               config_.indices_count * sizeof(int), app_context_->command_pool(),
               app_context_->device(), app_context_->graphics_queue());

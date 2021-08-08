@@ -18,8 +18,7 @@ void WindowBase::set_callbacks() {
   input_handler_.user_key_callbacks.push_back([&](int key, int action) {
     if (action == GLFW_PRESS) {
       events_.push_back({EventType::Press, button_id_to_name(key)});
-    }
-    else if(action == GLFW_RELEASE){
+    } else if (action == GLFW_RELEASE) {
       events_.push_back({EventType::Release, button_id_to_name(key)});
     }
   });
@@ -27,8 +26,7 @@ void WindowBase::set_callbacks() {
       [&](int key, int action) {
         if (action == GLFW_PRESS) {
           events_.push_back({EventType::Press, button_id_to_name(key)});
-        }
-        else if(action == GLFW_RELEASE){
+        } else if (action == GLFW_RELEASE) {
           events_.push_back({EventType::Release, button_id_to_name(key)});
         }
       });
@@ -159,6 +157,5 @@ void WindowBase::mouse_button_callback(GLFWwindow *glfw_window,
   window->input_handler_.mouse_button_callback(glfw_window, button, action,
                                                modifier);
 }
-
 
 TI_UI_NAMESPACE_END

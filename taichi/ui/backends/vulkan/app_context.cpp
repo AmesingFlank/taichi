@@ -192,5 +192,4 @@ VkRenderPass AppContext::render_pass() const {
 
 }  // namespace vulkan
 
-
 TI_UI_NAMESPACE_END

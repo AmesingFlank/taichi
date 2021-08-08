@@ -46,5 +46,4 @@ class AppContext {
 
 }  // namespace vulkan
 
-
 TI_UI_NAMESPACE_END

@@ -9,7 +9,6 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-
 using namespace taichi::lang;
 
 void Renderable::init(const RenderableConfig &config, AppContext *app_context) {
@@ -42,9 +41,9 @@ void Renderable::update_data(const RenderableInfo &info) {
   int num_indices;
   if (info.indices.valid) {
     num_indices = info.indices.shape[0];
-    if (info.indices.dtype != PrimitiveType::i32 && info.indices.dtype != PrimitiveType::u32) {
-      throw std::runtime_error(
-          "dtype needs to be 32-bit ints for indices");
+    if (info.indices.dtype != PrimitiveType::i32 &&
+        info.indices.dtype != PrimitiveType::u32) {
+      throw std::runtime_error("dtype needs to be 32-bit ints for indices");
     }
   } else {
     num_indices = num_vertices;
@@ -236,10 +235,9 @@ void Renderable::create_graphics_pipeline() {
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   } else if (config_.topology_type == TopologyType::Lines) {
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  } 
-  else if (config_.topology_type == TopologyType::Points) {
+  } else if (config_.topology_type == TopologyType::Points) {
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  }else {
+  } else {
     throw std::runtime_error("invalid topology");
   }
 
@@ -317,8 +315,8 @@ void Renderable::create_graphics_pipeline() {
     throw std::runtime_error("failed to create pipeline layout!");
   }
 
-  std::vector<VkDynamicState> dynamic_state_enables =
-      {VK_DYNAMIC_STATE_LINE_WIDTH};
+  std::vector<VkDynamicState> dynamic_state_enables = {
+      VK_DYNAMIC_STATE_LINE_WIDTH};
   VkPipelineDynamicStateCreateInfo dynamic_state = {};
   dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   dynamic_state.pNext = NULL;
@@ -456,13 +454,11 @@ void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer) {
       command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1,
       &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
 
-  if(indexed_){
+  if (indexed_) {
     vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
-  }
-  else{
+  } else {
     vkCmdDraw(command_buffer, config_.vertices_count, 1, 0, 0);
   }
-  
 }
 
 void Renderable::create_descriptor_set_layout() {
@@ -471,11 +467,9 @@ void Renderable::create_descriptor_set_layout() {
 void Renderable::create_descriptor_sets() {
 }
 
-Renderable::~Renderable(){
-  
+Renderable::~Renderable() {
 }
 
 }  // namespace vulkan
-
 
 TI_UI_NAMESPACE_END

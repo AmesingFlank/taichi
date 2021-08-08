@@ -42,5 +42,4 @@ struct CanvasBase {
   }
 };
 
-
 TI_UI_NAMESPACE_END

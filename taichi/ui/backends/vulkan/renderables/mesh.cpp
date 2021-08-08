@@ -2,7 +2,6 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
 
-
 TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {

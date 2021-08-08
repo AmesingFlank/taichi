@@ -103,7 +103,8 @@ void create_image(int dim,
                   VkDevice device,
                   VkPhysicalDevice physical_device);
 
-VkImageView create_image_view(int dim,VkImage image,
+VkImageView create_image_view(int dim,
+                              VkImage image,
                               VkFormat format,
                               VkImageAspectFlags aspect_flags,
                               VkDevice device);

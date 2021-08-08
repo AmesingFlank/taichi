@@ -12,5 +12,4 @@ struct RenderableInfo {
   FieldInfo indices;
 };
 
-
 TI_UI_NAMESPACE_END
