@@ -23,7 +23,7 @@ TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
 
-enum class TopologyType : int { TriangleList = 0, Points = 1 };
+enum class TopologyType : int { Triangles = 0, Lines = 1, Points = 2 };
 
 struct RenderableConfig {
   int vertices_count;

@@ -31,7 +31,7 @@ use_per_vertex_colors = True
 
 lines_color = (0, 0, 1)
 
-width = 0.1
+width = 0.01
 
 while window.running:
     #print("heyyy ",frame_id)
@@ -49,7 +49,7 @@ while window.running:
     window.GUI.begin("hello window", 0.1, 0.1, 0.2, 0.8)
     window.GUI.text("hello text")
     show_lines = window.GUI.checkbox("show lines", show_lines)
-    width = window.GUI.slider_float("width ", width, 0, 2)
+    width = window.GUI.slider_float("width ", width, 0, 0.02)
     use_per_vertex_colors = window.GUI.checkbox("use per vertex colors",
                                                 use_per_vertex_colors)
     if not use_per_vertex_colors:

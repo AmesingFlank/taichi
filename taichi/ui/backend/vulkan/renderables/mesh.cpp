@@ -47,7 +47,7 @@ void Mesh::init_mesh(AppContext *app_context,
       app_context->config.package_path + "/shaders/Mesh_vk_vert.spv",
       app_context->config.package_path + "/shaders/Mesh_vk_geom.spv",
       app_context->config.package_path + "/shaders/Mesh_vk_frag.spv",
-      TopologyType::TriangleList,
+      TopologyType::Triangles,
   };
 
   Renderable::init(config, app_context);

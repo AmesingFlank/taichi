@@ -31,6 +31,8 @@ class Lines final : public Renderable {
 
   void update_data(const LinesInfo &info);
 
+  virtual void record_this_frame_commands(VkCommandBuffer command_buffer) override;
+
  private:
   struct UniformBufferObject {
     alignas(16) glm::vec3 color;
@@ -48,6 +50,8 @@ class Lines final : public Renderable {
   virtual void create_descriptor_sets() override;
 
   virtual void cleanup() override;
+
+  float curr_width_;
 };
 
 }  // namespace vulkan

@@ -452,6 +452,7 @@ void EmbeddedVulkanDevice::create_logical_device() {
   if (params_.is_for_ui) {
     device_features.samplerAnisotropy = VK_TRUE;
     device_features.geometryShader = VK_TRUE;
+    device_features.wideLines = VK_TRUE;
   }
 
   create_info.pEnabledFeatures = &device_features;

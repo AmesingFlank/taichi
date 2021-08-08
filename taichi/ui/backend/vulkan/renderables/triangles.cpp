@@ -28,7 +28,7 @@ void Triangles::init_triangles(AppContext *app_context,
       app_context->config.package_path + "/shaders/Triangles_vk_vert.spv",
       "",
       app_context->config.package_path + "/shaders/Triangles_vk_frag.spv",
-      TopologyType::TriangleList,
+      TopologyType::Triangles,
   };
 
   Renderable::init(config, app_context);

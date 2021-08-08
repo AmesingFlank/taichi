@@ -9,63 +9,41 @@ TI_UI_NAMESPACE_BEGIN
 namespace vulkan {
 
 void Lines::update_data(const LinesInfo &info) {
-  int N = info.renderable_info.vertices.shape[0] / 2;
-
-  if (4 * N > config_.vertices_count || 6 * N > config_.indices_count) {
-    cleanup_swap_chain();
-    cleanup();
-    init_lines(app_context_, 4 * N, 6 * N);
+  if (info.renderable_info.vertices.matrix_rows != 2 ||
+      info.renderable_info.vertices.matrix_cols != 1) {
+    throw std::runtime_error("Lines vertices requres 2-d vector fields");
   }
-  auto check_valid = [&](const FieldInfo &f) {
-    if (f.dtype != DTYPE_F32) {
-      throw std::runtime_error("dtype needs to be f32 for Lines");
-    }
-    if (f.matrix_rows != 2 || f.matrix_cols != 1) {
-      throw std::runtime_error("Lines requres 2-d vector fields");
-    }
-  };
-  check_valid(info.renderable_info.vertices);
+
+  Renderable::update_data(info.renderable_info);
 
   update_ubo(info.color, info.renderable_info.per_vertex_color.valid);
 
-  float aspect_ratio = app_context_->swap_chain.swap_chain_extent.width /
-                       (float)app_context_->swap_chain.swap_chain_extent.height;
+  curr_width_ = info.width;
+}
 
-  bool use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
+void Lines::record_this_frame_commands(VkCommandBuffer command_buffer) {
+  vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphics_pipeline_);
 
-  indexed_ = true;
+  VkBuffer vertex_buffer_s[] = {vertex_buffer_};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffer_s, offsets);
 
-  if (info.renderable_info.vertices.field_source == FIELD_SOURCE_CUDA) {
-    update_lines_vbo_cuda(vertex_buffer_device_ptr_, index_buffer_device_ptr_,
-                          (float *)info.renderable_info.vertices.data, N,
-                          info.width, aspect_ratio,
-                          (float *)info.renderable_info.per_vertex_color.data,
-                          use_per_vertex_color);
-  } else if (info.renderable_info.vertices.field_source == FIELD_SOURCE_X64) {
-    {
-      MappedMemory mapped_vbo(app_context_->device(),
-                              staging_vertex_buffer_memory_,
-                              config_.vertices_count * sizeof(Vertex));
-      MappedMemory mapped_ibo(app_context_->device(),
-                              staging_index_buffer_memory_,
-                              config_.indices_count * sizeof(int));
-      update_lines_vbo_x64((Vertex *)mapped_vbo.data, (int *)mapped_ibo.data,
-                           (float *)info.renderable_info.vertices.data, N,
-                           info.width, aspect_ratio,
-                           (float *)info.renderable_info.per_vertex_color.data,
-                           use_per_vertex_color);
-    }
-    copy_buffer(staging_vertex_buffer_, vertex_buffer_,
-                config_.vertices_count * sizeof(Vertex),
-                app_context_->command_pool(), app_context_->device(),
-                app_context_->graphics_queue());
-    copy_buffer(staging_index_buffer_, index_buffer_,
-                config_.indices_count * sizeof(int),
-                app_context_->command_pool(), app_context_->device(),
-                app_context_->graphics_queue());
-  } else {
-    throw std::runtime_error("unsupported field source");
+  vkCmdBindIndexBuffer(command_buffer, index_buffer_, 0, VK_INDEX_TYPE_UINT32);
+
+  vkCmdBindDescriptorSets(
+      command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_, 0, 1,
+      &descriptor_sets_[app_context_->swap_chain.curr_image_index], 0, nullptr);
+
+  vkCmdSetLineWidth(command_buffer,curr_width_ * app_context_->swap_chain.swap_chain_extent.height);
+
+  if(indexed_){
+    vkCmdDrawIndexed(command_buffer, config_.indices_count, 1, 0, 0, 0);
   }
+  else{
+    vkCmdDraw(command_buffer, config_.vertices_count, 1, 0, 0);
+  }
+  
 }
 
 void Lines::init_lines(AppContext *app_context,
@@ -78,7 +56,7 @@ void Lines::init_lines(AppContext *app_context,
       app_context->config.package_path + "/shaders/Lines_vk_vert.spv",
       "",
       app_context->config.package_path + "/shaders/Lines_vk_frag.spv",
-      TopologyType::TriangleList,
+      TopologyType::Lines,
   };
 
   Renderable::init(config, app_context);

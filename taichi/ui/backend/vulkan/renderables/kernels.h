@@ -28,25 +28,6 @@ void update_renderables_normals_x64(Vertex *vbo,
                                     float *normals,
                                     int num_vertices);
 
-// We implement lines by generating rectangles. Note there this requires careful
-// treatment of aspect ratios.
-void update_lines_vbo_cuda(Vertex *vbo,
-                           int *ibo,
-                           float *vertices,
-                           int N,
-                           float width,
-                           float aspect_ratio,
-                           float *colors,
-                           bool use_per_vertex_color);
-void update_lines_vbo_x64(Vertex *vbo,
-                          int *ibo,
-                          float *vertices,
-                          int N,
-                          float width,
-                          float aspect_ratio,
-                          float *colors,
-                          bool use_per_vertex_color);
-
 template <typename T>
 void copy_to_texture_fuffer_cuda(T *src,
                                  uint64_t surface,

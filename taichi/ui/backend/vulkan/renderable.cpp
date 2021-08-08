@@ -229,11 +229,14 @@ void Renderable::create_graphics_pipeline() {
   VkPipelineInputAssemblyStateCreateInfo input_assembly{};
   input_assembly.sType =
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  if (config_.topology_type == TopologyType::TriangleList) {
+  if (config_.topology_type == TopologyType::Triangles) {
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  } else if (config_.topology_type == TopologyType::Points) {
+  } else if (config_.topology_type == TopologyType::Lines) {
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  } 
+  else if (config_.topology_type == TopologyType::Points) {
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  } else {
+  }else {
     throw std::runtime_error("invalid topology");
   }
 
@@ -312,7 +315,7 @@ void Renderable::create_graphics_pipeline() {
   }
 
   std::vector<VkDynamicState> dynamic_state_enables =
-      {};  //{VK_DYNAMIC_STATE_LINE_WIDTH};
+      {VK_DYNAMIC_STATE_LINE_WIDTH};
   VkPipelineDynamicStateCreateInfo dynamic_state = {};
   dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   dynamic_state.pNext = NULL;

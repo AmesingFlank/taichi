@@ -97,7 +97,7 @@ void SetImage::init_set_image(AppContext *app_context,
       app_context->config.package_path + "/shaders/SetImage_vk_vert.spv",
       "",
       app_context->config.package_path + "/shaders/SetImage_vk_frag.spv",
-      TopologyType::TriangleList,
+      TopologyType::Triangles,
   };
 
   Renderable::init(config, app_context);
