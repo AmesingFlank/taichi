@@ -235,6 +235,8 @@ if _ti_core.GGUI_AVAILABLE:
     def make_camera():
         return _ti_core.PyCamera()
 
+    ProjectionMode = _ti_core.ProjectionMode
+
 else:
 
     def err_no_ggui():

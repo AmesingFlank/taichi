@@ -1,11 +1,6 @@
 #pragma once
 
 
-
-#define PROJECTION_ORTHOGONAL 0
-#define PROJECTION_PERSPECTIVE 1
-
-
 #define MAX_POINTLIGHTS 16
 
 #define KEY_SHIFT std::string("Shift")

@@ -73,7 +73,7 @@ struct PyCamera {
   void up(float x, float y, float z) {
     camera.up = glm::vec3(x, y, z);
   }
-  void projection_mode(int mode) {
+  void projection_mode(ProjectionMode mode) {
     camera.projection_mode = mode;
   }
   void fov(float fov_) {
@@ -389,9 +389,10 @@ void export_ggui(py::module &m) {
     .value("Matrix", FieldType::Matrix)
     .export_values();
 
-
-  m.attr("PROJECTION_ORTHOGONAL") = py::int_(PROJECTION_ORTHOGONAL);
-  m.attr("PROJECTION_PERSPECTIVE") = py::int_(PROJECTION_PERSPECTIVE);
+  py::enum_<ProjectionMode>(m, "ProjectionMode")
+    .value("Perspective", ProjectionMode::Perspective)
+    .value("Orthogonal", ProjectionMode::Orthogonal)
+    .export_values();
 }
 
 TI_UI_NAMESPACE_END
