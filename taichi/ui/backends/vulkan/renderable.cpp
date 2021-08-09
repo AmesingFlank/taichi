@@ -193,7 +193,6 @@ void Renderable::create_graphics_pipeline() {
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
       vert_shader_stage_info, frag_shader_stage_info};
 
-
   VkPipelineVertexInputStateCreateInfo vertex_input_info{};
   vertex_input_info.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -329,7 +328,6 @@ void Renderable::create_graphics_pipeline() {
 
   vkDestroyShaderModule(app_context_->device(), frag_shader_module, nullptr);
   vkDestroyShaderModule(app_context_->device(), vert_shader_module, nullptr);
-
 }
 
 void Renderable::create_vertex_buffer() {

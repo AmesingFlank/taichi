@@ -7,15 +7,19 @@ from taichi.lang.kernel_arguments import ext_arr, template
 from taichi.lang.kernel_impl import kernel
 from taichi.lang.ops import get_addr
 
+
 @kernel
 def get_field_addr_0D(x: template()) -> u64:
     return get_addr(x, [None])
+
 
 @kernel
 def get_field_addr_ND(x: template()) -> u64:
     return get_addr(x, [0 for _ in x.shape])
 
+
 field_addr_cache = {}
+
 
 def get_field_addr(x):
     if x not in field_addr_cache:
@@ -25,6 +29,7 @@ def get_field_addr(x):
             addr = get_field_addr_ND(x)
         field_addr_cache[x] = addr
     return field_addr_cache[x]
+
 
 def get_field_info(field):
     info = _ti_core.FieldInfo()

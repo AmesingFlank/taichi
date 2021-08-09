@@ -6,8 +6,8 @@ from taichi.lang.impl import default_cfg
 from taichi.lang.kernel_arguments import ext_arr, template
 from taichi.lang.kernel_impl import kernel
 from taichi.lang.ops import get_addr
-from .utils import *
 
+from .utils import *
 
 
 class Gui:

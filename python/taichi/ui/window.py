@@ -6,11 +6,10 @@ from taichi.lang.impl import default_cfg
 from taichi.lang.kernel_arguments import ext_arr, template
 from taichi.lang.kernel_impl import kernel
 from taichi.lang.ops import get_addr
-from .utils import *
 
 from .canvas import Canvas
 from .gui import Gui
-
+from .utils import *
 
 SHIFT = 'Shift'
 ALT = 'Alt'
@@ -32,6 +31,7 @@ RMB = 'RMB'
 # Event types
 PRESS = "Press"
 RELEASE = "Release"
+
 
 class Window(_ti_core.PyWindow):
     def __init__(self, name, res, vsync=False):

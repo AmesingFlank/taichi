@@ -4,6 +4,7 @@ from taichi.lang.impl import default_cfg
 from taichi.lang.kernel_arguments import ext_arr, template
 from taichi.lang.kernel_impl import kernel
 from taichi.lang.ops import get_addr
+
 from .utils import *
 
 
@@ -19,27 +20,26 @@ class Canvas:
         self.canvas.set_image(info)
 
     def triangles(self,
-                    vertices,
-                    color=(0.5, 0.5, 0.5),
-                    indices=None,
-                    per_vertex_color=None):
+                  vertices,
+                  color=(0.5, 0.5, 0.5),
+                  indices=None,
+                  per_vertex_color=None):
         vertices_info = get_field_info(vertices)
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
-        self.canvas.triangles(vertices_info, indices_info, colors_info,
-                                color)
+        self.canvas.triangles(vertices_info, indices_info, colors_info, color)
 
     def lines(self,
-                vertices,
-                width,
-                indices=None,
-                color=(0.5, 0.5, 0.5),
-                per_vertex_color=None):
+              vertices,
+              width,
+              indices=None,
+              color=(0.5, 0.5, 0.5),
+              per_vertex_color=None):
         vertices_info = get_field_info(vertices)
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
         self.canvas.lines(vertices_info, indices_info, colors_info, color,
-                            width)
+                          width)
 
     def circles(self,
                 vertices,
