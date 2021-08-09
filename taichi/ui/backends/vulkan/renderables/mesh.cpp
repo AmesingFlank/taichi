@@ -16,7 +16,6 @@ void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
   ubo.color = info.color;
   ubo.use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
   ubo.shininess = info.shininess;
-  ubo.need_normal_generation = !info.renderable_info.normals.valid;
 
   MappedMemory mapped(
       app_context_->device(),
@@ -44,7 +43,6 @@ void Mesh::init_mesh(AppContext *app_context,
       indices_count,
       sizeof(UniformBufferObject),
       app_context->config.package_path + "/shaders/Mesh_vk_vert.spv",
-      app_context->config.package_path + "/shaders/Mesh_vk_geom.spv",
       app_context->config.package_path + "/shaders/Mesh_vk_frag.spv",
       TopologyType::Triangles,
   };

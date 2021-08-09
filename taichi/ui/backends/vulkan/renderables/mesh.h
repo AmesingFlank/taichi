@@ -37,7 +37,6 @@ class Mesh final : public Renderable {
     alignas(16) glm::vec3 color;
     int use_per_vertex_color;
     float shininess;
-    int need_normal_generation;
   };
 
   void init_mesh(AppContext *app_context,

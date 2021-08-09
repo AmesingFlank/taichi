@@ -193,26 +193,6 @@ void Renderable::create_graphics_pipeline() {
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
       vert_shader_stage_info, frag_shader_stage_info};
 
-  VkShaderModule geom_shader_module = VK_NULL_HANDLE;
-
-  bool has_geom_shader = config_.geometry_shader_path.size() > 0;
-
-  if (has_geom_shader) {
-    auto geom_code = read_file(config_.geometry_shader_path);
-
-    geom_shader_module =
-        create_shader_module(geom_code, app_context_->device());
-
-    VkPipelineShaderStageCreateInfo geom_shader_stage_info{};
-    geom_shader_stage_info.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    geom_shader_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    geom_shader_stage_info.module = geom_shader_module;
-    geom_shader_stage_info.pName = "main";
-
-    shader_stages = {vert_shader_stage_info, frag_shader_stage_info,
-                     geom_shader_stage_info};
-  }
 
   VkPipelineVertexInputStateCreateInfo vertex_input_info{};
   vertex_input_info.sType =
@@ -349,9 +329,7 @@ void Renderable::create_graphics_pipeline() {
 
   vkDestroyShaderModule(app_context_->device(), frag_shader_module, nullptr);
   vkDestroyShaderModule(app_context_->device(), vert_shader_module, nullptr);
-  if (has_geom_shader) {
-    vkDestroyShaderModule(app_context_->device(), geom_shader_module, nullptr);
-  }
+
 }
 
 void Renderable::create_vertex_buffer() {

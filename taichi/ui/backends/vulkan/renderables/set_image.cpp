@@ -97,7 +97,6 @@ void SetImage::init_set_image(AppContext *app_context,
       6,
       1,
       app_context->config.package_path + "/shaders/SetImage_vk_vert.spv",
-      "",
       app_context->config.package_path + "/shaders/SetImage_vk_frag.spv",
       TopologyType::Triangles,
   };
@@ -174,8 +173,7 @@ void SetImage::create_texture_sampler() {
   sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  sampler_info.anisotropyEnable = VK_TRUE;
-  sampler_info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+  sampler_info.anisotropyEnable = VK_FALSE;
   sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
   sampler_info.unnormalizedCoordinates = VK_FALSE;
   sampler_info.compareEnable = VK_FALSE;

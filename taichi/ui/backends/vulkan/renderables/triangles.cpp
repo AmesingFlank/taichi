@@ -25,7 +25,6 @@ void Triangles::init_triangles(AppContext *app_context,
       indices_count,
       sizeof(UniformBufferObject),
       app_context->config.package_path + "/shaders/Triangles_vk_vert.spv",
-      "",
       app_context->config.package_path + "/shaders/Triangles_vk_frag.spv",
       TopologyType::Triangles,
   };

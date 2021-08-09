@@ -26,7 +26,6 @@ layout(binding = 0) uniform UBO {
     vec3 color;
     int use_per_vertex_color;
     float shininess;
-    int need_normal_generation;
 } ubo;
 
 

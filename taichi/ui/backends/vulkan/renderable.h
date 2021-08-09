@@ -30,7 +30,6 @@ struct RenderableConfig {
   int indices_count;
   int ubo_size;
   std::string vertex_shader_path;
-  std::string geometry_shader_path;
   std::string fragment_shader_path;
   TopologyType topology_type;
 };
