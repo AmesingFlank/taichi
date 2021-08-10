@@ -114,8 +114,7 @@ struct PyScene {
             FieldInfo normals,
             FieldInfo per_vertex_color,
             FieldInfo indices,
-            py::tuple color_,
-            float shininess) {
+            py::tuple color_) {
     RenderableInfo renderable_info;
     renderable_info.vertices = vertices;
     renderable_info.normals = normals;
@@ -125,7 +124,6 @@ struct PyScene {
     MeshInfo info;
     info.renderable_info = renderable_info;
     info.color = tuple_to_vec3(color_);
-    info.shininess = shininess;
 
     scene->mesh(info);
   }
@@ -133,8 +131,7 @@ struct PyScene {
   void particles(FieldInfo vertices,
                  FieldInfo per_vertex_color,
                  py::tuple color_,
-                 float radius,
-                 float shininess) {
+                 float radius) {
     RenderableInfo renderable_info;
     renderable_info.vertices = vertices;
     renderable_info.per_vertex_color = per_vertex_color;
@@ -143,7 +140,6 @@ struct PyScene {
     info.renderable_info = renderable_info;
     info.color = tuple_to_vec3(color_);
     info.radius = radius;
-    info.shininess = shininess;
 
     scene->particles(info);
   }

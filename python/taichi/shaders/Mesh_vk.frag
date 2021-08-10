@@ -23,12 +23,11 @@ layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
-    float shininess;
 } ubo;
 
 layout(location = 3) in vec3 selectedColor;
 
-vec3 blinnPhong(){
+vec3 lambertian(){
     
     vec3 ambient = ubo.scene.ambient_light * selectedColor;
     vec3 result = ambient;
@@ -40,21 +39,13 @@ vec3 blinnPhong(){
         vec3 normal = normalize(fragNormal);
         vec3 diffuse = abs(dot(lightDir, normal)) * selectedColor * lightColor;
 
-        vec3 viewPos = ubo.scene.camera_pos;
-        vec3 viewDir = normalize(viewPos - fragPos);
-        vec3 reflectDir = reflect(-lightDir, normal);
         
-        vec3 halfwayDir = normalize(lightDir + viewDir);  
-        float spec = pow(abs(dot(normal, halfwayDir)), ubo.shininess);
-        
-        vec3 specular = lightColor * spec; 
-        
-        result += diffuse + specular;
+        result += diffuse;
     }
 
     return result;
 }
 
 void main() {
-    outColor = vec4(blinnPhong(),1);
+    outColor = vec4(lambertian(),1);
 }

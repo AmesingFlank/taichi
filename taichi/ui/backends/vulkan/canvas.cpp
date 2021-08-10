@@ -214,7 +214,7 @@ void Canvas::draw_frame(Gui *gui) {
     std::array<VkClearValue, 2> clear_values{};
     clear_values[0].color = {
         {background_color_.x, background_color_.y, background_color_.z, 1.0f}};
-    clear_values[1].depthStencil = {1.0f, 0};
+    clear_values[1].depthStencil = {0.0f, 0};
 
     render_pass_info.clearValueCount =
         static_cast<uint32_t>(clear_values.size());

@@ -20,7 +20,6 @@ layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
-    float shininess;
     float radius;
     float window_width;
     float window_height;

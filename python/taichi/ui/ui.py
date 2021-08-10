@@ -14,7 +14,7 @@ if _ti_core.GGUI_AVAILABLE:
     from .canvas import Canvas
     from .gui import Gui
     from .scene import Scene
-    from .window import Window
+    from .window import *
 
     def make_camera():
         return _ti_core.PyCamera()

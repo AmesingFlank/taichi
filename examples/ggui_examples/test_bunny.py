@@ -90,7 +90,6 @@ camera = ti.ui.make_camera()
 
 use_random_colors = False
 with_normals = True
-shininess = 32.0
 
 while window.running:
     #print("heyyy ",frame_id)
@@ -107,22 +106,18 @@ while window.running:
             scene.mesh(vertices,
                        indices,
                        per_vertex_color=colors,
-                       shininess=shininess,
                        normals=normals)
         else:
-            scene.mesh(vertices,
-                       indices,
-                       color=(0, 0, 1),
-                       shininess=shininess,
-                       normals=normals)
+            scene.mesh(vertices, indices, color=(0, 0, 1), normals=normals)
     else:
         if use_random_colors:
-            scene.mesh(vertices,
-                       indices,
-                       per_vertex_color=colors,
-                       shininess=shininess)
+            scene.mesh(
+                vertices,
+                indices,
+                per_vertex_color=colors,
+            )
         else:
-            scene.mesh(vertices, indices, color=(0, 0, 1), shininess=shininess)
+            scene.mesh(vertices, indices, color=(0, 0, 1))
 
     scene.point_light(pos=(2, 2, 2), color=(1, 1, 1))
 
@@ -132,7 +127,7 @@ while window.running:
     use_random_colors = window.GUI.checkbox("use_random_colors",
                                             use_random_colors)
     with_normals = window.GUI.checkbox("with_normals", with_normals)
-    shininess = window.GUI.slider_float("shininess", shininess, 1, 128)
+
     window.GUI.end()
 
     #

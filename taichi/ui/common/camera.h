@@ -13,16 +13,22 @@ struct Camera {
   ProjectionMode projection_mode = ProjectionMode::Perspective;
 
   float fov{45};
-  float left{-1}, right{1}, top{-1}, bottom{1}, z_near{0.1}, z_far{1000};
+
+  float left{-1};
+  float right{1};
+  float top{-1};
+  float bottom{1};
+  float z_near{0.1};
+  float z_far{1000};
 
   glm::mat4 get_view_matrix() {
     return glm::lookAt(position, lookat, up);
   }
   glm::mat4 get_projection_matrix(float aspect_ratio) {
     if (projection_mode == ProjectionMode::Perspective) {
-      return glm::perspective(fov, aspect_ratio, 0.1f, 1000.f);
+      return glm::perspective(fov, aspect_ratio, z_far, z_near);
     } else if (projection_mode == ProjectionMode::Orthogonal) {
-      return glm::ortho(left, right, top, bottom, z_near, z_far);
+      return glm::ortho(left, right, top, bottom, z_far, z_near);
     } else {
       throw std::runtime_error("invalid camera projection mode");
     }

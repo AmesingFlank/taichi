@@ -15,7 +15,6 @@ void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
   ubo.scene = scene.current_ubo_;
   ubo.color = info.color;
   ubo.use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
-  ubo.shininess = info.shininess;
 
   MappedMemory mapped(
       app_context_->device(),

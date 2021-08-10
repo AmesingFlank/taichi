@@ -14,7 +14,6 @@ layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
-    float shininess;
     float radius;
     float window_width;
     float window_height;
@@ -38,7 +37,7 @@ vec3 posToCameraSpace(vec3 pos){
 }
 
 // operates in camera space !!
-vec3 blinnPhong(vec3 fragPos,vec3 fragNormal){
+vec3 lambertian(vec3 fragPos,vec3 fragNormal){
     
     vec3 ambient = ubo.scene.ambient_light * selectedColor;
     vec3 result = ambient;
@@ -49,17 +48,8 @@ vec3 blinnPhong(vec3 fragPos,vec3 fragNormal){
         vec3 lightDir = normalize(posToCameraSpace(ubo.scene.point_light_positions[i]) - fragPos);
         vec3 normal = normalize(fragNormal);
         vec3 diffuse = max(dot(lightDir, normal), 0.0) * selectedColor * lightColor;
-
-        vec3 viewPos = vec3(0.0);
-        vec3 viewDir = normalize(viewPos - fragPos);
-        vec3 reflectDir = reflect(-lightDir, normal);
         
-        vec3 halfwayDir = normalize(lightDir + viewDir);  
-        float spec = pow(max(dot(normal, halfwayDir), 0.0), ubo.shininess);
-        
-        vec3 specular = lightColor * spec; 
-        
-        result += diffuse + specular;
+        result += diffuse;
     }
 
     return result;
@@ -82,7 +72,7 @@ void main()
 
     vec3 fragPos = posToCamera.xyz / posToCamera.w + coordInSphere * ubo.radius;
     vec3 fragNormal = coordInSphere;
-    vec3 color = blinnPhong(fragPos,fragNormal);
+    vec3 color = lambertian(fragPos,fragNormal);
     outColor = vec4(color,1.0);
 
 

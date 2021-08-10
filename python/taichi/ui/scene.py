@@ -80,13 +80,14 @@ class Scene(_ti_core.PyScene):
     def set_camera(self, camera):
         super().set_camera(camera)
 
-    def mesh(self,
-             vertices,
-             indices,
-             normals=None,
-             color=(0.5, 0.5, 0.5),
-             per_vertex_color=None,
-             shininess=32.0):
+    def mesh(
+            self,
+            vertices,
+            indices,
+            normals=None,
+            color=(0.5, 0.5, 0.5),
+            per_vertex_color=None,
+    ):
         vertices_info = get_field_info(vertices)
         if normals is None:
             normals = gen_normals(vertices, indices)
@@ -94,17 +95,18 @@ class Scene(_ti_core.PyScene):
         indices_info = get_field_info(indices)
         colors_info = get_field_info(per_vertex_color)
         super().mesh(vertices_info, normals_info, colors_info, indices_info,
-                     color, shininess)
+                     color)
 
-    def particles(self,
-                  vertices,
-                  radius,
-                  color=(0.5, 0.5, 0.5),
-                  per_vertex_color=None,
-                  shininess=32.0):
+    def particles(
+            self,
+            vertices,
+            radius,
+            color=(0.5, 0.5, 0.5),
+            per_vertex_color=None,
+    ):
         vertices_info = get_field_info(vertices)
         colors_info = get_field_info(per_vertex_color)
-        super().particles(vertices_info, colors_info, color, radius, shininess)
+        super().particles(vertices_info, colors_info, color, radius)
 
     def point_light(self, pos, color):
         super().point_light(pos, color)

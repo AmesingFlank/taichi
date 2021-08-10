@@ -13,7 +13,6 @@ Particles::Particles(AppContext *app_context) {
 void Particles::update_ubo(glm::vec3 color,
                            bool use_per_vertex_color,
                            float radius,
-                           float shininess,
                            const Scene &scene) {
   UniformBufferObject ubo;
   ubo.scene = scene.current_ubo_;
@@ -23,7 +22,6 @@ void Particles::update_ubo(glm::vec3 color,
   ubo.window_height = app_context_->swap_chain.swap_chain_extent.height;
   ubo.tan_half_fov = tan(glm::radians(scene.camera_.fov) / 2);
   ubo.use_per_vertex_color = use_per_vertex_color;
-  ubo.shininess = shininess;
 
   MappedMemory mapped(
       app_context_->device(),
@@ -41,7 +39,7 @@ void Particles::update_data(const ParticlesInfo &info, const Scene &scene) {
   Renderable::update_data(info.renderable_info);
 
   update_ubo(info.color, info.renderable_info.per_vertex_color.valid,
-             info.radius, info.shininess, scene);
+             info.radius, scene);
 }
 
 void Particles::init_particles(AppContext *app_context, int vertices_count) {

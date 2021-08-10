@@ -36,7 +36,6 @@ class Mesh final : public Renderable {
     Scene::SceneUniformBuffer scene;
     alignas(16) glm::vec3 color;
     int use_per_vertex_color;
-    float shininess;
   };
 
   void init_mesh(AppContext *app_context,

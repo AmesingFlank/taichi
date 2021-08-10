@@ -17,8 +17,8 @@ class Scene final : public SceneBase {
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 projection;
     // vec4 instead of vec3 because of alignment in vulkan uniform buffer
-    glm::vec4 point_light_positions[MAX_POINTLIGHTS];
-    glm::vec4 point_light_colors[MAX_POINTLIGHTS];
+    glm::vec4 point_light_positions[kMaxPointLights];
+    glm::vec4 point_light_colors[kMaxPointLights];
     int point_light_count;
     alignas(16) glm::vec3 ambient_light;
   };

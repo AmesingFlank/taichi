@@ -36,7 +36,6 @@ class Particles final : public Renderable {
     Scene::SceneUniformBuffer scene;
     alignas(16) glm::vec3 color;
     int use_per_vertex_color;
-    float shininess;
     float radius;
     float window_width;
     float window_height;
@@ -48,7 +47,6 @@ class Particles final : public Renderable {
   void update_ubo(glm::vec3 color,
                   bool use_per_vertex_color,
                   float radius,
-                  float shininess,
                   const Scene &scene);
 
   virtual void create_descriptor_set_layout() override;
