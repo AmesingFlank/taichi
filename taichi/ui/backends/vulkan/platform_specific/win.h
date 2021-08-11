@@ -1,5 +1,8 @@
 #pragma once
 TI_UI_NAMESPACE_BEGIN
+// this class is needed for Vulkan-Cuda interop on Windows
+// the implementation is taken from
+// https://github.com/NVIDIA/cuda-samples/tree/master/Samples/vulkanImageCUDA
 class WindowsSecurityAttributes {
  protected:
   SECURITY_ATTRIBUTES security_attributes;

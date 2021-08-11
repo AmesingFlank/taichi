@@ -37,21 +37,21 @@ void Canvas::create_semaphores() {
 }
 
 template <typename T>
+std::unique_ptr<Renderable> get_new_renderable(AppContext *ctx) {
+  return std::unique_ptr<Renderable>{new T(ctx)};
+}
+
+template <typename T>
 T *Canvas::get_renderable_of_type() {
   if (next_renderable_ >= renderables_.size()) {
-    renderables_.push_back(std::unique_ptr<Renderable>{
-        std::make_unique<T>(app_context_).release()});
+    renderables_.push_back(get_new_renderable<T>(app_context_));
     clear_command_buffer_cache();
   } else if (dynamic_cast<T *>(renderables_[next_renderable_].get()) ==
              nullptr) {
     renderables_.insert(renderables_.begin() + next_renderable_,
-                        std::unique_ptr<Renderable>{
-                            std::make_unique<T>(app_context_).release()});
+                        get_new_renderable<T>(app_context_));
     clear_command_buffer_cache();
   }
-
-  // printf("renderables_.size:%ld  next_renderable_:%d
-  // \n",renderables_.size(),next_renderable_);
 
   if (T *t = dynamic_cast<T *>(renderables_[next_renderable_].get())) {
     return t;
@@ -64,7 +64,6 @@ void Canvas::set_background_color(const glm::vec3 &color) {
 }
 
 void Canvas::set_image(const SetImageInfo &info) {
-  // printf("calling set_image \n");
   SetImage *s = get_renderable_of_type<SetImage>();
   s->update_data(info);
   next_renderable_ += 1;
@@ -188,9 +187,6 @@ void Canvas::draw_frame(Gui *gui) {
   if (cached_command_buffers_[image_index] != VK_NULL_HANDLE) {
     command_buffer = cached_command_buffers_[image_index];
   } else {
-    // printf("recording new commandBuffer %d
-    // %ld\n",image_index,renderables_.size());
-
     command_buffer = create_new_command_buffer(app_context_->command_pool(),
                                                app_context_->device());
 
