@@ -28,7 +28,6 @@ layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
-    PointLight point_lights[];
 } ubo;
 
 void main() {

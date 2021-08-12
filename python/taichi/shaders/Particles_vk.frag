@@ -4,10 +4,8 @@ struct SceneUBO{
     vec3 camera_pos;
     mat4 view;
     mat4 projection;
-    vec3 point_light_positions[16];
-    vec3 point_light_colors[16];
-    int point_light_count;
     vec3 ambient_light;
+    int point_light_count;
 };
 
 layout(binding = 0) uniform UBO {
@@ -20,10 +18,21 @@ layout(binding = 0) uniform UBO {
     float tan_half_fov;
 } ubo;
 
+struct PointLight{
+    vec3 pos;
+    vec3 color;
+};
+
+layout(binding = 1, std430) buffer SSBO {
+    PointLight point_lights[];
+} ssbo;
+
+
 layout(location = 0) out vec4 outColor;
-layout(location = 1) in vec3 selectedColor;
 
 layout(location = 0) in vec4 posToCamera;
+layout(location = 1) in vec3 selectedColor;
+
  
 float projectZ(float viewZ) {
 	vec3 dummyViewSpacePoint = vec3(0, 0, viewZ);
@@ -43,9 +52,9 @@ vec3 lambertian(vec3 fragPos,vec3 fragNormal){
     vec3 result = ambient;
 
     for(int i = 0;i<ubo.scene.point_light_count;++i){
-        vec3 lightColor = ubo.scene.point_light_colors[i];
+        vec3 lightColor = ssbo.point_lights[i].color;
 
-        vec3 lightDir = normalize(posToCameraSpace(ubo.scene.point_light_positions[i]) - fragPos);
+        vec3 lightDir = normalize(posToCameraSpace(ssbo.point_lights[i].pos) - fragPos);
         vec3 normal = normalize(fragNormal);
         vec3 diffuse = max(dot(lightDir, normal), 0.0) * selectedColor * lightColor;
         

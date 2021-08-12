@@ -28,8 +28,8 @@ enum class TopologyType : int { Triangles = 0, Lines = 1, Points = 2 };
 struct RenderableConfig {
   int vertices_count;
   int indices_count;
-  int ubo_size;
-  int ssbo_size;
+  size_t ubo_size;
+  size_t ssbo_size;
   std::string vertex_shader_path;
   std::string fragment_shader_path;
   TopologyType topology_type;
@@ -57,7 +57,6 @@ class Renderable {
   VkPipelineLayout pipeline_layout_;
   VkPipeline graphics_pipeline_;
 
-  
   // TODO: use the memory allocator from ti vulkan backend
   VkBuffer vertex_buffer_;
   VkDeviceMemory vertex_buffer_memory_;
@@ -105,6 +104,10 @@ class Renderable {
   void create_uniform_buffers();
 
   void create_storage_buffers();
+
+  void destroy_uniform_buffers();
+
+  void destroy_storage_buffers();
 
   void resize_storage_buffers(int new_ssbo_size);
 

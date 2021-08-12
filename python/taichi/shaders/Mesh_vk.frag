@@ -17,17 +17,22 @@ struct SceneUBO{
     int point_light_count;
 };
 
-struct PointLight{
-    vec3 pos;
-    vec3 color;
-};
 
 layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
-    PointLight point_lights[];
 } ubo;
+
+
+struct PointLight{
+    vec3 pos;
+    vec3 color;
+};
+
+layout(binding = 1, std430) buffer SSBO {
+    PointLight point_lights[];
+} ssbo;
 
 layout(location = 3) in vec3 selectedColor;
 
@@ -37,9 +42,9 @@ vec3 lambertian(){
     vec3 result = ambient;
 
     for(int i = 0;i<ubo.scene.point_light_count;++i){
-        vec3 lightColor = ubo.point_lights.color[i];
+        vec3 lightColor = ssbo.point_lights[i].color;
 
-        vec3 lightDir = normalize(ubo.point_lights.pos[i] - fragPos);
+        vec3 lightDir = normalize(ssbo.point_lights[i].pos - fragPos);
         vec3 normal = normalize(fragNormal);
         vec3 diffuse = abs(dot(lightDir, normal)) * selectedColor * lightColor;
         result += diffuse;

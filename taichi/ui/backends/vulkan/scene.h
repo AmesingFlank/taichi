@@ -26,7 +26,7 @@ class Scene final : public SceneBase {
     current_ubo_.view = camera_.get_view_matrix();
     current_ubo_.projection = camera_.get_projection_matrix(aspect_ratio);
     current_ubo_.point_light_count = point_lights_.size();
-    
+
     current_ubo_.ambient_light = ambient_light_color_;
   }
 };

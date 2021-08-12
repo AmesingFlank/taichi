@@ -12,6 +12,6 @@ if __name__ == "__main__":
         if suffix in ['frag', 'vert', 'geom']:
             name = f.split('.')[0]
             output = f'{name}_{suffix}.spv'
-            command = f'glslc {f} -o {output}'
+            command = f'glslangValidator -V -o {output} {f}'
             print(f"running: {command}")
             os.system(command)

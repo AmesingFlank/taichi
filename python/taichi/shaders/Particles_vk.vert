@@ -10,10 +10,8 @@ struct SceneUBO{
     vec3 camera_pos;
     mat4 view;
     mat4 projection;
-    vec3 point_light_positions[16];
-    vec3 point_light_colors[16];
-    int point_light_count;
     vec3 ambient_light;
+    int point_light_count;
 };
 
 layout(binding = 0) uniform UBO {
