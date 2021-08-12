@@ -24,6 +24,7 @@ void Renderable::init_render_resources() {
   create_vertex_buffer();
   create_index_buffer();
   create_uniform_buffers();
+  create_storage_buffers();
   create_descriptor_sets();
 
   if (app_context_->config.ti_arch == Arch::cuda) {
@@ -380,9 +381,25 @@ void Renderable::create_uniform_buffers() {
   }
 }
 
+void Renderable::create_storage_buffers() {
+  VkDeviceSize buffer_size = config_.ssbo_size;
+
+  storage_buffers_.resize(app_context_->get_swap_chain_size());
+  storage_buffer_memories_.resize(app_context_->get_swap_chain_size());
+
+  for (size_t i = 0; i < app_context_->get_swap_chain_size(); i++) {
+    create_buffer(buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                  storage_buffers_[i], storage_buffer_memories_[i],
+                  app_context_->device(), app_context_->physical_device());
+  }
+}
+
 void Renderable::recreate_swap_chain() {
   create_graphics_pipeline();
   create_uniform_buffers();
+  create_storage_buffers();
   create_descriptor_pool();
   create_descriptor_sets();
 }
@@ -394,6 +411,11 @@ void Renderable::cleanup_swap_chain() {
   for (int i = 0; i < uniform_buffers_.size(); ++i) {
     vkDestroyBuffer(app_context_->device(), uniform_buffers_[i], nullptr);
     vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i], nullptr);
+  }
+
+  for (int i = 0; i < storage_buffers_.size(); ++i) {
+    vkDestroyBuffer(app_context_->device(), storage_buffers_[i], nullptr);
+    vkFreeMemory(app_context_->device(), storage_buffer_memories_[i], nullptr);
   }
 
   vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
@@ -437,8 +459,8 @@ void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer) {
   }
 }
 
-void Renderable::resize_uniform_buffers(int new_ubo_size){
-  if(new_ubo_size == config_.ubo_size){
+void Renderable::resize_storage_buffers(int new_ssbo_size){
+  if(new_ssbo_size == config_.ssbo_size){
     return;
   }
   for (int i = 0; i < uniform_buffers_.size(); ++i) {
@@ -446,8 +468,9 @@ void Renderable::resize_uniform_buffers(int new_ubo_size){
     vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i], nullptr);
   }
   vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
-  config_.ubo_size = new_ubo_size;
+  config_.ssbo_size = new_ssbo_size;
   create_uniform_buffers();
+  create_storage_buffers();
   create_descriptor_pool();
   create_descriptor_sets();
 }

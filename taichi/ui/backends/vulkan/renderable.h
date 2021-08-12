@@ -29,6 +29,7 @@ struct RenderableConfig {
   int vertices_count;
   int indices_count;
   int ubo_size;
+  int ssbo_size;
   std::string vertex_shader_path;
   std::string fragment_shader_path;
   TopologyType topology_type;
@@ -73,6 +74,9 @@ class Renderable {
   std::vector<VkBuffer> uniform_buffers_;
   std::vector<VkDeviceMemory> uniform_buffer_memories_;
 
+  std::vector<VkBuffer> storage_buffers_;
+  std::vector<VkDeviceMemory> storage_buffer_memories_;
+
   VkDescriptorSetLayout descriptor_set_layout_;
   std::vector<VkDescriptorSet> descriptor_sets_;
 
@@ -100,7 +104,9 @@ class Renderable {
 
   void create_uniform_buffers();
 
-  void resize_uniform_buffers(int new_ubo_size);
+  void create_storage_buffers();
+
+  void resize_storage_buffers(int new_ssbo_size);
 
   virtual void create_descriptor_sets() = 0;
 };
