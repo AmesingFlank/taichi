@@ -40,7 +40,8 @@ class Mesh final : public Renderable {
 
   void init_mesh(AppContext *app_context,
                  int vertices_count,
-                 int indices_count);
+                 int indices_count,
+                 int ubo_size);
 
   void update_ubo(const MeshInfo &info, const Scene &scene);
 

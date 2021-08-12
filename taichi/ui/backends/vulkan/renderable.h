@@ -46,7 +46,7 @@ class Renderable {
 
   virtual void cleanup();
 
-  virtual ~Renderable();
+  virtual ~Renderable() = default;
 
  protected:
   RenderableConfig config_;
@@ -99,6 +99,8 @@ class Renderable {
   void create_index_buffer();
 
   void create_uniform_buffers();
+
+  void resize_uniform_buffers(int new_ubo_size);
 
   virtual void create_descriptor_sets() = 0;
 };

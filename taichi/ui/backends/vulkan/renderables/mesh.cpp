@@ -7,7 +7,7 @@ TI_UI_NAMESPACE_BEGIN
 namespace vulkan {
 
 Mesh::Mesh(AppContext *app_context) {
-  init_mesh(app_context, 3, 3);
+  init_mesh(app_context, 3, 3,sizeof(UniformBufferObject));
 }
 
 void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
@@ -29,6 +29,11 @@ void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
     throw std::runtime_error("Mesh vertices requres 3-d vector fields");
   }
 
+  int correct_ubo_size = sizeof(UniformBufferObject) + scene.point_lights_.size() * sizeof(PointLight);
+  if(config_.ubo_size != correct_ubo_size){
+    resize_uniform_buffers(correct_ubo_size);
+  }
+
   Renderable::update_data(info.renderable_info);
 
   update_ubo(info, scene);
@@ -36,11 +41,12 @@ void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
 
 void Mesh::init_mesh(AppContext *app_context,
                      int vertices_count,
-                     int indices_count) {
+                     int indices_count,
+                     int ubo_size) {
   RenderableConfig config = {
       vertices_count,
       indices_count,
-      sizeof(UniformBufferObject),
+      ubo_size,
       app_context->config.package_path + "/shaders/Mesh_vk_vert.spv",
       app_context->config.package_path + "/shaders/Mesh_vk_frag.spv",
       TopologyType::Triangles,

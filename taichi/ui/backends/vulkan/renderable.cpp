@@ -437,13 +437,19 @@ void Renderable::record_this_frame_commands(VkCommandBuffer command_buffer) {
   }
 }
 
-void Renderable::create_descriptor_set_layout() {
-}
-
-void Renderable::create_descriptor_sets() {
-}
-
-Renderable::~Renderable() {
+void Renderable::resize_uniform_buffers(int new_ubo_size){
+  if(new_ubo_size == config_.ubo_size){
+    return;
+  }
+  for (int i = 0; i < uniform_buffers_.size(); ++i) {
+    vkDestroyBuffer(app_context_->device(), uniform_buffers_[i], nullptr);
+    vkFreeMemory(app_context_->device(), uniform_buffer_memories_[i], nullptr);
+  }
+  vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
+  config_.ubo_size = new_ubo_size;
+  create_uniform_buffers();
+  create_descriptor_pool();
+  create_descriptor_sets();
 }
 
 }  // namespace vulkan

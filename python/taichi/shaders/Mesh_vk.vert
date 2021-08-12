@@ -15,19 +15,21 @@ struct SceneUBO{
     vec3 camera_pos;
     mat4 view;
     mat4 projection;
-    vec3 point_light_positions[16];
-    vec3 point_light_colors[16];
-    int point_light_count;
     vec3 ambient_light;
+    int point_light_count;
+};
+
+struct PointLight{
+    vec3 pos;
+    vec3 color;
 };
 
 layout(binding = 0) uniform UBO {
     SceneUBO scene;
     vec3 color;
     int use_per_vertex_color;
+    PointLight point_lights[];
 } ubo;
-
-
 
 void main() {
     gl_Position =  ubo.scene.projection * ubo.scene.view * vec4(inPosition,1.0);
