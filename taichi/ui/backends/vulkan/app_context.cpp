@@ -9,7 +9,7 @@ namespace vulkan {
 
 using namespace taichi::lang::vulkan;
 
-const std::vector<const char *> device_extensions = {
+const std::vector<std::string> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
     VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
@@ -22,13 +22,16 @@ const std::vector<const char *> device_extensions = {
 #endif
 };
 
-std::vector<const char *> get_required_instance_extensions() {
+std::vector<std::string> get_required_instance_extensions() {
   uint32_t glfw_ext_count = 0;
   const char **glfw_extensions;
   glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
 
-  std::vector<const char *> extensions(glfw_extensions,
-                                       glfw_extensions + glfw_ext_count);
+  std::vector<std::string> extensions;
+
+  for (int i = 0; i < glfw_ext_count; ++i) {
+    extensions.push_back(glfw_extensions[i]);
+  }
 
   extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
   extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);

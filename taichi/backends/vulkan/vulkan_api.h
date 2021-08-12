@@ -126,11 +126,13 @@ struct VulkanCapabilities {
   bool has_int8{false};
   bool has_int16{false};
   bool has_int64{false};
+  bool has_float16{false};
   bool has_float64{false};
 
   bool has_nvidia_interop{false};
   bool has_atomic_i64{false};
-  bool has_atomic_float{false};
+  bool has_atomic_float_add{false};
+  bool has_atomic_float_minmax{false};
   bool has_presentation{false};
   bool has_spv_variable_ptr{false};
 };
@@ -144,8 +146,8 @@ class EmbeddedVulkanDevice {
   struct Params {
     std::optional<uint32_t> api_version;
     bool is_for_ui{false};
-    std::vector<const char *> additional_instance_extensions;
-    std::vector<const char *> additional_device_extensions;
+    std::vector<std::string> additional_instance_extensions;
+    std::vector<std::string> additional_device_extensions;
     // the VkSurfaceKHR needs to be created after creating the VkInstance, but
     // before creating the VkPhysicalDevice thus, we allow the user to pass in a
     // custom surface creator
