@@ -56,6 +56,8 @@ class Renderable {
   VkPipelineLayout pipeline_layout_;
   VkPipeline graphics_pipeline_;
 
+  
+  // TODO: use the memory allocator from ti vulkan backend
   VkBuffer vertex_buffer_;
   VkDeviceMemory vertex_buffer_memory_;
   VkBuffer index_buffer_;
