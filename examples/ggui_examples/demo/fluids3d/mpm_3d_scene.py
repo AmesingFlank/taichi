@@ -1,6 +1,8 @@
 import numpy as np
 
 import taichi as ti
+from import_obj import import_obj
+import pathlib
 
 ti.init(ti.cuda)
 
@@ -112,6 +114,10 @@ use_random_colors = False
 particles_color = (0, 0, 1)
 particles_radius = 0.05
 
+scene_vertices,scene_normals,scene_indices = import_obj(str(pathlib.Path(__file__).parent) +
+                              "/scene.ply")
+
+
 while window.running:
     #print("heyyy ",frame_id)
     frame_id += 1
@@ -125,6 +131,7 @@ while window.running:
     camera.up(0, 1, 0)
     scene.set_camera(camera)
     scene.ambient_light((0, 0, 0))
+    scene.mesh(vertices = scene_vertices,indices = scene_indices,normals = scene_normals)
     if show_particles:
         if use_random_colors:
             scene.particles(x,
