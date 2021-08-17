@@ -89,6 +89,6 @@ void main()
 
 
 	gl_FragDepth = projectZ(depth);
-	gl_FragDepth = 0.5 * (1.0 + gl_FragDepth);
+	//gl_FragDepth = 0.5 * (1.0 + gl_FragDepth);
 
 }
