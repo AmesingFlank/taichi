@@ -1,21 +1,21 @@
-
+from taichi.lang.matrix import Vector
 
 
 class Camera:
     def __init__(self,ptr):
         self.ptr = ptr
-        self.curr_pos = (0,0,0)
-        self.curr_lookat = (0,0,1)
-        self.curr_up = (0,1,0)
+        self.curr_pos =  Vector([(0,0,0)])
+        self.curr_front = Vector([0,0,1])
+        self.curr_up = Vector([0,1,0])
 
     def position(self,x,y,z):
-        self.curr_position = (x,y,z)
+        self.curr_position = Vector([x,y,z])
         self.ptr.position(x,y,z)
     def lookat(self,x,y,z):
-        self.curr_lookat = (x,y,z)
+        self.curr_front = (Vector([x,y,z]) - self.curr_pos).normalized()
         self.ptr.lookat(x,y,z)
     def up(self,x,y,z):
-        self.curr_up = (x,y,z)
+        self.curr_up = Vector([x,y,z])
         self.ptr.up(x,y,z)
 
     def projection_mode(self,mode):
