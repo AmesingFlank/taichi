@@ -91,10 +91,9 @@ def substep():
         C[p] = new_C
 
 class Volume:
-    def __init__(self,minimum,maximum,material):
+    def __init__(self,minimum,size,material):
         self.minimum=minimum
-        self.maximum=maximum
-        self.size = maximum-minimum
+        self.size = size
         self.volume = self.size.x * self.size.y *self.size.z
         self.material = material
 
@@ -104,6 +103,7 @@ def init_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:flo
     for i in range(first_par,last_par):
         x[i] = ti.Vector([ti.random() for i in range(dim)]) * ti.Vector([x_size,y_size,z_size]) + ti.Vector([x_begin,y_begin,z_begin]) 
         J[i] = 1
+        v[i] = ti.Vector([0.0,0.0,0.0])
         materials[i] = material
         colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
 
@@ -129,8 +129,22 @@ def init_vols(vols):
 
 presets = [
     [
-        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.45,0.45,0.45]),WATER), 
+        Volume(ti.Vector([0.55,0.05,0.55]),ti.Vector([0.4,0.4,0.4]),WATER), 
     ],
+    [
+        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.3,0.4,0.3]),WATER), 
+        Volume(ti.Vector([0.65,0.05,0.65]),ti.Vector([0.3,0.4,0.3]),WATER), 
+    ],
+    [
+        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.25,0.25,0.25]),WATER), 
+        Volume(ti.Vector([0.35,0.35,0.35]),ti.Vector([0.25,0.25,0.25]),SNOW), 
+        Volume(ti.Vector([0.6,0.6,0.6]),ti.Vector([0.25,0.25,0.25]),JELLY), 
+    ],
+]
+preset_names = [
+    "Single Dam Break",
+    "Double Dam Break",
+    "Water Snow Jelly"
 ]
 
 curr_preset_id = 0
@@ -172,10 +186,21 @@ def show_options():
     global use_random_colors
     global paused
     global particles_radius
-    window.GUI.begin("Real MPM 3D", 0.05, 0.1, 0.15, 0.8)
+    global curr_preset_id
+
+    window.GUI.begin("Presets",0.05, 0.1, 0.2, 0.1)
+    old_preset = curr_preset_id
+    for i in range(len(presets)):
+        if window.GUI.checkbox(preset_names[i], curr_preset_id == i):
+            curr_preset_id = i
+    if curr_preset_id != old_preset:
+        init()
+    window.GUI.end()
+
+
+    window.GUI.begin("Real MPM 3D", 0.05, 0.3, 0.2, 0.6)
       
-    use_random_colors = window.GUI.checkbox("use_random_colors",
-                                            use_random_colors)
+    use_random_colors = window.GUI.checkbox("use_random_colors", use_random_colors)
     if not use_random_colors:
         material_colors[WATER] = window.GUI.color_edit_3("water color",material_colors[WATER])
         material_colors[SNOW] = window.GUI.color_edit_3("snow color",material_colors[SNOW])
