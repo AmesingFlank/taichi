@@ -168,29 +168,10 @@ scene_vertices,scene_normals,scene_indices = import_obj(str(pathlib.Path(__file_
                               "/scene.ply")
 
 
-while window.running:
-    #print("heyyy ",frame_id)
-    frame_id += 1
-    frame_id = frame_id % 256
-
-    if not paused:
-        for s in range(steps):
-            substep()
-
-    camera.track_user_inputs(window,movement_speed = 0.05)
-    scene.set_camera(camera)
-
-    scene.ambient_light((0, 0, 0))
-    scene.mesh(vertices = scene_vertices,indices = scene_indices,normals = scene_normals)
-
-    colors_used = colors_random if use_random_colors else colors
-    scene.particles(x,per_vertex_color=colors_used, radius=particles_radius) 
-
-    scene.point_light(pos=(0.5,1.5,0.5), color=(0.5, 0.5, 0.5))
-    scene.point_light(pos=(0.5,1.5,1.5), color=(0.5, 0.5, 0.5))
-
-    canvas.scene(scene)
-
+def show_options():
+    global use_random_colors
+    global paused
+    global particles_radius
     window.GUI.begin("Real MPM 3D", 0.05, 0.1, 0.15, 0.8)
       
     use_random_colors = window.GUI.checkbox("use_random_colors",
@@ -211,6 +192,36 @@ while window.running:
         if window.GUI.button("Pause"):
             paused = True
     window.GUI.end()
+
+
+def render():
+    camera.track_user_inputs(window,movement_speed = 0.05)
+    scene.set_camera(camera)
+
+    scene.ambient_light((0, 0, 0))
+    scene.mesh(vertices = scene_vertices,indices = scene_indices,normals = scene_normals)
+
+    colors_used = colors_random if use_random_colors else colors
+    scene.particles(x,per_vertex_color=colors_used, radius=particles_radius) 
+
+    scene.point_light(pos=(0.5,1.5,0.5), color=(0.5, 0.5, 0.5))
+    scene.point_light(pos=(0.5,1.5,1.5), color=(0.5, 0.5, 0.5))
+
+    canvas.scene(scene)
+
+
+while window.running:
+    #print("heyyy ",frame_id)
+    frame_id += 1
+    frame_id = frame_id % 256
+
+    if not paused:
+        for s in range(steps):
+            substep()
+
+    render()
+
+    show_options()
 
     #
     window.show()
