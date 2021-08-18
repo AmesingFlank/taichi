@@ -104,11 +104,11 @@ frame_id = 0
 canvas = window.get_canvas()
 scene = ti.ui.Scene()
 camera = ti.ui.make_camera()
+camera.position(2,2,2)
+camera.lookat(0,0,0)
 
 show_particles = True
-camera_x = 2.0
-camera_y = 2.0
-camera_z = 2.0
+
 
 use_random_colors = False
 particles_color = (0, 0, 1)
@@ -126,10 +126,9 @@ while window.running:
     for s in range(steps):
         substep()
 
-    camera.position(camera_x, camera_y, camera_z)
-    camera.lookat(0, 0, 0)
-    camera.up(0, 1, 0)
+    camera.track_user_inputs(window,movement_speed = 0.05)
     scene.set_camera(camera)
+
     scene.ambient_light((0, 0, 0))
     scene.mesh(vertices = scene_vertices,indices = scene_indices,normals = scene_normals)
     if show_particles:
@@ -139,16 +138,14 @@ while window.running:
                             radius=particles_radius)
         else:
             scene.particles(x, color=particles_color, radius=particles_radius)
-    scene.point_light(pos=(camera_x, camera_y, camera_z), color=(1, 1, 1))
+    scene.point_light(pos=(2,2,2), color=(1, 1, 1))
 
     canvas.scene(scene)
 
     window.GUI.begin("Real MPM 3D", 0.1, 0.1, 0.2, 0.8)
     window.GUI.text("hello text")
     show_particles = window.GUI.checkbox("show particles", show_particles)
-    camera_x = window.GUI.slider_float("camera x", camera_x, -10, 10)
-    camera_y = window.GUI.slider_float("camera y", camera_y, -10, 10)
-    camera_z = window.GUI.slider_float("camera z", camera_z, -10, 10)
+    
     use_random_colors = window.GUI.checkbox("use_random_colors",
                                             use_random_colors)
     if not use_random_colors:
