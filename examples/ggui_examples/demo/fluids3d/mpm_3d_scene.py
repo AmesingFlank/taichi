@@ -23,12 +23,17 @@ p_vol = (dx * 0.5)**2
 p_mass = p_vol * p_rho
 gravity = 9.8
 bound = 3
-E = 400
+E = 400 # Young's modulus
+nu =  0.2  #  Poisson's ratio
+mu_0, lambda_0 = E / (2 * (1 + nu)), E * nu / (
+    (1 + nu) * (1 - 2 * nu))  # Lame parameters
 
 x = ti.Vector.field(dim, float, n_particles)
 v = ti.Vector.field(dim, float, n_particles)
 C = ti.Matrix.field(dim, dim, float, n_particles)
-J = ti.field(float, n_particles)
+F = ti.Matrix.field(3,3, dtype=float,
+                    shape=n_particles)  # deformation gradient
+Jp = ti.field(float, n_particles)
 
 colors = ti.Vector.field(3, float, n_particles)
 colors_random = ti.Vector.field(3, float, n_particles)
@@ -53,8 +58,21 @@ def substep():
         base = int(Xp - 0.5)
         fx = Xp - base
         w = [0.5 * (1.5 - fx)**2, 0.75 - (fx - 1)**2, 0.5 * (fx - 0.5)**2]
-        stress = -dt * 4 * E * p_vol * (J[p] - 1) / dx**2
+
+        F[p] = (ti.Matrix.identity(float, 3) + dt * C[p]) @ F[p]  # deformation gradient update
+         
+        U, sig, V = ti.svd(F[p])
+        J = 1.0
+        for d in ti.static(range(3)):
+            J *=  sig[d, d]
+        new_F = ti.Matrix.identity(ti.f32, 3)
+        new_F[0,0] = J 
+        F[p] = new_F
+         
+        stress = -dt * 4 * E * p_vol * (J - 1) / dx**2
         affine = ti.Matrix.identity(float, dim) * stress + p_mass * C[p]
+ 
+
         for offset in ti.static(ti.grouped(ti.ndrange(*neighbour))):
             dpos = (offset - fx) * dx
             weight = 1.0
@@ -87,7 +105,6 @@ def substep():
             new_C += 4 * weight * g_v.outer_product(dpos) / dx**2
         v[p] = new_v
         x[p] += dt * v[p]
-        J[p] *= 1 + dt * new_C.trace()
         C[p] = new_C
 
 class Volume:
@@ -102,7 +119,8 @@ class Volume:
 def init_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:float,x_size:float,y_size:float,z_size:float,material:int ):
     for i in range(first_par,last_par):
         x[i] = ti.Vector([ti.random() for i in range(dim)]) * ti.Vector([x_size,y_size,z_size]) + ti.Vector([x_begin,y_begin,z_begin]) 
-        J[i] = 1
+        Jp[i] = 1
+        F[i] = ti.Matrix([[1, 0,0], [0, 1,0],[0,0,1]])
         v[i] = ti.Vector([0.0,0.0,0.0])
         materials[i] = material
         colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
@@ -121,8 +139,11 @@ def init_vols(vols):
     for v in vols:
         total_vol += v.volume
     next_p = 0
-    for v in vols:
+    for i in range(len(vols)):
+        v = vols[i]
         par_count = int(v.volume / total_vol * n_particles)
+        if i == len(vols) -1 and next_p+par_count < n_particles:
+            par_count = n_particles - next_p
         init_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
         next_p += par_count
 
