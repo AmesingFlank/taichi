@@ -60,17 +60,33 @@ def substep():
         w = [0.5 * (1.5 - fx)**2, 0.75 - (fx - 1)**2, 0.5 * (fx - 0.5)**2]
 
         F[p] = (ti.Matrix.identity(float, 3) + dt * C[p]) @ F[p]  # deformation gradient update
+
+        h = ti.exp( 10 * (1.0 -  Jp[p]))  # Hardening coefficient: snow gets harder when compressed
+        if materials[p] == JELLY:  # jelly, make it softer
+            h = 0.3
+        mu, la = mu_0 * h, lambda_0 * h
+        if materials[p] == WATER:  # liquid
+            mu = 0.0
          
         U, sig, V = ti.svd(F[p])
         J = 1.0
         for d in ti.static(range(3)):
-            J *=  sig[d, d]
-        new_F = ti.Matrix.identity(ti.f32, 3)
-        new_F[0,0] = J 
-        F[p] = new_F
-         
-        stress = -dt * 4 * E * p_vol * (J - 1) / dx**2
-        affine = ti.Matrix.identity(float, dim) * stress + p_mass * C[p]
+            new_sig = sig[d, d]
+            if materials[p] == SNOW:  # Snow
+                new_sig = min(max(sig[d, d], 1 - 2.5e-2),
+                              1 + 4.5e-3)  # Plasticity
+            Jp[p] *= sig[d, d] / new_sig
+            sig[d, d] = new_sig
+            J *= new_sig
+        if materials[ p] == WATER:  # Reset deformation gradient to avoid numerical instability
+            new_F = ti.Matrix.identity(float, 3)
+            new_F[0,0] = J
+            F[p] = new_F
+        elif materials[p] == SNOW:
+            F[p] = U @ sig @ V.transpose( )  # Reconstruct elastic deformation gradient after plasticity
+        stress = 2 * mu * (F[p] - U @ V.transpose()) @ F[p].transpose() + ti.Matrix.identity(float, 3) * la * J * (J - 1)
+        stress = (-dt * p_vol * 4 ) * stress / dx**2
+        affine = stress + p_mass * C[p]
  
 
         for offset in ti.static(ti.grouped(ti.ndrange(*neighbour))):
@@ -157,9 +173,9 @@ presets = [
         Volume(ti.Vector([0.65,0.05,0.65]),ti.Vector([0.3,0.4,0.3]),WATER), 
     ],
     [
-        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.25,0.25,0.25]),WATER), 
+        Volume(ti.Vector([0.6,0.05,0.6]),ti.Vector([0.25,0.25,0.25]),WATER), 
         Volume(ti.Vector([0.35,0.35,0.35]),ti.Vector([0.25,0.25,0.25]),SNOW), 
-        Volume(ti.Vector([0.6,0.6,0.6]),ti.Vector([0.25,0.25,0.25]),JELLY), 
+        Volume(ti.Vector([0.05,0.6,0.05]),ti.Vector([0.25,0.25,0.25]),JELLY), 
     ],
 ]
 preset_names = [
