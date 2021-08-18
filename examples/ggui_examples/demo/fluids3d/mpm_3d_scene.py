@@ -31,12 +31,16 @@ C = ti.Matrix.field(dim, dim, float, n_particles)
 J = ti.field(float, n_particles)
 
 colors = ti.Vector.field(3, float, n_particles)
-
+colors_random = ti.Vector.field(3, float, n_particles)
+materials = ti.field(int, n_particles)
 grid_v = ti.Vector.field(dim, float, (n_grid, ) * dim)
 grid_m = ti.field(float, (n_grid, ) * dim)
 
 neighbour = (3, ) * dim
 
+WATER = 0
+JELLY = 1
+SNOW = 2
 
 @ti.kernel
 def substep():
@@ -86,19 +90,60 @@ def substep():
         J[p] *= 1 + dt * new_C.trace()
         C[p] = new_C
 
+class Volume:
+    def __init__(self,minimum,maximum,material):
+        self.minimum=minimum
+        self.maximum=maximum
+        self.size = maximum-minimum
+        self.volume = self.size.x * self.size.y *self.size.z
+        self.material = material
+
 
 @ti.kernel
-def init():
-    for i in range(n_particles):
-        x[i] = ti.Vector([ti.random() for i in range(dim)]) * 0.4 + 0.15
+def init_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:float,x_size:float,y_size:float,z_size:float,material:int ):
+    for i in range(first_par,last_par):
+        x[i] = ti.Vector([ti.random() for i in range(dim)]) * ti.Vector([x_size,y_size,z_size]) + ti.Vector([x_begin,y_begin,z_begin]) 
         J[i] = 1
-        colors[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
+        materials[i] = material
+        colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
 
+
+
+@ti.kernel
+def set_color_by_material(material_colors:ti.ext_arr()):
+    for i in range(n_particles):
+        mat = materials[i]
+        colors[i] = ti.Vector([material_colors[mat,0],material_colors[mat,1],material_colors[mat,2]])
+ 
+
+def init_vols(vols):
+    total_vol = 0
+    for v in vols:
+        total_vol += v.volume
+    next_p = 0
+    for v in vols:
+        par_count = int(v.volume / total_vol * n_particles)
+        init_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
+        next_p += par_count
+
+
+presets = [
+    [
+        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.45,0.45,0.45]),WATER), 
+    ],
+]
+
+curr_preset_id = 0
+
+
+def init():
+    init_vols(presets[curr_preset_id])
 
 init()
 
+
 res = (1920, 1080)
-window = ti.ui.Window("heyy", res)
+window = ti.ui.Window("Real MPM 3D", res,vsync=True)
 
 frame_id = 0
 canvas = window.get_canvas()
@@ -107,12 +152,17 @@ camera = ti.ui.make_camera()
 camera.position(0.5,1.0,1.9)
 camera.lookat(0.5,0.3,0.5)
 
-show_particles = True
+paused = False
 
 
 use_random_colors = False
-particles_color = (0, 0, 1)
-particles_radius = 0.05
+particles_radius = 0.03
+
+material_colors = [
+    (0.1,0.6,0.9),
+    (0.93,0.33,0.23),
+    (1.0,1.0,1.0)
+]
 
 scene_vertices,scene_normals,scene_indices = import_obj(str(pathlib.Path(__file__).parent) +
                               "/scene.ply")
@@ -123,39 +173,43 @@ while window.running:
     frame_id += 1
     frame_id = frame_id % 256
 
-    for s in range(steps):
-        substep()
+    if not paused:
+        for s in range(steps):
+            substep()
 
     camera.track_user_inputs(window,movement_speed = 0.05)
     scene.set_camera(camera)
 
     scene.ambient_light((0, 0, 0))
     scene.mesh(vertices = scene_vertices,indices = scene_indices,normals = scene_normals)
-    if show_particles:
-        if use_random_colors:
-            scene.particles(x,
-                            per_vertex_color=colors,
-                            radius=particles_radius)
-        else:
-            scene.particles(x, color=particles_color, radius=particles_radius)
+
+    colors_used = colors_random if use_random_colors else colors
+    scene.particles(x,per_vertex_color=colors_used, radius=particles_radius) 
+
     scene.point_light(pos=(0.5,1.5,0.5), color=(0.5, 0.5, 0.5))
     scene.point_light(pos=(0.5,1.5,1.5), color=(0.5, 0.5, 0.5))
 
     canvas.scene(scene)
 
-    window.GUI.begin("Real MPM 3D", 0.1, 0.1, 0.2, 0.8)
-    window.GUI.text("hello text")
-    show_particles = window.GUI.checkbox("show particles", show_particles)
-    
+    window.GUI.begin("Real MPM 3D", 0.05, 0.1, 0.15, 0.8)
+      
     use_random_colors = window.GUI.checkbox("use_random_colors",
                                             use_random_colors)
     if not use_random_colors:
-        particles_color = window.GUI.color_edit_3("particles color",
-                                                  particles_color)
+        material_colors[WATER] = window.GUI.color_edit_3("water color",material_colors[WATER])
+        material_colors[SNOW] = window.GUI.color_edit_3("snow color",material_colors[SNOW])
+        material_colors[JELLY] = window.GUI.color_edit_3("jelly color",material_colors[JELLY])
+        set_color_by_material(np.array(material_colors))
     particles_radius = window.GUI.slider_float("particles radius ",
                                                particles_radius, 0, 0.1)
     if window.GUI.button("restart"):
         init()
+    if paused:
+        if window.GUI.button("Continue"):
+            paused = False
+    else:
+        if window.GUI.button("Pause"):
+            paused = True
     window.GUI.end()
 
     #

@@ -81,7 +81,7 @@ class Camera:
         self.position(*(self.curr_position + position_change))
         self.lookat(*(self.curr_lookat + position_change))
 
-        if not window.is_pressed(LMB):
+        if not window.is_pressed(RMB):
             self.last_mouse_x = None
             self.last_mouse_y = None
             return
