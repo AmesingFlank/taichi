@@ -104,8 +104,8 @@ frame_id = 0
 canvas = window.get_canvas()
 scene = ti.ui.Scene()
 camera = ti.ui.make_camera()
-camera.position(2,2,2)
-camera.lookat(0,0,0)
+camera.position(0.5,1.0,1.9)
+camera.lookat(0.5,0.3,0.5)
 
 show_particles = True
 
@@ -138,7 +138,8 @@ while window.running:
                             radius=particles_radius)
         else:
             scene.particles(x, color=particles_color, radius=particles_radius)
-    scene.point_light(pos=(2,2,2), color=(1, 1, 1))
+    scene.point_light(pos=(0.5,1.5,0.5), color=(0.5, 0.5, 0.5))
+    scene.point_light(pos=(0.5,1.5,1.5), color=(0.5, 0.5, 0.5))
 
     canvas.scene(scene)
 

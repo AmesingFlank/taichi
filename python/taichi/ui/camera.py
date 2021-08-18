@@ -16,9 +16,14 @@ def vec_to_euler(v):
     sin_yaw = -v[0] / cos( pitch )  
     cos_yaw = -v[2] / cos( pitch)
 
-    yaw = acos(cos_yaw)
-    if (sin_yaw < 0):
-        yaw = -yaw
+    eps = 1e-6
+
+    if abs(sin_yaw) < eps:
+        yaw = 0
+    else:
+        yaw = acos(cos_yaw)
+        if (sin_yaw < 0):
+            yaw = -yaw
         
     return yaw,pitch
 
