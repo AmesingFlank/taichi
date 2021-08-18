@@ -187,10 +187,7 @@ preset_names = [
 curr_preset_id = 0
 
 
-def init():
-    init_vols(presets[curr_preset_id])
 
-init()
 
 
 res = (1920, 1080)
@@ -218,6 +215,11 @@ material_colors = [
 scene_vertices,scene_normals,scene_indices = import_obj(str(pathlib.Path(__file__).parent) +
                               "/scene.ply")
 
+def init():
+    global paused
+    init_vols(presets[curr_preset_id])
+
+init()
 
 def show_options():
     global use_random_colors
@@ -232,6 +234,7 @@ def show_options():
             curr_preset_id = i
     if curr_preset_id != old_preset:
         init()
+        paused = True
     window.GUI.end()
 
 
