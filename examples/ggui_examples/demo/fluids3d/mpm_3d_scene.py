@@ -2,7 +2,10 @@ import numpy as np
 
 import taichi as ti
 from import_obj import import_obj
+from voxelizer import voxelize_indexed
 import pathlib
+
+this_dir = str(pathlib.Path(__file__).parent)
 
 ti.init(ti.cuda)
 
@@ -123,16 +126,25 @@ def substep():
         x[p] += dt * v[p]
         C[p] = new_C
 
-class Volume:
+class CubeVolume:
     def __init__(self,minimum,size,material):
         self.minimum=minimum
         self.size = size
         self.volume = self.size.x * self.size.y *self.size.z
         self.material = material
 
+class MeshVolume:
+    def __init__(self,path,material):
+        self.path = path
+        self.voxels = ti.field(int, (n_grid, ) * dim)
+        vertices,normals,indices = import_obj(path)
+        voxels_count = voxelize_indexed(vertices,indices,voxels,dx,0,0,0)
+        self.volume = self.voxels * dx ** 3
+        self.material = material
+
 
 @ti.kernel
-def init_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:float,x_size:float,y_size:float,z_size:float,material:int ):
+def init_cube_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:float,x_size:float,y_size:float,z_size:float,material:int ):
     for i in range(first_par,last_par):
         x[i] = ti.Vector([ti.random() for i in range(dim)]) * ti.Vector([x_size,y_size,z_size]) + ti.Vector([x_begin,y_begin,z_begin]) 
         Jp[i] = 1
@@ -142,6 +154,42 @@ def init_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begin:flo
         colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
 
 
+@ti.kernel
+def init_mesh_vol(first_par:int,voxels:ti.template(),material:int,ppc:int) -> int:
+    curr_par_id = first_par
+    for i,j,k in voxels:
+        if voxels[i,j,k] != 0:
+            this_par_id = ti.atomic_add(curr_par_id,ppc)
+            cell_center = (ti.Vector([i,j,k]) + 0.5)*dx
+            for p in range(this_par_id,this_par_id+ppc):
+                x[i] = cell_center + (ti.Vector([ti.random() for i in range(dim)]) - 0.5) * dx
+                Jp[i] = 1
+                F[i] = ti.Matrix([[1, 0,0], [0, 1,0],[0,0,1]])
+                v[i] = ti.Vector([0.0,0.0,0.0])
+                materials[i] = material
+                colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
+    return curr_par_id
+
+
+def init_vols(vols):
+    total_vol = 0
+    for v in vols:
+        total_vol += v.volume
+    total_cells = int(total_vol / (dx**3))
+    ppc = int(n_particles / total_cells)
+
+    next_p = 0
+    for i in range(len(vols)):
+        v = vols[i]
+        par_count = int(v.volume / total_vol * n_particles)
+        if i == len(vols) -1 and next_p+par_count < n_particles:
+            par_count = n_particles - next_p
+        if isinstance(v,CubeVolume):
+            init_cube_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
+            next_p += par_count
+        elif isinstance(v,MeshVolume):
+            next_p = init_mesh_vol(next_p,v.voxles,v.material,ppc)
+
 
 @ti.kernel
 def set_color_by_material(material_colors:ti.ext_arr()):
@@ -150,32 +198,21 @@ def set_color_by_material(material_colors:ti.ext_arr()):
         colors[i] = ti.Vector([material_colors[mat,0],material_colors[mat,1],material_colors[mat,2]])
  
 
-def init_vols(vols):
-    total_vol = 0
-    for v in vols:
-        total_vol += v.volume
-    next_p = 0
-    for i in range(len(vols)):
-        v = vols[i]
-        par_count = int(v.volume / total_vol * n_particles)
-        if i == len(vols) -1 and next_p+par_count < n_particles:
-            par_count = n_particles - next_p
-        init_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
-        next_p += par_count
-
-
 presets = [
     [
-        Volume(ti.Vector([0.55,0.05,0.55]),ti.Vector([0.4,0.4,0.4]),WATER), 
+        CubeVolume(ti.Vector([0.55,0.05,0.55]),ti.Vector([0.4,0.4,0.4]),WATER), 
     ],
     [
-        Volume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.3,0.4,0.3]),WATER), 
-        Volume(ti.Vector([0.65,0.05,0.65]),ti.Vector([0.3,0.4,0.3]),WATER), 
+        CubeVolume(ti.Vector([0.05,0.05,0.05]),ti.Vector([0.3,0.4,0.3]),WATER), 
+        CubeVolume(ti.Vector([0.65,0.05,0.65]),ti.Vector([0.3,0.4,0.3]),WATER), 
     ],
     [
-        Volume(ti.Vector([0.6,0.05,0.6]),ti.Vector([0.25,0.25,0.25]),WATER), 
-        Volume(ti.Vector([0.35,0.35,0.35]),ti.Vector([0.25,0.25,0.25]),SNOW), 
-        Volume(ti.Vector([0.05,0.6,0.05]),ti.Vector([0.25,0.25,0.25]),JELLY), 
+        CubeVolume(ti.Vector([0.6,0.05,0.6]),ti.Vector([0.25,0.25,0.25]),WATER), 
+        CubeVolume(ti.Vector([0.35,0.35,0.35]),ti.Vector([0.25,0.25,0.25]),SNOW), 
+        CubeVolume(ti.Vector([0.05,0.6,0.05]),ti.Vector([0.25,0.25,0.25]),JELLY), 
+    ],
+    [
+        MeshVolume(this_dir+ "/bunny.ply",WATER), 
     ],
 ]
 preset_names = [
@@ -212,8 +249,7 @@ material_colors = [
     (1.0,1.0,1.0)
 ]
 
-scene_vertices,scene_normals,scene_indices = import_obj(str(pathlib.Path(__file__).parent) +
-                              "/scene.ply")
+scene_vertices,scene_normals,scene_indices = import_obj( this_dir+ "/scene.ply")
 
 def init():
     global paused
