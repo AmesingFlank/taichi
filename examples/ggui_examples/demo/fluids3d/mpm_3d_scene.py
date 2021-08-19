@@ -24,7 +24,9 @@ dx = 1 / n_grid
 p_rho = 1
 p_vol = (dx * 0.5)**2
 p_mass = p_vol * p_rho
-gravity = 9.8
+g_x = 0
+g_y = -9.8
+g_z = 0
 bound = 3
 E = 400 # Young's modulus
 nu =  0.2  #  Poisson's ratio
@@ -52,7 +54,7 @@ JELLY = 1
 SNOW = 2
 
 @ti.kernel
-def substep():
+def substep(g_x:float,g_y:float,g_z:float):
     for I in ti.grouped(grid_m):
         grid_v[I] = ti.zero(grid_v[I])
         grid_m[I] = 0
@@ -105,7 +107,7 @@ def substep():
     for I in ti.grouped(grid_m):
         if grid_m[I] > 0:
             grid_v[I] /= grid_m[I]
-        grid_v[I][1] -= dt * gravity
+        grid_v[I] += dt * ti.Vector([g_x,g_y,g_z])
         cond = I < bound and grid_v[I] < 0 or I > n_grid - bound and grid_v[
             I] > 0
         grid_v[I] = 0 if cond else grid_v[I]
@@ -288,6 +290,7 @@ def show_options():
     global paused
     global particles_radius
     global curr_preset_id
+    global g_x,g_y,g_z
 
     window.GUI.begin("Presets",0.05, 0.1, 0.2, 0.15)
     old_preset = curr_preset_id
@@ -299,8 +302,14 @@ def show_options():
         paused = True
     window.GUI.end()
 
+    window.GUI.begin("Gravity",0.05, 0.3, 0.2, 0.1)
+    g_x = window.GUI.slider_float("x",g_x, -10, 10)
+    g_y = window.GUI.slider_float("y",g_y, -10, 10)
+    g_z = window.GUI.slider_float("z",g_z, -10, 10)
+    window.GUI.end()
 
-    window.GUI.begin("Real MPM 3D", 0.05, 0.3, 0.2, 0.6)
+
+    window.GUI.begin("Options", 0.05, 0.45, 0.2, 0.4)
       
     use_random_colors = window.GUI.checkbox("use_random_colors", use_random_colors)
     if not use_random_colors:
@@ -344,7 +353,7 @@ while window.running:
 
     if not paused:
         for s in range(steps):
-            substep()
+            substep(g_x,g_y,g_z)
 
     render()
 
