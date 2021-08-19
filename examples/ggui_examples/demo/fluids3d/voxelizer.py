@@ -16,16 +16,16 @@ def right(a,b,x):
     return ax3.cross(bx3).z > 0
 
 @ti.func
-def intersect_z(voxel_center,a,b,c):
-    triangle_z = ((a+b+c) / 3).z
-    voxel_z = voxel_center.z
+def intersect_z(voxel_center_3,a_3,b_3,c_3):
+    triangle_z = ((a_3+b_3+c_3) / 3).z
+    voxel_z = voxel_center_3.z
 
     intersects = False
     if voxel_z > triangle_z:
-        voxel_center = xy(voxel_center)
-        a = xy(a)
-        b = xy(b)
-        c = xy(c)
+        voxel_center = xy(voxel_center_3)
+        a = xy(a_3)
+        b = xy(b_3)
+        c = xy(c_3)
         
         right_ab = right(a,b,voxel_center)
         right_bc = right(b,c,voxel_center)
@@ -49,10 +49,10 @@ def voxelize_indexed(vertices:ti.template(),indices:ti.template(),result:ti.temp
         inside = False
         
         num_triangles = indices.shape[0] / 3
-        for i in range(num_triangles):
-            ia = indices[i*3]
-            ib = indices[i*3+1]
-            ic = indices[i*3+2]
+        for t in range(num_triangles):
+            ia = indices[t*3]
+            ib = indices[t*3+1]
+            ic = indices[t*3+2]
 
             a = vertices[ia]
             b = vertices[ib]
@@ -76,10 +76,10 @@ def voxelize(vertices:ti.template(),result:ti.template(),cell_size:float,grid_mi
         inside = False
         
         num_triangles = vertices.shape[0] / 3
-        for i in range(num_triangles):
-            a = vertices[i*3]
-            b = vertices[i*3+1]
-            c = vertices[i*3+2]
+        for t in range(num_triangles):
+            a = vertices[t*3]
+            b = vertices[t*3+1]
+            c = vertices[t*3+2]
 
             intersects = intersect_z(center_pos,a,b,c)
             if intersects:

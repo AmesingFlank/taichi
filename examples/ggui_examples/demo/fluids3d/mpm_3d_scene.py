@@ -138,8 +138,8 @@ class MeshVolume:
         self.path = path
         self.voxels = ti.field(int, (n_grid, ) * dim)
         vertices,normals,indices = import_obj(path)
-        voxels_count = voxelize_indexed(vertices,indices,voxels,dx,0,0,0)
-        self.volume = self.voxels * dx ** 3
+        self.voxels_count = voxelize_indexed(vertices,indices,self.voxels,dx,0,0,0)
+        self.volume = self.voxels_count * dx ** 3
         self.material = material
 
 
@@ -188,7 +188,9 @@ def init_vols(vols):
             init_cube_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
             next_p += par_count
         elif isinstance(v,MeshVolume):
-            next_p = init_mesh_vol(next_p,v.voxles,v.material,ppc)
+            next_p = init_mesh_vol(next_p,v.voxels,v.material,ppc)
+        else:
+            raise Exception("???")
 
 
 @ti.kernel
@@ -218,7 +220,8 @@ presets = [
 preset_names = [
     "Single Dam Break",
     "Double Dam Break",
-    "Water Snow Jelly"
+    "Water Snow Jelly",
+    "Water Bunny"
 ]
 
 curr_preset_id = 0
@@ -263,7 +266,7 @@ def show_options():
     global particles_radius
     global curr_preset_id
 
-    window.GUI.begin("Presets",0.05, 0.1, 0.2, 0.1)
+    window.GUI.begin("Presets",0.05, 0.1, 0.2, 0.15)
     old_preset = curr_preset_id
     for i in range(len(presets)):
         if window.GUI.checkbox(preset_names[i], curr_preset_id == i):
