@@ -42,6 +42,11 @@ def intersect_z(voxel_center_3,a_3,b_3,c_3):
 @ti.kernel
 def voxelize_indexed(vertices:ti.template(),indices:ti.template(),result:ti.template(),cell_size:float,grid_min_x:float,grid_min_y:float,grid_min_z:float) -> int:
     voxels_count = 0
+    min_pos = vertices[0]
+    max_pos = vertices[0]
+    for v in vertices:
+        ti.atomic_max(max_pos,vertices[v])
+        ti.atomic_min(min_pos,vertices[v])
     for i,j,k in result:
         grid_min = ti.Vector([grid_min_x,grid_min_y,grid_min_z])
         center_pos = (ti.Vector([i,j,k]) + 0.5) * cell_size + grid_min
@@ -61,29 +66,10 @@ def voxelize_indexed(vertices:ti.template(),indices:ti.template(),result:ti.temp
             intersects = intersect_z(center_pos,a,b,c)
             if intersects:
                 inside = not inside
+        if any(center_pos > max_pos) or any (center_pos <  min_pos):
+            inside = False
+
         result[i,j,k] = inside
         if inside:
             voxels_count += 1
     return voxels_count
-
-
-@ti.kernel
-def voxelize(vertices:ti.template(),result:ti.template(),cell_size:float,grid_min_x:float,grid_min_y:float,grid_min_z:float):
-    for i,j,k in result:
-        grid_min = ti.Vector([grid_min_x,grid_min_y,grid_min_z])
-        center_pos = (ti.Vector([i,j,k]) + 0.5) * cell_size + grid_min
-
-        inside = False
-        
-        num_triangles = vertices.shape[0] / 3
-        for t in range(num_triangles):
-            a = vertices[t*3]
-            b = vertices[t*3+1]
-            c = vertices[t*3+2]
-
-            intersects = intersect_z(center_pos,a,b,c)
-            if intersects:
-                inside = not inside
-        result[i,j,k] = inside
-
-

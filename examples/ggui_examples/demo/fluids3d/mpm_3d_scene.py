@@ -43,6 +43,7 @@ colors_random = ti.Vector.field(3, float, n_particles)
 materials = ti.field(int, n_particles)
 grid_v = ti.Vector.field(dim, float, (n_grid, ) * dim)
 grid_m = ti.field(float, (n_grid, ) * dim)
+used = ti.field(int,n_particles)
 
 neighbour = (3, ) * dim
 
@@ -57,6 +58,8 @@ def substep():
         grid_m[I] = 0
     ti.block_dim(n_grid)
     for p in x:
+        if used[p] == 0:
+            continue
         Xp = x[p] / dx
         base = int(Xp - 0.5)
         fx = Xp - base
@@ -108,6 +111,8 @@ def substep():
         grid_v[I] = 0 if cond else grid_v[I]
     ti.block_dim(n_grid)
     for p in x:
+        if used[p] == 0:
+            continue
         Xp = x[p] / dx
         base = int(Xp - 0.5)
         fx = Xp - base
@@ -134,12 +139,13 @@ class CubeVolume:
         self.material = material
 
 class MeshVolume:
-    def __init__(self,path,scale,translate,material):
+    def __init__(self,path,scale,translate,material,voxel_dx):
         self.path = path
-        self.voxels = ti.field(int, (n_grid, ) * dim)
-        vertices,normals,indices = import_obj(path,scale,translate)
-        self.voxels_count = voxelize_indexed(vertices,indices,self.voxels,dx,0,0,0)
-        self.volume = self.voxels_count * dx ** 3
+        self.voxel_dx = voxel_dx
+        self.voxels = ti.field(int, (int(1/voxel_dx), ) * dim)
+        vertices,normals,indices = import_obj(path,scale,translate,False)
+        self.voxels_count = voxelize_indexed(vertices,indices,self.voxels,voxel_dx,0,0,0)
+        self.volume = self.voxels_count * voxel_dx ** 3
         self.material = material
 
 
@@ -152,43 +158,58 @@ def init_cube_vol(first_par:int,last_par:int, x_begin:float,y_begin:float,z_begi
         v[i] = ti.Vector([0.0,0.0,0.0])
         materials[i] = material
         colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
+        used[i] = 1
 
 
 @ti.kernel
-def init_mesh_vol(first_par:int,voxels:ti.template(),material:int,ppc:int) -> int:
+def init_mesh_vol(first_par:int,voxels:ti.template(),material:int,ppc:int,voxel_dx:float) -> int:
     curr_par_id = first_par
     for i,j,k in voxels:
         if voxels[i,j,k] != 0:
             this_par_id = ti.atomic_add(curr_par_id,ppc)
-            cell_center = (ti.Vector([i,j,k]) + 0.5)*dx
+            cell_center = (ti.Vector([i,j,k]) + 0.5)*voxel_dx
             for p in range(this_par_id,this_par_id+ppc):
-                x[i] = cell_center + (ti.Vector([ti.random() for i in range(dim)]) - 0.5) * dx
-                Jp[i] = 1
-                F[i] = ti.Matrix([[1, 0,0], [0, 1,0],[0,0,1]])
-                v[i] = ti.Vector([0.0,0.0,0.0])
-                materials[i] = material
-                colors_random[i] = ti.Vector([ti.random(), ti.random(), ti.random()])
+                x[p] = cell_center + (ti.Vector([ti.random() for i in range(dim)]) - 0.5) * voxel_dx
+                Jp[p] = 1
+                F[p] = ti.Matrix([[1, 0,0], [0, 1,0],[0,0,1]])
+                v[p] = ti.Vector([0.0,0.0,0.0])
+                materials[p] = material
+                colors_random[p] = ti.Vector([ti.random(), ti.random(), ti.random()])
+                used[p] = 1
     return curr_par_id
+
+@ti.kernel
+def set_all_unused():
+    for p in used:
+        used[p] = 0
+        # basically throw them away so they aren't rendered
+        x[p] = ti.Vector([533799.0,533799.0,533799.0])
+        Jp[p] = 1
+        F[p] = ti.Matrix([[1, 0,0], [0, 1,0],[0,0,1]])
+        C[p] = ti.Matrix([[0, 0,0], [0, 0,0],[0,0,0]])
+        v[p] = ti.Vector([0.0,0.0,0.0])
 
 
 def init_vols(vols):
+    set_all_unused()
     total_vol = 0
     for v in vols:
         total_vol += v.volume
-    total_cells = int(total_vol / (dx**3))
-    ppc = int(n_particles / total_cells)
-
+    
     next_p = 0
     for i in range(len(vols)):
         v = vols[i]
-        par_count = int(v.volume / total_vol * n_particles)
-        if i == len(vols) -1 and next_p+par_count < n_particles:
-            par_count = n_particles - next_p
         if isinstance(v,CubeVolume):
+            par_count = int(v.volume / total_vol * n_particles)
+            if i == len(vols) -1: # this is the last volume, so use all remaining particles
+                par_count = n_particles - next_p
             init_cube_vol(next_p,next_p+par_count,*v.minimum,*v.size,v.material)
             next_p += par_count
         elif isinstance(v,MeshVolume):
-            next_p = init_mesh_vol(next_p,v.voxels,v.material,ppc)
+            particles_for_this_vol = int(n_particles * v.volume / total_vol )
+            ppc = int(particles_for_this_vol / v.voxels_count)
+            #print(v.volume,v.voxels_count,ppc,next_p,next_p + ppc * v.voxels_count)
+            next_p = init_mesh_vol(next_p,v.voxels,v.material,ppc,v.voxel_dx)
         else:
             raise Exception("???")
 
@@ -214,14 +235,16 @@ presets = [
         CubeVolume(ti.Vector([0.05,0.6,0.05]),ti.Vector([0.25,0.25,0.25]),JELLY), 
     ],
     [
-        MeshVolume(this_dir+ "/scene.ply",0.15,(0.5,0.5,0.5),WATER), 
+        MeshVolume(this_dir+ "/bunny.ply",2.2,(0.77,0.0,0.8),WATER,dx), 
+        MeshVolume(this_dir+ "/armadillo.ply",0.9,(0.27,0.2,0.35),SNOW,dx), 
+        MeshVolume(this_dir+ "/dragon.ply",0.85,(-0.05,0.5,0.05),JELLY,dx), 
     ],
 ]
 preset_names = [
     "Single Dam Break",
     "Double Dam Break",
     "Water Snow Jelly",
-    "Water Bunny"
+    "MPM Animals"
 ]
 
 curr_preset_id = 0
@@ -244,7 +267,7 @@ paused = False
 
 
 use_random_colors = False
-particles_radius = 0.03
+particles_radius = 0.02
 
 material_colors = [
     (0.1,0.6,0.9),
