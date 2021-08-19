@@ -4,7 +4,7 @@ import plyfile
 from plyfile import PlyData,PlyElement
 import numpy as np
 
-def import_obj(path):
+def import_obj(path,scale = 1,translate = (0,0,0)):
 
     plydata = PlyData.read(path)
     ply_verts = plydata['vertex']
@@ -14,7 +14,12 @@ def import_obj(path):
     normals_host = []
     for i in range(num_vertices):
         v = [x for x in ply_verts[i]]
-        vertices_host += [v[:3]]
+        pos = np.array(v[:3])
+        pos *= scale
+        pos += np.array([*translate])
+        vertices_host.append(pos)
+
+        normal = np.array(v[3:6])
         normals_host += [v[3:6]]
 
 

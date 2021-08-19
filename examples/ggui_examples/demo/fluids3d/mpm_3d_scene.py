@@ -134,10 +134,10 @@ class CubeVolume:
         self.material = material
 
 class MeshVolume:
-    def __init__(self,path,material):
+    def __init__(self,path,scale,translate,material):
         self.path = path
         self.voxels = ti.field(int, (n_grid, ) * dim)
-        vertices,normals,indices = import_obj(path)
+        vertices,normals,indices = import_obj(path,scale,translate)
         self.voxels_count = voxelize_indexed(vertices,indices,self.voxels,dx,0,0,0)
         self.volume = self.voxels_count * dx ** 3
         self.material = material
@@ -214,7 +214,7 @@ presets = [
         CubeVolume(ti.Vector([0.05,0.6,0.05]),ti.Vector([0.25,0.25,0.25]),JELLY), 
     ],
     [
-        MeshVolume(this_dir+ "/bunny.ply",WATER), 
+        MeshVolume(this_dir+ "/scene.ply",0.15,(0.5,0.5,0.5),WATER), 
     ],
 ]
 preset_names = [
