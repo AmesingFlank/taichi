@@ -221,6 +221,10 @@ EmbeddedVulkanDevice::~EmbeddedVulkanDevice() {
 
   ti_device_.reset();
 
+  if(surface_ != VK_NULL_HANDLE){
+    vkDestroySurfaceKHR(instance_, surface_, kNoVkAllocCallbacks);
+  } 
+
   if constexpr (kEnableValidationLayers) {
     destroy_debug_utils_messenger_ext(instance_, debug_messenger_,
                                       kNoVkAllocCallbacks);
@@ -228,6 +232,7 @@ EmbeddedVulkanDevice::~EmbeddedVulkanDevice() {
   vkDestroyCommandPool(device_, command_pool_, kNoVkAllocCallbacks);
   vkDestroyDevice(device_, kNoVkAllocCallbacks);
   vkDestroyInstance(instance_, kNoVkAllocCallbacks);
+  
 }
 
 Device *EmbeddedVulkanDevice::get_ti_device() const {

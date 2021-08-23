@@ -26,9 +26,10 @@ void Renderable::init_render_resources(){
 }
 
 void Renderable::free_buffers(){
+  
   app_context_->device().dealloc_memory(vertex_buffer_);
-  app_context_->device().dealloc_memory(staging_index_buffer_);
-  app_context_->device().dealloc_memory(vertex_buffer_);
+  app_context_->device().dealloc_memory(staging_vertex_buffer_);
+  app_context_->device().dealloc_memory(index_buffer_);
   app_context_->device().dealloc_memory(staging_index_buffer_);
 
   destroy_uniform_buffers();
@@ -226,7 +227,6 @@ void Renderable::create_graphics_pipeline() {
 void Renderable::create_vertex_buffer() {
   size_t buffer_size = sizeof(Vertex) * config_.vertices_count;
 
-
   Device::AllocParams vb_params {buffer_size,false,false,true,AllocUsage::Vertex};
   vertex_buffer_ = app_context_->device().allocate_memory(vb_params);
 
@@ -284,6 +284,7 @@ void Renderable::destroy_storage_buffers() {
 
 void Renderable::cleanup() {
   free_buffers();
+  pipeline_.reset();
 }
 
 void Renderable::record_this_frame_commands(CommandList* command_list) {

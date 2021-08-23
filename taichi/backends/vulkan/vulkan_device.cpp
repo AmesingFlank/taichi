@@ -113,6 +113,7 @@ VulkanPipeline::VulkanPipeline(const Params &params)
   for (VkShaderModule shader_module : shader_modules_) {
     vkDestroyShaderModule(device_, shader_module, kNoVkAllocCallbacks);
   }
+  shader_modules_.clear();
 }
 
 VulkanPipeline::VulkanPipeline(
@@ -130,6 +131,11 @@ VulkanPipeline::VulkanPipeline(
 VulkanPipeline::~VulkanPipeline() {
   vkDestroyPipeline(device_, pipeline_, kNoVkAllocCallbacks);
   vkDestroyPipelineLayout(device_, pipeline_layout_, kNoVkAllocCallbacks);
+
+  for (VkShaderModule shader_module : shader_modules_) {
+    vkDestroyShaderModule(device_, shader_module, kNoVkAllocCallbacks);
+  }
+  shader_modules_.clear();
 }
 
 VkShaderModule VulkanPipeline::create_shader_module(VkDevice device,
@@ -440,6 +446,16 @@ VulkanResourceBinder::VulkanResourceBinder(VkPipelineBindPoint bind_point)
 }
 
 VulkanResourceBinder::~VulkanResourceBinder() {
+  for(auto& set_pair:sets_){
+    Set& set = set_pair.second;
+    for(auto& binding_pair: set.bindings){
+      VkSampler sampler = binding_pair.second.sampler;
+      if(sampler != VK_NULL_HANDLE){
+        Device* dev = binding_pair.second.ptr.device;
+        vkDestroySampler(static_cast<VulkanDevice*>(dev)->vk_device(), sampler,kNoVkAllocCallbacks);
+      }
+    }
+  }
 }
 
 VkSampler create_sampler(ImageSamplerConfig config, VkDevice device) {
@@ -541,6 +557,9 @@ void VulkanResourceBinder::image(uint32_t set,
                        alloc.get_ptr(0), VK_WHOLE_SIZE};
   if (alloc.device) {
     VulkanDevice *device = static_cast<VulkanDevice *>(alloc.device);
+    if(bindings[binding].sampler != VK_NULL_HANDLE){
+      vkDestroySampler(device->vk_device(),bindings[binding].sampler,kNoVkAllocCallbacks);
+    }
     bindings[binding].sampler =
         create_sampler(sampler_config, device->vk_device());
   }
@@ -1058,6 +1077,13 @@ VulkanDevice::~VulkanDevice() {
 
   for (auto &pair : desc_set_layouts_) {
     vkDestroyDescriptorSetLayout(device_, pair.second, kNoVkAllocCallbacks);
+  }
+
+  for(auto& pair:renderpass_pools_){
+    vkDestroyRenderPass(device_,pair.second,kNoVkAllocCallbacks);
+  }
+  for(auto& pair:framebuffer_pools_){
+    vkDestroyFramebuffer(device_,pair.second,kNoVkAllocCallbacks);
   }
 
   vmaDestroyPool(allocator_,export_pool_.pool);
