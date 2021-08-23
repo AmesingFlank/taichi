@@ -29,23 +29,24 @@ Gui::Gui(class Renderer *renderer,GLFWwindow *window){
   ImGui::StyleColorsDark();
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
-  ImGui_ImplVulkan_LoadFunctions(
-      load_vk_function_for_gui);  // this is becaus we're using volk.
+  
 }
 
-void Gui::init(VkRenderPass render_pass) {
-  
+void Gui::init_render_resources(VkRenderPass render_pass) {
+  ImGui_ImplVulkan_LoadFunctions(
+      load_vk_function_for_gui);  // this is becaus we're using volk.
+
+  auto& device = app_context_->device();
+
   ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = app_context_->instance();
-  init_info.PhysicalDevice = app_context_->physical_device();
-  init_info.Device = app_context_->device();
-  init_info.QueueFamily =
-      app_context_->queue_family_indices().graphics_family.value();
-  init_info.Queue = app_context_->graphics_queue();
+  init_info.Instance = device.vk_instance();
+  init_info.PhysicalDevice =  device.vk_physical_device();
+  init_info.Device = device.vk_device();
+  init_info.QueueFamily = device.graphics_queue_family_index();
+  init_info.Queue = device.graphics_queue();
   init_info.PipelineCache = VK_NULL_HANDLE;
   init_info.DescriptorPool = descriptor_pool_;
   init_info.Allocator = VK_NULL_HANDLE;
-  ;
   init_info.MinImageCount = 1;
   init_info.ImageCount = 1;
   ImGui_ImplVulkan_Init(&init_info, render_pass);
@@ -54,21 +55,12 @@ void Gui::init(VkRenderPass render_pass) {
   // Upload Fonts
   {
     // Use any command queue
-    VkCommandBuffer command_buffer = begin_single_time_commands(
-        app_context_->command_pool(), app_context_->device());
-
+    std::unique_ptr<CommandList> cmd_list = device.new_command_list({CommandListType::Graphics});
+    VkCommandBuffer command_buffer = static_cast<VulkanCommandList*>(cmd_list.get())->vk_command_buffer();
+    
     ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 
-    VkSubmitInfo end_info = {};
-    end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &command_buffer;
-    vkEndCommandBuffer(command_buffer);
-    vkQueueSubmit(app_context_->graphics_queue(), 1, &end_info, VK_NULL_HANDLE);
-
-    vkDeviceWaitIdle(app_context_->device());
-    vkFreeCommandBuffers(app_context_->device(), app_context_->command_pool(),
-                         1, &command_buffer);
+    device.submit_synced(cmd_list.get());
     ImGui_ImplVulkan_DestroyFontUploadObjects();
   }
   prepare_for_next_frame();
@@ -93,7 +85,7 @@ void Gui::create_descriptor_pool() {
   pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
   pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
   pool_info.pPoolSizes = pool_sizes;
-  VkResult err = vkCreateDescriptorPool(app_context_->device(), &pool_info,
+  VkResult err = vkCreateDescriptorPool(app_context_->device().vk_device(), &pool_info,
                                         VK_NULL_HANDLE, &descriptor_pool_);
 }
 
@@ -181,11 +173,16 @@ void Gui::draw(taichi::lang::CommandList* cmd_list) {
   ImGui_ImplVulkan_RenderDrawData(draw_data, buffer);
 }
 
-void Gui::cleanup() {
-  vkDestroyDescriptorPool(app_context_->device(), descriptor_pool_, nullptr);
+void Gui::cleanup_render_resources() {
+  vkDestroyDescriptorPool(app_context_->device().vk_device(), descriptor_pool_, nullptr);
 
   ImGui_ImplVulkan_Shutdown();
+  render_pass_ = VK_NULL_HANDLE; 
+}
+
+void Gui::cleanup(){
   ImGui_ImplGlfw_Shutdown();
+  cleanup_render_resources();
   ImGui::DestroyContext();
 }
 

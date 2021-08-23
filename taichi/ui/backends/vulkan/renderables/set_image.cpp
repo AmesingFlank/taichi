@@ -29,8 +29,8 @@ void SetImage::update_data(const SetImageInfo &info) {
   int new_height = img.shape[1];
 
   if (new_width != width || new_height != height) {
-    cleanup_swap_chain();
-    cleanup();
+    destroy_texture();
+    free_buffers();
     init_set_image(renderer_, new_width, new_height);
   }
 
@@ -38,58 +38,55 @@ void SetImage::update_data(const SetImageInfo &info) {
   int actual_height = next_power_of_2(height);
 
   int pixels = width * height;
+ 
+  app_context_->device().image_transition(texture_,ImageLayout::shader_read,ImageLayout::transfer_dst);
 
-  VkImage texture_image = std::get<0>(
-      renderer_->app_context().vulkan_device().get_vk_image(texture_));
+  BufferImageCopyParams copy_params;
+  copy_params.image_extent.x = width;
+  copy_params.image_extent.y = height;
 
   if (img.field_source == FieldSource::TaichiCuda) {
-    if (img.dtype == PrimitiveType::u8) {
-      copy_to_texture_fuffer_cuda((unsigned char *)img.data,
-                                  (uint64_t)texture_surface_, width, height,
-                                  actual_width, actual_height, img.matrix_rows);
-    } else if (img.dtype == PrimitiveType::f32) {
-      copy_to_texture_fuffer_cuda((float *)img.data, (uint64_t)texture_surface_,
-                                  width, height, actual_width, actual_height,
-                                  img.matrix_rows);
-    } else {
-      throw std::runtime_error("for set image, dtype must be u8 or f32");
-    }
-  } else if (img.field_source == FieldSource::TaichiX64) {
-    transition_image_layout(
-        texture_image, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, app_context_->command_pool(),
-        app_context_->device(), app_context_->graphics_queue());
 
-    unsigned char *mapped =
-        (unsigned char *)app_context_->vulkan_device().map(staging_buffer_);
+    unsigned char *mapped = device_ptr_;
 
     if (img.dtype == PrimitiveType::u8) {
-      copy_to_texture_fuffer_x64((unsigned char *)img.data, mapped, width,
+      copy_to_texture_buffer_cuda((unsigned char *)img.data, mapped, width,
                                  height, actual_width, actual_height,
                                  img.matrix_rows);
     } else if (img.dtype == PrimitiveType::f32) {
-      copy_to_texture_fuffer_x64((float *)img.data, mapped, width, height,
+      copy_to_texture_buffer_cuda((float *)img.data, mapped, width, height,
                                  actual_width, actual_height, img.matrix_rows);
     } else {
       throw std::runtime_error("for set image, dtype must be u8 or f32");
     }
 
-    app_context_->vulkan_device().unmap(staging_buffer_);
+    app_context_->device().buffer_to_image(texture_,gpu_staging_buffer_.get_ptr(0),ImageLayout::transfer_dst,copy_params);
 
-    copy_buffer_to_image(
-        app_context_->vulkan_device().get_vkbuffer(staging_buffer_),
-        texture_image, width, height, app_context_->command_pool(),
-        app_context_->device(), app_context_->graphics_queue());
+  } else if (img.field_source == FieldSource::TaichiX64) {
 
-    transition_image_layout(
-        texture_image, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, app_context_->command_pool(),
-        app_context_->device(), app_context_->graphics_queue());
+    unsigned char *mapped =
+        (unsigned char *)app_context_->device().map(cpu_staging_buffer_);
+
+    if (img.dtype == PrimitiveType::u8) {
+      copy_to_texture_buffer_x64((unsigned char *)img.data, mapped, width,
+                                 height, actual_width, actual_height,
+                                 img.matrix_rows);
+    } else if (img.dtype == PrimitiveType::f32) {
+      copy_to_texture_buffer_x64((float *)img.data, mapped, width, height,
+                                 actual_width, actual_height, img.matrix_rows);
+    } else {
+      throw std::runtime_error("for set image, dtype must be u8 or f32");
+    }
+
+    app_context_->device().unmap(gpu_staging_buffer_);
+    app_context_->device().buffer_to_image(texture_,cpu_staging_buffer_.get_ptr(0),ImageLayout::transfer_dst,copy_params);
+
+    
   } else {
     throw std::runtime_error("unsupported field source");
   }
+
+  app_context_->device().image_transition(texture_,ImageLayout::transfer_dst ,ImageLayout::shader_read);
 }
 
 SetImage::SetImage(Renderer *renderer) {
@@ -125,51 +122,49 @@ void SetImage::init_set_image(Renderer *renderer,
 }
 
 void SetImage::create_texture() {
-  VkImage texture_image;
-  VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
   size_t image_size = width * height * 4;
 
-  create_image(3, width, height, 1, format, VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image,
-               texture_image_memory_, app_context_->device(),
-               app_context_->physical_device());
+  ImageParams params;
+  params.dimension = ImageDimension::d2D;
+  params.format = BufferFormat::rgba8;
+  params.initial_layout = ImageLayout::shader_read;
+  params.x = width;
+  params.y = height;
+  params.z = 1;
+  params.export_sharing = true;
 
-  transition_image_layout(texture_image, format, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          app_context_->command_pool(), app_context_->device(),
-                          app_context_->graphics_queue());
-  transition_image_layout(
-      texture_image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, app_context_->command_pool(),
-      app_context_->device(), app_context_->graphics_queue());
+  texture_ = renderer_->app_context().device().create_image(params);
+
+
+
+  Device::AllocParams cpu_staging_buffer_params{image_size, true, false, false,
+                                            AllocUsage::Uniform};
+  cpu_staging_buffer_ = renderer_->app_context().device().allocate_memory(
+      cpu_staging_buffer_params);
+
+  Device::AllocParams gpu_staging_buffer_params{image_size, false, false, true,
+                                            AllocUsage::Uniform};
+  gpu_staging_buffer_ = renderer_->app_context().device().allocate_memory(
+      gpu_staging_buffer_params);
 
   if (app_context_->config.ti_arch == Arch::cuda) {
-    VkMemoryRequirements mem_requirements;
-    vkGetImageMemoryRequirements(app_context_->device(), texture_image,
-                                 &mem_requirements);
+    auto [mem,offset,size] = app_context_->device().get_vkmemory_offset_size(gpu_staging_buffer_);
+  
+    auto block_size = VulkanDevice::kMemoryBlockSize;
 
-    auto handle =
-        get_device_mem_handle(texture_image_memory_, app_context_->device());
-    CUexternalMemory external_mem = import_vk_memory_object_from_handle(
-        handle, mem_requirements.size, true);
-
-    texture_surface_ = (uint64_t)get_image_surface_object_of_external_memory(
-        external_mem, width, height, 1);
+    device_ptr_ = (unsigned char *)get_memory_pointer(
+        mem,block_size,offset,size,
+        app_context_->device().vk_device());
   }
 
-  Device::AllocParams staging_buffer_params{image_size, true, false, false,
-                                            AllocUsage::Uniform};
-  staging_buffer_ = renderer_->app_context().vulkan_device().allocate_memory(
-      staging_buffer_params);
-
-  VkImageView view =
-      create_image_view(3, texture_image, VK_FORMAT_R8G8B8A8_UNORM,
-                        VK_IMAGE_ASPECT_COLOR_BIT, app_context_->device());
-
-  texture_ = renderer_->app_context().vulkan_device().import_vk_image(
-      texture_image, view, format);
 }
+
+void SetImage::destroy_texture(){
+  app_context_->device().destroy_image(texture_);
+  app_context_->device().dealloc_memory(cpu_staging_buffer_);
+  app_context_->device().dealloc_memory(gpu_staging_buffer_);
+}
+
 
 void SetImage::update_vertex_buffer_() {
   const std::vector<Vertex> vertices = {
@@ -184,14 +179,14 @@ void SetImage::update_vertex_buffer_() {
 
   {
     Vertex *mapped_vbo =
-        (Vertex *)app_context_->vulkan_device().map(staging_vertex_buffer_);
+        (Vertex *)app_context_->device().map(staging_vertex_buffer_);
 
     memcpy(mapped_vbo, vertices.data(),
            (size_t)config_.vertices_count * sizeof(Vertex));
-    app_context_->vulkan_device().unmap(staging_vertex_buffer_);
+    app_context_->device().unmap(staging_vertex_buffer_);
   }
 
-  app_context_->vulkan_device().memcpy(vertex_buffer_.get_ptr(0),
+  app_context_->device().memcpy(vertex_buffer_.get_ptr(0),
                                        staging_vertex_buffer_.get_ptr(0),
                                        config_.vertices_count * sizeof(Vertex));
 }
@@ -202,18 +197,19 @@ void SetImage::update_index_buffer_() {
   };
   {
     int *mapped_ibo =
-        (int *)app_context_->vulkan_device().map(staging_index_buffer_);
+        (int *)app_context_->device().map(staging_index_buffer_);
     memcpy(mapped_ibo, indices.data(),
            (size_t)config_.indices_count * sizeof(int));
-    app_context_->vulkan_device().unmap(staging_index_buffer_);
+    app_context_->device().unmap(staging_index_buffer_);
   }
 
-  app_context_->vulkan_device().memcpy(index_buffer_.get_ptr(0),
+  app_context_->device().memcpy(index_buffer_.get_ptr(0),
                                        staging_index_buffer_.get_ptr(0),
                                        config_.indices_count * sizeof(int));
 
   indexed_ = true;
 }
+
 
 void SetImage::create_bindings() {
   Renderable::create_bindings();
@@ -222,9 +218,8 @@ void SetImage::create_bindings() {
 }
 
 void SetImage::cleanup() {
-  Renderable::cleanup();
 
-  vkFreeMemory(app_context_->device(), texture_image_memory_, nullptr);
+  Renderable::cleanup();
 }
 
 }  // namespace vulkan

@@ -416,8 +416,6 @@ void VulkanPipeline::create_graphics_pipeline(
   dynamic_state.dynamicStateCount =
       graphics_pipeline_template_->dynamic_state_enables.size();
 
-  printf("%p %p\n", shader_stages_[0].module, shader_stages_[1].module);
-
   VkGraphicsPipelineCreateInfo &pipeline_info =
       graphics_pipeline_template_->pipeline_info;
   pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -900,7 +898,7 @@ void VulkanCommandList::draw_indexed(uint32_t num_indicies,
 void VulkanCommandList::image_transition(DeviceAllocation img,
                                          ImageLayout old_layout_,
                                          ImageLayout new_layout_) {
-  auto &[image, view, format] = ti_device_->get_vk_image(img);
+  auto [image, view, format] = ti_device_->get_vk_image(img);
 
   VkImageLayout old_layout = image_layout_ti_to_vk(old_layout_);
   VkImageLayout new_layout = image_layout_ti_to_vk(new_layout_);
@@ -967,33 +965,33 @@ inline void buffer_image_copy_ti_to_vk(VkBufferImageCopy &copy_info,
   copy_info.imageOffset.y = params.image_offset.y;
   copy_info.imageOffset.z = params.image_offset.z;
   copy_info.imageSubresource.aspectMask =
-      VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+      VK_IMAGE_ASPECT_COLOR_BIT; // FIXME: add option in BufferImageCopyParams to support copying depth images
   copy_info.imageSubresource.baseArrayLayer = params.image_base_layer;
   copy_info.imageSubresource.layerCount = params.image_layer_count;
   copy_info.imageSubresource.mipLevel = params.image_mip_level;
 }
 
-void VulkanCommandList::buffer2image(DeviceAllocation dst_img,
+void VulkanCommandList::buffer_to_image(DeviceAllocation dst_img,
                                      DevicePtr src_buf,
                                      ImageLayout img_layout,
                                      const BufferImageCopyParams &params) {
   VkBufferImageCopy copy_info{};
   buffer_image_copy_ti_to_vk(copy_info, src_buf.offset, params);
 
-  auto &[image, view, format] = ti_device_->get_vk_image(dst_img);
+  auto [image, view, format] = ti_device_->get_vk_image(dst_img);
 
   vkCmdCopyBufferToImage(buffer_, ti_device_->get_vkbuffer(src_buf), image,
                          image_layout_ti_to_vk(img_layout), 1, &copy_info);
 }
 
-void VulkanCommandList::image2buffer(DevicePtr dst_buf,
+void VulkanCommandList::image_to_buffer(DevicePtr dst_buf,
                                      DeviceAllocation src_img,
                                      ImageLayout img_layout,
                                      const BufferImageCopyParams &params) {
   VkBufferImageCopy copy_info{};
   buffer_image_copy_ti_to_vk(copy_info, dst_buf.offset, params);
 
-  auto &[image, view, format] = ti_device_->get_vk_image(src_img);
+  auto [image, view, format] = ti_device_->get_vk_image(src_img);
 
   vkCmdCopyImageToBuffer(buffer_, image, image_layout_ti_to_vk(img_layout),
                          ti_device_->get_vkbuffer(dst_buf), 1, &copy_info);
@@ -1053,6 +1051,7 @@ VulkanDevice::~VulkanDevice() {
     vkDestroyDescriptorSetLayout(device_, pair.second, kNoVkAllocCallbacks);
   }
 
+  vmaDestroyPool(allocator_,export_pool_.pool);
   vmaDestroyAllocator(allocator_);
   vkDestroyFence(device_, cmd_sync_fence_, kNoVkAllocCallbacks);
 }
@@ -1136,31 +1135,6 @@ DeviceAllocation VulkanDevice::allocate_memory(const AllocParams &params) {
   } else {
     alloc_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
   }
-
-  //   VkExportMemoryAllocateInfoKHR export_mem_alloc_info_ = {};
-  //   export_mem_alloc_info_.sType =
-  //       VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR;
-  // #ifdef _WIN64
-  //   WindowsSecurityAttributes win_security_attribs;
-
-  //   VkExportMemoryWin32HandleInfoKHR export_mem_win32_handle_info = {};
-  //   export_mem_win32_handle_info.sType =
-  //       VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
-  //   export_mem_win32_handle_info.pNext = NULL;
-  //   export_mem_win32_handle_info.pAttributes = &win_security_attribs;
-  //   export_mem_win32_handle_info.dwAccess =
-  //       DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE;
-  //   export_mem_win32_handle_info.name = (LPCWSTR)NULL;
-
-  //   export_mem_alloc_info_.pNext = &export_mem_win32_handle_info;
-  //   export_mem_alloc_info_.handleTypes =
-  //       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-  // #else
-  //   export_mem_alloc_info_.pNext = NULL;
-  //   export_mem_alloc_info_.handleTypes =
-  //       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-  // #endif
-  //   alloc.alloc_info. = &export_mem_alloc_info_;
 
   BAIL_ON_VK_BAD_RESULT(
       vmaCreateBuffer(allocator_, &buffer_info, &alloc_info, &alloc.buffer,
@@ -1501,13 +1475,13 @@ DeviceAllocation VulkanDevice::create_image(const ImageParams &params) {
   image_info.format = buffer_format_ti_to_vk(params.format);
   image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
   image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+  image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | 
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   if (is_depth) {
-    image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
   } else {
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
   image_info.samples = VK_SAMPLE_COUNT_1_BIT;
   image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1543,7 +1517,13 @@ DeviceAllocation VulkanDevice::create_image(const ImageParams &params) {
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   view_info.pNext = nullptr;
   view_info.image = alloc.image;
-  view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  if (params.dimension == ImageDimension::d1D) {
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_1D;
+  } else if (params.dimension == ImageDimension::d2D) {
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  } else if (params.dimension == ImageDimension::d3D) {
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
+  }
   view_info.format = image_info.format;
   view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
   view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -1560,15 +1540,20 @@ DeviceAllocation VulkanDevice::create_image(const ImageParams &params) {
       vkCreateImageView(device_, &view_info, nullptr, &alloc.view),
       "Failed to create image view");
 
+  if(params.initial_layout != ImageLayout::undefined){
+    image_transition(handle,ImageLayout::undefined,params.initial_layout);
+  }
+
   return handle;
 }
 
 void VulkanDevice::destroy_image(DeviceAllocation alloc) {
   ImageAllocInternal &alloc_int = image_allocations_.at(alloc.alloc_id);
 
-  TI_ASSERT(!alloc_int.external);
-
-  vmaDestroyImage(allocator_, alloc_int.image, alloc_int.allocation);
+  if(!alloc_int.external){
+    vkDestroyImageView(vk_device(), alloc_int.view, nullptr);
+    vmaDestroyImage(allocator_, alloc_int.image, alloc_int.allocation);
+  }
 
   image_allocations_.erase(alloc.alloc_id);
 }
@@ -1845,7 +1830,7 @@ void VulkanDevice::create_vma_allocator() {
 
     VmaPoolCreateInfo pool_info{};
     pool_info.memoryTypeIndex = memTypeIndex;
-    pool_info.blockSize = 128ull * 1024 * 1024;  // 128MB
+    pool_info.blockSize = kMemoryBlockSize;  // 128MB
     pool_info.maxBlockCount = 16;
     pool_info.pMemoryAllocateNext = &export_pool_.export_mem_alloc_info;
 
@@ -1883,17 +1868,28 @@ VkPresentModeKHR choose_swap_present_mode(
 }
 
 VulkanSurface::VulkanSurface(VulkanDevice *device, const SurfaceConfig &config)
-    : device_(device) {
+    : device_(device),config_(config) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   window_ = (GLFWwindow *)config.window_handle;
   VkResult err =
       glfwCreateWindowSurface(device->vk_instance(), window_, NULL, &surface_);
   if (err) {
-    TI_ERROR("Failed to create window ({})", err);
+    TI_ERROR("Failed to create window surface ({})", err);
     return;
   }
 
-  auto choose_surface_format =
+  create_swap_chain();
+
+  VkSemaphoreCreateInfo sema_create_info;
+  sema_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  sema_create_info.pNext = nullptr;
+  sema_create_info.flags = 0;
+  vkCreateSemaphore(device->vk_device(), &sema_create_info, kNoVkAllocCallbacks,
+                    &image_available_);
+}
+
+void VulkanSurface::create_swap_chain(){
+   auto choose_surface_format =
       [](const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto &availableFormat : availableFormats) {
           if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
@@ -1905,24 +1901,24 @@ VulkanSurface::VulkanSurface(VulkanDevice *device, const SurfaceConfig &config)
       };
 
   VkSurfaceCapabilitiesKHR capabilities;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->vk_physical_device(),
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device_->vk_physical_device(),
                                             surface_, &capabilities);
 
   VkBool32 supported = false;
-  vkGetPhysicalDeviceSurfaceSupportKHR(device->vk_physical_device(),
-                                       device->graphics_queue_family_index(),
+  vkGetPhysicalDeviceSurfaceSupportKHR(device_->vk_physical_device(),
+                                       device_->graphics_queue_family_index(),
                                        surface_, &supported);
 
   if (!supported) {
-    TI_ERROR("Selected queue does not support presenting", err);
+    TI_ERROR("Selected queue does not support presenting");
     return;
   }
 
   uint32_t formatCount;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device(), surface_,
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device_->vk_physical_device(), surface_,
                                        &formatCount, nullptr);
   std::vector<VkSurfaceFormatKHR> surface_formats(formatCount);
-  vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device(), surface_,
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device_->vk_physical_device(), surface_,
                                        &formatCount, surface_formats.data());
 
   VkSurfaceFormatKHR surface_format = choose_surface_format(surface_formats);
@@ -1930,16 +1926,16 @@ VulkanSurface::VulkanSurface(VulkanDevice *device, const SurfaceConfig &config)
   uint32_t present_mode_count;
   std::vector<VkPresentModeKHR> present_modes;
   vkGetPhysicalDeviceSurfacePresentModesKHR(
-      device->vk_physical_device(), surface_, &present_mode_count, nullptr);
+      device_->vk_physical_device(), surface_, &present_mode_count, nullptr);
 
   if (present_mode_count != 0) {
     present_modes.resize(present_mode_count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device->vk_physical_device(),
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device_->vk_physical_device(),
                                               surface_, &present_mode_count,
                                               present_modes.data());
   }
   VkPresentModeKHR present_mode =
-      choose_swap_present_mode(present_modes, config.vsync);
+      choose_swap_present_mode(present_modes, config_.vsync);
 
   int width, height;
   glfwGetFramebufferSize(window_, &width, &height);
@@ -1966,24 +1962,17 @@ VulkanSurface::VulkanSurface(VulkanDevice *device, const SurfaceConfig &config)
   createInfo.clipped = VK_TRUE;
   createInfo.oldSwapchain = nullptr;
 
-  if (vkCreateSwapchainKHR(device->vk_device(), &createInfo,
+  if (vkCreateSwapchainKHR(device_->vk_device(), &createInfo,
                            kNoVkAllocCallbacks, &swapchain_) != VK_SUCCESS) {
     TI_ERROR("Failed to create swapchain");
     return;
   }
 
-  VkSemaphoreCreateInfo sema_create_info;
-  sema_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-  sema_create_info.pNext = nullptr;
-  sema_create_info.flags = 0;
-  vkCreateSemaphore(device->vk_device(), &sema_create_info, kNoVkAllocCallbacks,
-                    &image_available_);
-
   uint32_t num_images;
-  vkGetSwapchainImagesKHR(device->vk_device(), swapchain_, &num_images,
+  vkGetSwapchainImagesKHR(device_->vk_device(), swapchain_, &num_images,
                           nullptr);
   std::vector<VkImage> swapchain_images(num_images);
-  vkGetSwapchainImagesKHR(device->vk_device(), swapchain_, &num_images,
+  vkGetSwapchainImagesKHR(device_->vk_device(), swapchain_, &num_images,
                           swapchain_images.data());
 
   image_format_ = buffer_format_vk_to_ti(surface_format.format);
@@ -2011,11 +2000,30 @@ VulkanSurface::VulkanSurface(VulkanDevice *device, const SurfaceConfig &config)
         "Failed to create image view");
 
     swapchain_images_.push_back(
-        device->import_vk_image(img, view, surface_format.format));
+        device_->import_vk_image(img, view, surface_format.format));
   }
+
+}
+
+void VulkanSurface::destroy_swap_chain(){
+  for(auto alloc:swapchain_images_){
+    VkImageView view = std::get<1>(device_->get_vk_image(alloc));
+    vkDestroyImageView(device_->vk_device(), view, nullptr);
+    device_->destroy_image(alloc);
+  }
+  swapchain_images_.clear();
+  vkDestroySwapchainKHR(device_->vk_device(), swapchain_, nullptr);
 }
 
 VulkanSurface::~VulkanSurface() {
+  destroy_swap_chain();
+  vkDestroySemaphore(device_->vk_device(), image_available_, nullptr);
+  vkDestroySurfaceKHR(device_->vk_instance(), surface_, nullptr);
+}
+
+void VulkanSurface::resize(uint32_t width, uint32_t height) {
+  destroy_swap_chain();
+  create_swap_chain();
 }
 
 std::pair<uint32_t, uint32_t> VulkanSurface::get_size() {
@@ -2038,6 +2046,7 @@ BufferFormat VulkanSurface::image_format() {
 void VulkanSurface::present_image() {
   // TODO: In the future tie the wait semaphores.
   // Currently we should just halt and wait on host before present
+  vkDeviceWaitIdle(device_->vk_device());
   VkPresentInfoKHR presentInfo{};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   presentInfo.waitSemaphoreCount = 1;

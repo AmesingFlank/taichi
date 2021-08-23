@@ -290,13 +290,13 @@ class CommandList {
                                 ImageLayout new_layout) {
     TI_NOT_IMPLEMENTED
   }
-  virtual void buffer2image(DeviceAllocation dst_img,
+  virtual void buffer_to_image(DeviceAllocation dst_img,
                             DevicePtr src_buf,
                             ImageLayout img_layout,
                             const BufferImageCopyParams &params) {
     TI_NOT_IMPLEMENTED
   }
-  virtual void image2buffer(DevicePtr dst_buf,
+  virtual void image_to_buffer(DevicePtr dst_buf,
                             DeviceAllocation src_img,
                             ImageLayout img_layout,
                             const BufferImageCopyParams &params) {
@@ -398,6 +398,7 @@ class Surface {
   virtual void present_image() = 0;
   virtual std::pair<uint32_t, uint32_t> get_size() = 0;
   virtual BufferFormat image_format() = 0;
+  virtual void resize(uint32_t width, uint32_t height) = 0; 
 };
 
 struct VertexInputBinding {
@@ -443,6 +444,18 @@ class GraphicsDevice : public Device {
       const SurfaceConfig &config) = 0;
   virtual DeviceAllocation create_image(const ImageParams &params) = 0;
   virtual void destroy_image(DeviceAllocation alloc) = 0;
+
+  virtual void image_transition(DeviceAllocation img,
+                        ImageLayout old_layout,
+                        ImageLayout new_layout);
+  virtual void buffer_to_image(DeviceAllocation dst_img,
+                    DevicePtr src_buf,
+                    ImageLayout img_layout,
+                    const BufferImageCopyParams &params);
+  virtual void image_to_buffer(DevicePtr dst_buf,
+                    DeviceAllocation src_img,
+                    ImageLayout img_layout,
+                    const BufferImageCopyParams &params);
 };
 
 }  // namespace lang

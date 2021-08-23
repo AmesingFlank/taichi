@@ -99,20 +99,8 @@ void Renderer::cleanup() {
   for (auto &renderable : renderables_) {
     renderable->cleanup();
   }
+  swap_chain_.cleanup();
   app_context_.cleanup();
-}
-
-void Renderer::cleanup_swap_chain() {
-  
-  for (auto &renderable : renderables_) {
-    renderable->cleanup_swap_chain();
-  }
-}
-
-void Renderer::recreate_swap_chain() {
-  for (auto &renderable : renderables_) {
-    renderable->recreate_swap_chain();
-  }
 }
 
 
@@ -127,9 +115,8 @@ void Renderer::draw_frame(Gui *gui) {
     CUDADriver::get_instance().stream_synchronize(nullptr);
   }
 
-  VkCommandBuffer command_buffer;
 
-  std::unique_ptr<CommandList> cmd_list = app_context().vulkan_device().new_command_list({CommandListType::Graphics});
+  std::unique_ptr<CommandList> cmd_list = app_context().device().new_command_list({CommandListType::Graphics});
   bool color_clear = true;
   std::vector<float> clear_colors = {background_color_[0],background_color_[1],background_color_[2],1};
   auto image = swap_chain_.surface().get_target_image();
@@ -141,13 +128,19 @@ void Renderer::draw_frame(Gui *gui) {
     renderables_[i]->record_this_frame_commands(cmd_list.get());
   }
 
+  VkRenderPass pass = static_cast<VulkanCommandList*>(cmd_list.get())->current_renderpass();
+  
   if(gui->render_pass()==VK_NULL_HANDLE){
-    VkRenderPass pass = static_cast<VulkanCommandList*>(cmd_list.get())->current_renderpass();
-    gui->init(pass);
+    gui->init_render_resources(pass);
   }
+  else if(gui->render_pass() != pass){
+    gui->cleanup_render_resources();
+    gui->init_render_resources(pass);
+  }
+
   gui->draw(cmd_list.get());
   cmd_list->end_renderpass();
-  app_context_.vulkan_device().submit_synced(cmd_list.get());
+  app_context_.device().submit_synced(cmd_list.get());
 
 }
 

@@ -10,20 +10,18 @@ class SwapChain {
   void init(class AppContext *app_context);
   uint32_t width();
   uint32_t height();
-  VkFormat depth_format();
+ 
   taichi::lang::Surface& surface();
-  VkFramebuffer framebuffer(VkRenderPass render_pass);
   taichi::lang::DeviceAllocation depth_allocation();
+
+  void resize(uint32_t width, uint32_t height);
+
+  void cleanup();
 
  private:
 
   void create_depth_resources();
   
-  // TODO: make the device api support allocating images.
-  VkImage depth_image_;
-  VkDeviceMemory depth_image_memory_;
-  VkImageView depth_image_view_;
-  VkFormat depth_format_;
   taichi::lang::DeviceAllocation depth_allocation_;
 
   std::unique_ptr<taichi::lang::Surface> surface_; 

@@ -18,40 +18,36 @@ void SwapChain::init(class AppContext *app_context) {
   config.vsync = app_context_->config.vsync;
   config.window_handle = app_context_->glfw_window();
   
-  surface_ = app_context_->vulkan_device().create_surface(config);
+  surface_ = app_context_->device().create_surface(config);
 
   create_depth_resources(); 
 }
 
+ 
+void SwapChain::create_depth_resources() {
+  auto size = surface_->get_size();
 
-VkFramebuffer SwapChain::framebuffer(VkRenderPass render_pass){
-  DeviceAllocation image_alloc = surface_->get_target_image();
-  auto [img,view,format] = app_context_->vulkan_device().get_vk_image(image_alloc);
-  VulkanFramebufferDesc desc;
-  desc.width = width();
-  desc.height = height();
-  desc.attachments = {view,depth_image_view_};
-  desc.renderpass = render_pass;
-  return app_context_->vulkan_device().get_framebuffer(desc);
+  ImageParams params;
+  params.dimension = ImageDimension::d2D;
+  params.format = BufferFormat::depth32f;
+  params.initial_layout = ImageLayout::undefined;
+  params.x = size.first;
+  params.y = size.second;
+  params.z = 1;
+  params.export_sharing = false;
+
+  depth_allocation_ = app_context_->device().create_image(params);
 }
 
- 
- VkFormat SwapChain::depth_format(){
-   return depth_format_;
- }
-void SwapChain::create_depth_resources() {
-   depth_format_ = find_depth_format(app_context_->physical_device());
-  auto size = surface_->get_size();
-  create_image(
-      2, size.first, size.second, 1, depth_format_,
-      VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image_, depth_image_memory_,
-      app_context_->device(), app_context_->physical_device());
-  depth_image_view_ =
-      create_image_view(2, depth_image_, depth_format_,
-                        VK_IMAGE_ASPECT_DEPTH_BIT, app_context_->device());
+void SwapChain::resize(uint32_t width, uint32_t height){
+  surface().resize(width,height);
+  app_context_->device().destroy_image(depth_allocation_);
+  create_depth_resources();
+}
 
-  depth_allocation_ = app_context_->vulkan_device().import_vk_image(depth_image_, depth_image_view_, depth_format_);
+void SwapChain::cleanup(){
+  app_context_->device().destroy_image(depth_allocation_);
+  surface_.reset();
 }
 
 
@@ -66,9 +62,9 @@ uint32_t  SwapChain::width(){
 uint32_t  SwapChain::height(){
   return surface_->get_size().second;
 }
- taichi::lang::Surface& SwapChain::surface(){
-   return *(surface_.get());
- }
+taichi::lang::Surface& SwapChain::surface(){
+  return *(surface_.get());
+}
  
  
  
