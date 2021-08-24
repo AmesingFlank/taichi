@@ -17,19 +17,19 @@ void SwapChain::init(class AppContext *app_context) {
   config.window_handle = app_context_->glfw_window();
 
   surface_ = app_context_->device().create_surface(config);
-
+  auto [w, h] = surface_->get_size();
+  curr_width_ = w;
+  curr_height_ = h;
   create_depth_resources();
 }
 
 void SwapChain::create_depth_resources() {
-  auto size = surface_->get_size();
-
   ImageParams params;
   params.dimension = ImageDimension::d2D;
   params.format = BufferFormat::depth32f;
   params.initial_layout = ImageLayout::undefined;
-  params.x = size.first;
-  params.y = size.second;
+  params.x = curr_width_;
+  params.y = curr_height_;
   params.export_sharing = false;
 
   depth_allocation_ = app_context_->device().create_image(params);
@@ -38,6 +38,9 @@ void SwapChain::create_depth_resources() {
 void SwapChain::resize(uint32_t width, uint32_t height) {
   surface().resize(width, height);
   app_context_->device().destroy_image(depth_allocation_);
+  auto [w, h] = surface_->get_size();
+  curr_width_ = w;
+  curr_height_ = h;
   create_depth_resources();
 }
 
@@ -51,10 +54,10 @@ DeviceAllocation SwapChain::depth_allocation() {
 }
 
 uint32_t SwapChain::width() {
-  return surface_->get_size().first;
+  return curr_width_;
 }
 uint32_t SwapChain::height() {
-  return surface_->get_size().second;
+  return curr_height_;
 }
 taichi::lang::Surface &SwapChain::surface() {
   return *(surface_.get());

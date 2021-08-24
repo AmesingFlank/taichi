@@ -26,6 +26,9 @@ class SwapChain {
   std::unique_ptr<taichi::lang::Surface> surface_;
 
   class AppContext *app_context_;
+
+  uint32_t curr_width_;
+  uint32_t curr_height_;
 };
 
 }  // namespace vulkan
