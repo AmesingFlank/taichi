@@ -13,8 +13,6 @@ using namespace taichi::lang;
 void SwapChain::init(class AppContext *app_context) {
   app_context_ = app_context;
   SurfaceConfig config;
-  config.width = app_context_->config.width;
-  config.height = app_context_->config.height;
   config.vsync = app_context_->config.vsync;
   config.window_handle = app_context_->glfw_window();
 
