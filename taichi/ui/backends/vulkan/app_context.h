@@ -1,5 +1,4 @@
 #pragma once
-#include "taichi/ui/backends/vulkan/vulkan_utils.h"
 #include "taichi/ui/common/app_config.h"
 #include <memory>
 #include "taichi/backends/vulkan/vulkan_api.h"
