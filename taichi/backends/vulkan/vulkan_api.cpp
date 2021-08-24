@@ -220,7 +220,9 @@ EmbeddedVulkanDevice::~EmbeddedVulkanDevice() {
 #endif
 
   ti_device_.reset();
-
+  if(surface_ != VK_NULL_HANDLE){
+    vkDestroySurfaceKHR(instance_, surface_, kNoVkAllocCallbacks);
+  }
   if constexpr (kEnableValidationLayers) {
     destroy_debug_utils_messenger_ext(instance_, debug_messenger_,
                                       kNoVkAllocCallbacks);
