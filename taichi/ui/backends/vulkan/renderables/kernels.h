@@ -2,13 +2,16 @@
 namespace taichi {
 namespace ui {
 
+template<typename TSrc, typename TDst>
 void update_renderables_vertices_cuda(Vertex *vbo,
-                                      float *data,
+                                      TSrc *data,
                                       int num_vertices,
                                       int num_components,
                                       int offset_bytes);
+
+template<typename TSrc, typename TDst>
 void update_renderables_vertices_x64(Vertex *vbo,
-                                     float *vertices,
+                                     TSrc *data,
                                      int num_vertices,
                                      int num_components,
                                      int offset_bytes);

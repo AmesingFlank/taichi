@@ -19,46 +19,75 @@ void set_num_blocks_threads(int N, int &num_blocks, int &num_threads) {
   num_blocks = div_up(N, num_threads);
 }
 #undef MAX_THREADS_PER_BLOCK
+
+template <typename TSrc, typename TDst>
+__device__ __host__ inline TDst convert_to(TSrc x);
+
+template <>
+__device__ __host__ inline float convert_to<float,float>(
+    float x) {
+  return x;
+}
+
+template <>
+__device__ __host__ inline unsigned char convert_to<unsigned char,unsigned char>(
+    unsigned char x) {
+  return x;
+}
+
+template <>
+__device__ __host__ inline unsigned char convert_to<float,unsigned char>(float x) {
+  x = max(0.f, min(1.f, x));
+  return (unsigned char)(x * 255);
+}
+
+template <>
+__device__ __host__ inline float convert_to<unsigned char,float>(unsigned char x) {
+  return ((float) x) / 255.f;
+}
+
 }  // namespace
 
+template<typename TSrc, typename TDst>
 __global__ void update_renderables_vertices_cuda_impl(Vertex *vbo,
-                                                      float *data,
+                                                      TSrc *data,
                                                       int num_vertices,
                                                       int num_components,
-                                                      int offset) {
+                                                      int offset_bytes) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= num_vertices)
     return;
 
-  float *dst = (float *)(vbo + i) + offset;
-  float *src = data + i * num_components;
+  TDst *dst = (TDst *)((unsigned char*)(vbo+i) + offset_bytes);
+  TSrc *src = data + i * num_components;
   for (int c = 0; c < num_components; ++c) {
-    dst[c] = src[c];
+    dst[c] = convert_to<TSrc,TDst>(src[c]);
   }
 }
 
+template<typename TSrc, typename TDst>
 void update_renderables_vertices_cuda(Vertex *vbo,
-                                      float *data,
+                                      TSrc *data,
                                       int num_vertices,
                                       int num_components,
                                       int offset_bytes) {
   int num_blocks, num_threads;
   set_num_blocks_threads(num_vertices, num_blocks, num_threads);
-  update_renderables_vertices_cuda_impl<<<num_blocks, num_threads>>>(
-      vbo, data, num_vertices, num_components, offset_bytes / sizeof(float));
+  update_renderables_vertices_cuda_impl<TSrc,TDst><<<num_blocks, num_threads>>>(
+      vbo, data, num_vertices, num_components, offset_bytes);
 }
 
+template<typename TSrc, typename TDst>
 void update_renderables_vertices_x64(Vertex *vbo,
-                                     float *data,
+                                     TSrc *data,
                                      int num_vertices,
                                      int num_components,
                                      int offset_bytes) {
-  int offset = offset_bytes / sizeof(float);
   for (int i = 0; i < num_vertices; ++i) {
-    float *dst = (float *)(vbo + i) + offset;
-    float *src = data + i * num_components;
+    TDst *dst = (TDst *)((unsigned char*)(vbo+i) + offset_bytes);
+    TSrc *src = data + i * num_components;
     for (int c = 0; c < num_components; ++c) {
-      dst[c] = src[c];
+      dst[c] = convert_to<TSrc,TDst>(src[c]);
     }
   }
 }
@@ -85,20 +114,7 @@ void update_renderables_indices_x64(int *ibo, int *indices, int num_indices) {
   }
 }
 
-template <typename T>
-__device__ __host__ inline unsigned char get_color_value(T x);
 
-template <>
-__device__ __host__ inline unsigned char get_color_value<unsigned char>(
-    unsigned char x) {
-  return x;
-}
-
-template <>
-__device__ __host__ inline unsigned char get_color_value<float>(float x) {
-  x = max(0.f, min(1.f, x));
-  return (unsigned char)(x * 255);
-}
 
 template <typename T>
 void copy_to_texture_buffer_x64(T *src,
@@ -115,9 +131,9 @@ void copy_to_texture_buffer_x64(T *src,
     T *src_base_addr = src + (x * actual_height + y) * channels;
     uchar4 data = make_uchar4(0, 0, 0, 0);
 
-    data.x = get_color_value<T>(src_base_addr[0]);
-    data.y = get_color_value<T>(src_base_addr[1]);
-    data.z = get_color_value<T>(src_base_addr[2]);
+    data.x = convert_to<T,unsigned char>(src_base_addr[0]);
+    data.y = convert_to<T,unsigned char>(src_base_addr[1]);
+    data.z = convert_to<T,unsigned char>(src_base_addr[2]);
     data.w = 255;
 
     ((uchar4 *)dest)[y * width + x] = data;
@@ -142,9 +158,9 @@ __global__ void copy_to_texture_buffer_cuda_impl(T *src,
   T *src_base_addr = src + (x * actual_height + y) * channels;
   uchar4 data = make_uchar4(0, 0, 0, 0);
 
-  data.x = get_color_value<T>(src_base_addr[0]);
-  data.y = get_color_value<T>(src_base_addr[1]);
-  data.z = get_color_value<T>(src_base_addr[2]);
+  data.x = convert_to<T,unsigned char>(src_base_addr[0]);
+  data.y = convert_to<T,unsigned char>(src_base_addr[1]);
+  data.z = convert_to<T,unsigned char>(src_base_addr[2]);
   data.w = 255;
 
   ((uchar4 *)dest)[y * width + x] = data;
@@ -163,6 +179,50 @@ void copy_to_texture_buffer_cuda(T *src,
   copy_to_texture_buffer_cuda_impl<<<num_blocks, num_threads>>>(
       src, dest, width, height, actual_width, actual_height, channels);
 }
+
+
+template void update_renderables_vertices_cuda<float,float>(Vertex *vbo,
+                                      float *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_cuda<float,unsigned char>(Vertex *vbo,
+                                      float *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_cuda<unsigned char,float>(Vertex *vbo,
+                                      unsigned char *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_cuda<unsigned char,unsigned char>(Vertex *vbo,
+                                      unsigned char *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+
+template void update_renderables_vertices_x64<float,float>(Vertex *vbo,
+                                      float *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_x64<float,unsigned char>(Vertex *vbo,
+                                      float *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_x64<unsigned char,float>(Vertex *vbo,
+                                      unsigned char *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+template void update_renderables_vertices_x64<unsigned char,unsigned char>(Vertex *vbo,
+                                      unsigned char *data,
+                                      int num_vertices,
+                                      int num_components,
+                                      int offset_bytes);
+
 
 template void copy_to_texture_buffer_cuda<float>(float *src,
                                                  unsigned char *dest,

@@ -4,19 +4,21 @@ namespace taichi {
 namespace ui {
 
 struct Vertex {
+  template<typename T>
   struct vec3 {
-    float x;
-    float y;
-    float z;
+    T x;
+    T y;
+    T z;
   };
+  template<typename T>
   struct vec2 {
     float x;
     float y;
   };
-  vec3 pos;
-  vec3 normal;
-  vec2 texCoord;
-  vec3 color;
+  vec3<float> pos;
+  vec3<float> normal;
+  vec2<float> texCoord;
+  vec3<unsigned char> color;
 };
 
 }  // namespace ui

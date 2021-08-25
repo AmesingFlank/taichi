@@ -84,7 +84,7 @@ void Renderable::update_data(const RenderableInfo &info) {
   int num_components = info.vertices.matrix_rows;
 
   if (info.vertices.field_source == FieldSource::TaichiCuda) {
-    update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
+    update_renderables_vertices_cuda<float,float>(vertex_buffer_device_ptr_,
                                      (float *)info.vertices.data, num_vertices,
                                      num_components, offsetof(Vertex, pos));
 
@@ -93,7 +93,7 @@ void Renderable::update_data(const RenderableInfo &info) {
         throw std::runtime_error(
             "shape of per_vertex_color should be the same as vertices");
       }
-      update_renderables_vertices_cuda(
+      update_renderables_vertices_cuda<float,unsigned char>(
           vertex_buffer_device_ptr_, (float *)info.per_vertex_color.data,
           num_vertices, 3, offsetof(Vertex, color));
     }
@@ -103,7 +103,7 @@ void Renderable::update_data(const RenderableInfo &info) {
         throw std::runtime_error(
             "shape of normals should be the same as vertices");
       }
-      update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
+      update_renderables_vertices_cuda<float,float>(vertex_buffer_device_ptr_,
                                        (float *)info.normals.data, num_vertices,
                                        3, offsetof(Vertex, normal));
     }
@@ -123,7 +123,7 @@ void Renderable::update_data(const RenderableInfo &info) {
       Vertex *mapped_vbo =
           (Vertex *)app_context_->device().map(staging_vertex_buffer_);
 
-      update_renderables_vertices_x64(mapped_vbo, (float *)info.vertices.data,
+      update_renderables_vertices_x64<float,float>(mapped_vbo, (float *)info.vertices.data,
                                       num_vertices, num_components,
                                       offsetof(Vertex, pos));
       if (info.per_vertex_color.valid) {
@@ -131,7 +131,7 @@ void Renderable::update_data(const RenderableInfo &info) {
           throw std::runtime_error(
               "shape of per_vertex_color should be the same as vertices");
         }
-        update_renderables_vertices_x64(
+        update_renderables_vertices_x64<float,unsigned char>(
             mapped_vbo, (float *)info.per_vertex_color.data, num_vertices, 3,
             offsetof(Vertex, color));
       }
@@ -140,7 +140,7 @@ void Renderable::update_data(const RenderableInfo &info) {
           throw std::runtime_error(
               "shape of normals should be the same as vertices");
         }
-        update_renderables_vertices_x64(mapped_vbo, (float *)info.normals.data,
+        update_renderables_vertices_x64<float,unsigned char>(mapped_vbo, (float *)info.normals.data,
                                         num_vertices, 3,
                                         offsetof(Vertex, normal));
       }
@@ -204,12 +204,11 @@ void Renderable::create_graphics_pipeline() {
   raster_params.depth_write = true;
 
   std::vector<VertexInputBinding> vertex_inputs = {{0, sizeof(Vertex), false}};
-  // TODO: consider using uint8 for colors and normals
   std::vector<VertexInputAttribute> vertex_attribs = {
       {0, 0, BufferFormat::rgb32f, offsetof(Vertex, pos)},
-      {1, 0, BufferFormat::rgb32f, offsetof(Vertex, normal)},
+      {1, 0, BufferFormat::rgba32f, offsetof(Vertex, normal)},
       {2, 0, BufferFormat::rg32f, offsetof(Vertex, texCoord)},
-      {3, 0, BufferFormat::rgb32f, offsetof(Vertex, color)}};
+      {3, 0, BufferFormat::rgba8, offsetof(Vertex, color)}};
 
   pipeline_ = app_context_->device().create_raster_pipeline(
       source, raster_params, vertex_inputs, vertex_attribs);
