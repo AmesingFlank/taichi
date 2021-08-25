@@ -49,8 +49,6 @@ class Renderable {
 
  protected:
   RenderableConfig config_;
-
-  class Renderer *renderer_;
   AppContext *app_context_;
 
   std::unique_ptr<taichi::lang::Pipeline> pipeline_{nullptr};
@@ -72,7 +70,7 @@ class Renderable {
   bool indexed_{false};
 
  protected:
-  void init(const RenderableConfig &config_, class Renderer *renderer_);
+  void init(const RenderableConfig &config_, AppContext *app_context);
   void free_buffers();
   void init_buffers();
   void init_render_resources();

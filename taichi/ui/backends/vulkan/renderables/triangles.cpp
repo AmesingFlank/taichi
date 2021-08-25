@@ -1,6 +1,6 @@
 #include "triangles.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+
 
 #include "taichi/ui/utils/utils.h"
 
@@ -22,7 +22,7 @@ void Triangles::update_data(const TrianglesInfo &info) {
   update_ubo(info.color, info.renderable_info.per_vertex_color.valid);
 }
 
-void Triangles::init_triangles(Renderer *renderer,
+void Triangles::init_triangles(AppContext *app_context,
                                int vertices_count,
                                int indices_count) {
   RenderableConfig config = {
@@ -30,27 +30,27 @@ void Triangles::init_triangles(Renderer *renderer,
       indices_count,
       sizeof(UniformBufferObject),
       0,
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Triangles_vk_vert.spv",
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Triangles_vk_frag.spv",
       TopologyType::Triangles,
   };
 
-  Renderable::init(config, renderer);
+  Renderable::init(config, app_context);
   Renderable::init_render_resources();
 }
 
-Triangles::Triangles(Renderer *renderer) {
-  init_triangles(renderer, 3, 3);
+Triangles::Triangles(AppContext *app_context) {
+  init_triangles(app_context, 3, 3);
 }
 
 void Triangles::update_ubo(glm::vec3 color, bool use_per_vertex_color) {
   UniformBufferObject ubo{color, (int)use_per_vertex_color};
 
-  void *mapped = renderer_->app_context().device().map(uniform_buffer_);
+  void *mapped = app_context_->device().map(uniform_buffer_);
   memcpy(mapped, &ubo, sizeof(ubo));
-  renderer_->app_context().device().unmap(uniform_buffer_);
+  app_context_->device().unmap(uniform_buffer_);
 }
 
 void Triangles::create_bindings() {

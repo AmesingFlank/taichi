@@ -27,7 +27,7 @@ namespace vulkan {
 
 class Triangles final : public Renderable {
  public:
-  Triangles(class Renderer *renderer);
+  Triangles(AppContext *app_context);
 
   void update_data(const TrianglesInfo &info);
 
@@ -37,7 +37,7 @@ class Triangles final : public Renderable {
     int use_per_vertex_color;
   };
 
-  void init_triangles(class Renderer *renderer,
+  void init_triangles(AppContext *app_context,
                       int vertices_count,
                       int indices_count);
 

@@ -2,7 +2,7 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+
 
 #include "kernels.h"
 
@@ -31,7 +31,7 @@ void SetImage::update_data(const SetImageInfo &info) {
   if (new_width != width || new_height != height) {
     destroy_texture();
     free_buffers();
-    init_set_image(renderer_, new_width, new_height);
+    init_set_image(app_context_, new_width, new_height);
   }
 
   int actual_width = next_power_of_2(width);
@@ -92,11 +92,11 @@ void SetImage::update_data(const SetImageInfo &info) {
                                           ImageLayout::shader_read);
 }
 
-SetImage::SetImage(Renderer *renderer) {
-  init_set_image(renderer, 1, 1);
+SetImage::SetImage(AppContext *app_context) {
+  init_set_image(app_context, 1, 1);
 }
 
-void SetImage::init_set_image(Renderer *renderer,
+void SetImage::init_set_image(AppContext *app_context,
                               int img_width,
                               int img_height) {
   RenderableConfig config = {
@@ -104,14 +104,14 @@ void SetImage::init_set_image(Renderer *renderer,
       6,
       0,
       0,
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/SetImage_vk_vert.spv",
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/SetImage_vk_frag.spv",
       TopologyType::Triangles,
   };
 
-  Renderable::init(config, renderer);
+  Renderable::init(config, app_context);
 
   width = img_width;
   height = img_height;
@@ -136,16 +136,16 @@ void SetImage::create_texture() {
   params.z = 1;
   params.export_sharing = true;
 
-  texture_ = renderer_->app_context().device().create_image(params);
+  texture_ = app_context_->device().create_image(params);
 
   Device::AllocParams cpu_staging_buffer_params{image_size, true, false, false,
                                                 AllocUsage::Uniform};
-  cpu_staging_buffer_ = renderer_->app_context().device().allocate_memory(
+  cpu_staging_buffer_ = app_context_->device().allocate_memory(
       cpu_staging_buffer_params);
 
   Device::AllocParams gpu_staging_buffer_params{image_size, false, false, true,
                                                 AllocUsage::Uniform};
-  gpu_staging_buffer_ = renderer_->app_context().device().allocate_memory(
+  gpu_staging_buffer_ = app_context_->device().allocate_memory(
       gpu_staging_buffer_params);
 
   if (app_context_->config.ti_arch == Arch::cuda) {

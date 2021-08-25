@@ -27,7 +27,7 @@ namespace vulkan {
 
 class Mesh final : public Renderable {
  public:
-  Mesh(class Renderer *renderer);
+  Mesh(AppContext *app_context);
 
   void update_data(const MeshInfo &info, const Scene &scene);
 
@@ -38,7 +38,7 @@ class Mesh final : public Renderable {
     int use_per_vertex_color;
   };
 
-  void init_mesh(class Renderer *renderer,
+  void init_mesh(AppContext *app_context,
                  int vertices_count,
                  int indices_count);
 

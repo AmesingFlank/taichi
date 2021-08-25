@@ -2,7 +2,6 @@
 #include "taichi/ui/utils/utils.h"
 
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
 #include "taichi/ui/backends/vulkan/renderables/kernels.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -13,10 +12,9 @@ using namespace taichi::lang;
 using namespace taichi::lang::vulkan;
 
 void Renderable::init(const RenderableConfig &config,
-                      class Renderer *renderer) {
+                      AppContext *app_context) {
   config_ = config;
-  renderer_ = renderer;
-  app_context_ = &renderer->app_context();
+  app_context_ = app_context;
 }
 
 void Renderable::init_render_resources() {

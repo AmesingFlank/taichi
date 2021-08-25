@@ -17,18 +17,18 @@ void Renderer::init(GLFWwindow *window, const AppConfig &config) {
 }
 
 template <typename T>
-std::unique_ptr<Renderable> get_new_renderable(Renderer *r) {
-  return std::unique_ptr<Renderable>{new T(r)};
+std::unique_ptr<Renderable> get_new_renderable(AppContext *app_context) {
+  return std::unique_ptr<Renderable>{new T(app_context)};
 }
 
 template <typename T>
 T *Renderer::get_renderable_of_type() {
   if (next_renderable_ >= renderables_.size()) {
-    renderables_.push_back(get_new_renderable<T>(this));
+    renderables_.push_back(get_new_renderable<T>(&app_context_));
   } else if (dynamic_cast<T *>(renderables_[next_renderable_].get()) ==
              nullptr) {
     renderables_.insert(renderables_.begin() + next_renderable_,
-                        get_new_renderable<T>(this));
+                        get_new_renderable<T>(&app_context_));
   }
 
   if (T *t = dynamic_cast<T *>(renderables_[next_renderable_].get())) {

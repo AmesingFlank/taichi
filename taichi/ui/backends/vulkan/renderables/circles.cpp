@@ -1,6 +1,6 @@
 #include "circles.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+
 
 #include "taichi/ui/utils/utils.h"
 
@@ -23,36 +23,36 @@ void Circles::update_data(const CirclesInfo &info) {
              info.radius);
 }
 
-void Circles::init_circles(Renderer *renderer, int vertices_count) {
+void Circles::init_circles(AppContext *app_context, int vertices_count) {
   RenderableConfig config = {
       vertices_count,
       1,
       sizeof(UniformBufferObject),
       0,
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Circles_vk_vert.spv",
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Circles_vk_frag.spv",
       TopologyType::Points,
   };
 
-  Renderable::init(config, renderer);
+  Renderable::init(config, app_context);
   Renderable::init_render_resources();
 }
 
-Circles::Circles(Renderer *renderer) {
-  init_circles(renderer, 1);
+Circles::Circles(AppContext *app_context) {
+  init_circles(app_context, 1);
 }
 
 void Circles::update_ubo(glm::vec3 color,
                          bool use_per_vertex_color,
                          float radius) {
   UniformBufferObject ubo{color, (int)use_per_vertex_color,
-                          radius * renderer_->swap_chain().height()};
+                          radius * app_context_->config.height};
 
-  void *mapped = renderer_->app_context().device().map(uniform_buffer_);
+  void *mapped = app_context_->device().map(uniform_buffer_);
   memcpy(mapped, &ubo, sizeof(ubo));
-  renderer_->app_context().device().unmap(uniform_buffer_);
+  app_context_->device().unmap(uniform_buffer_);
 }
 
 void Circles::create_bindings() {

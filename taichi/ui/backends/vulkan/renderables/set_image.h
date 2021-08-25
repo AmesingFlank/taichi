@@ -30,7 +30,7 @@ class SetImage final : public Renderable {
  public:
   int width, height;
 
-  SetImage(class Renderer *renderer);
+  SetImage(AppContext *app_context);
 
   void update_data(const SetImageInfo &info);
 
@@ -45,7 +45,7 @@ class SetImage final : public Renderable {
   unsigned char *device_ptr_{nullptr};
 
  private:
-  void init_set_image(class Renderer *renderer, int img_width, int img_height);
+  void init_set_image(AppContext *app_context, int img_width, int img_height);
 
   virtual void create_bindings() override;
 

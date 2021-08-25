@@ -1,6 +1,6 @@
 #include "lines.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+
 
 #include "taichi/ui/utils/utils.h"
 
@@ -28,7 +28,7 @@ void Lines::update_data(const LinesInfo &info) {
   curr_width_ = info.width;
 }
 
-void Lines::init_lines(Renderer *renderer,
+void Lines::init_lines(AppContext *app_context,
                        int vertices_count,
                        int indices_count) {
   RenderableConfig config = {
@@ -36,27 +36,27 @@ void Lines::init_lines(Renderer *renderer,
       indices_count,
       sizeof(UniformBufferObject),
       0,
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Lines_vk_vert.spv",
-      renderer->app_context().config.package_path +
+      app_context->config.package_path +
           "/shaders/Lines_vk_frag.spv",
       TopologyType::Lines,
   };
 
-  Renderable::init(config, renderer);
+  Renderable::init(config, app_context);
   Renderable::init_render_resources();
 }
 
-Lines::Lines(Renderer *renderer) {
-  init_lines(renderer, 4, 6);
+Lines::Lines(AppContext *app_context) {
+  init_lines(app_context, 4, 6);
 }
 
 void Lines::update_ubo(glm::vec3 color, bool use_per_vertex_color) {
   UniformBufferObject ubo{color, (int)use_per_vertex_color};
 
-  void *mapped = renderer_->app_context().device().map(uniform_buffer_);
+  void *mapped = app_context_->device().map(uniform_buffer_);
   memcpy(mapped, &ubo, sizeof(ubo));
-  renderer_->app_context().device().unmap(uniform_buffer_);
+  app_context_->device().unmap(uniform_buffer_);
 }
 
 void Lines::create_bindings() {
@@ -68,7 +68,7 @@ void Lines::create_bindings() {
 void Lines::record_this_frame_commands(CommandList *command_list) {
   command_list->bind_pipeline(pipeline_.get());
   command_list->bind_resources(pipeline_->resource_binder());
-  command_list->set_line_width(curr_width_ * renderer_->swap_chain().height());
+  command_list->set_line_width(curr_width_ * app_context_->config.height);
 
   if (indexed_) {
     command_list->draw_indexed(config_.indices_count, 0, 0);

@@ -27,7 +27,7 @@ namespace vulkan {
 
 class Lines final : public Renderable {
  public:
-  Lines(class Renderer *renderer);
+  Lines(AppContext *app_context);
 
   void update_data(const LinesInfo &info);
 
@@ -40,7 +40,7 @@ class Lines final : public Renderable {
     int use_per_vertex_color;
   };
 
-  void init_lines(class Renderer *renderer,
+  void init_lines(AppContext *app_context,
                   int vertices_count,
                   int indices_count);
 

@@ -1,6 +1,6 @@
 #include "mesh.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+
 
 #include "taichi/ui/utils/utils.h"
 #include "taichi/backends/vulkan/vulkan_device.h"
@@ -11,8 +11,8 @@ namespace vulkan {
 
 using namespace taichi::lang;
 
-Mesh::Mesh(Renderer *renderer) {
-  init_mesh(renderer, 3, 3);
+Mesh::Mesh(AppContext *app_context) {
+  init_mesh(app_context, 3, 3);
 }
 
 void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
@@ -21,9 +21,9 @@ void Mesh::update_ubo(const MeshInfo &info, const Scene &scene) {
   ubo.color = info.color;
   ubo.use_per_vertex_color = info.renderable_info.per_vertex_color.valid;
 
-  void *mapped = renderer_->app_context().device().map(uniform_buffer_);
+  void *mapped = app_context_->device().map(uniform_buffer_);
   memcpy(mapped, &ubo, sizeof(ubo));
-  renderer_->app_context().device().unmap(uniform_buffer_);
+  app_context_->device().unmap(uniform_buffer_);
 }
 
 void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
@@ -37,9 +37,9 @@ void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
     resize_storage_buffers(correct_ssbo_size);
   }
   {
-    void *mapped = renderer_->app_context().device().map(storage_buffer_);
+    void *mapped = app_context_->device().map(storage_buffer_);
     memcpy(mapped, scene.point_lights_.data(), correct_ssbo_size);
-    renderer_->app_context().device().unmap(storage_buffer_);
+    app_context_->device().unmap(storage_buffer_);
   }
 
   Renderable::update_data(info.renderable_info);
@@ -47,7 +47,7 @@ void Mesh::update_data(const MeshInfo &info, const Scene &scene) {
   update_ubo(info, scene);
 }
 
-void Mesh::init_mesh(Renderer *renderer,
+void Mesh::init_mesh(AppContext *app_context,
                      int vertices_count,
                      int indices_count) {
   RenderableConfig config = {
@@ -55,12 +55,12 @@ void Mesh::init_mesh(Renderer *renderer,
       indices_count,
       sizeof(UniformBufferObject),
       1,
-      renderer->app_context().config.package_path + "/shaders/Mesh_vk_vert.spv",
-      renderer->app_context().config.package_path + "/shaders/Mesh_vk_frag.spv",
+      app_context->config.package_path + "/shaders/Mesh_vk_vert.spv",
+      app_context->config.package_path + "/shaders/Mesh_vk_frag.spv",
       TopologyType::Triangles,
   };
 
-  Renderable::init(config, renderer);
+  Renderable::init(config, app_context);
   Renderable::init_render_resources();
 }
 
