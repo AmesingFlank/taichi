@@ -3,30 +3,18 @@ namespace taichi {
 namespace ui {
 
 void update_renderables_vertices_cuda(Vertex *vbo,
-                                      float *vertices,
+                                      float *data,
                                       int num_vertices,
-                                      int num_components);
+                                      int num_components,
+                                      int offset_bytes);
 void update_renderables_vertices_x64(Vertex *vbo,
                                      float *vertices,
                                      int num_vertices,
-                                     int num_components);
+                                     int num_components,
+                                     int offset_bytes);
 
 void update_renderables_indices_cuda(int *ibo, int *indices, int num_indices);
 void update_renderables_indices_x64(int *ibo, int *indices, int num_indices);
-
-void update_renderables_colors_cuda(Vertex *vbo,
-                                    float *colors,
-                                    int num_vertices);
-void update_renderables_colors_x64(Vertex *vbo,
-                                   float *colors,
-                                   int num_vertices);
-
-void update_renderables_normals_cuda(Vertex *vbo,
-                                     float *normals,
-                                     int num_vertices);
-void update_renderables_normals_x64(Vertex *vbo,
-                                    float *normals,
-                                    int num_vertices);
 
 template <typename T>
 void copy_to_texture_buffer_surface_cuda(T *src,

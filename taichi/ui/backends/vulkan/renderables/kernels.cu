@@ -19,39 +19,43 @@ void set_num_blocks_threads(int N, int &num_blocks, int &num_threads) {
 }
 
 __global__ void update_renderables_vertices_cuda_impl(Vertex *vbo,
-                                                      float *vertices,
+                                                      float *data,
                                                       int num_vertices,
-                                                      int num_components) {
+                                                      int num_components,
+                                                      int offset) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= num_vertices)
     return;
 
-  vbo[i].pos.x = vertices[i * num_components];
-  vbo[i].pos.y = vertices[i * num_components + 1];
-  if (num_components == 3) {
-    vbo[i].pos.z = vertices[i * num_components + 2];
+  float *dst = (float *)(vbo + i) + offset;
+  float *src = data + i * num_components;
+  for (int c = 0; c < num_components; ++c) {
+    dst[c] = src[c];
   }
 }
 
 void update_renderables_vertices_cuda(Vertex *vbo,
-                                      float *vertices,
+                                      float *data,
                                       int num_vertices,
-                                      int num_components) {
+                                      int num_components,
+                                      int offset_bytes) {
   int num_blocks, num_threads;
   set_num_blocks_threads(num_vertices, num_blocks, num_threads);
   update_renderables_vertices_cuda_impl<<<num_blocks, num_threads>>>(
-      vbo, vertices, num_vertices, num_components);
+      vbo, data, num_vertices, num_components, offset_bytes / sizeof(float));
 }
 
 void update_renderables_vertices_x64(Vertex *vbo,
-                                     float *vertices,
+                                     float *data,
                                      int num_vertices,
-                                     int num_components) {
+                                     int num_components,
+                                     int offset_bytes) {
+  int offset = offset_bytes / sizeof(float);
   for (int i = 0; i < num_vertices; ++i) {
-    vbo[i].pos.x = vertices[i * num_components];
-    vbo[i].pos.y = vertices[i * num_components + 1];
-    if (num_components == 3) {
-      vbo[i].pos.z = vertices[i * num_components + 2];
+    float *dst = (float *)(vbo + i) + offset;
+    float *src = data + i * num_components;
+    for (int c = 0; c < num_components; ++c) {
+      dst[c] = src[c];
     }
   }
 }
