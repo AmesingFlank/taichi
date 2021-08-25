@@ -1,7 +1,6 @@
 #include "triangles.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 
-
 #include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -30,10 +29,8 @@ void Triangles::init_triangles(AppContext *app_context,
       indices_count,
       sizeof(UniformBufferObject),
       0,
-      app_context->config.package_path +
-          "/shaders/Triangles_vk_vert.spv",
-      app_context->config.package_path +
-          "/shaders/Triangles_vk_frag.spv",
+      app_context->config.package_path + "/shaders/Triangles_vk_vert.spv",
+      app_context->config.package_path + "/shaders/Triangles_vk_frag.spv",
       TopologyType::Triangles,
   };
 

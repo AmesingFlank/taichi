@@ -1,7 +1,6 @@
 #include "particles.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 
-
 #include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -61,10 +60,8 @@ void Particles::init_particles(AppContext *app_context, int vertices_count) {
       vertices_count,
       sizeof(UniformBufferObject),
       1,
-      app_context->config.package_path +
-          "/shaders/Particles_vk_vert.spv",
-      app_context->config.package_path +
-          "/shaders/Particles_vk_frag.spv",
+      app_context->config.package_path + "/shaders/Particles_vk_vert.spv",
+      app_context->config.package_path + "/shaders/Particles_vk_frag.spv",
       TopologyType::Points,
   };
 

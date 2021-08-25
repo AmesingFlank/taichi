@@ -1,7 +1,6 @@
 #include "circles.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 
-
 #include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -29,10 +28,8 @@ void Circles::init_circles(AppContext *app_context, int vertices_count) {
       1,
       sizeof(UniformBufferObject),
       0,
-      app_context->config.package_path +
-          "/shaders/Circles_vk_vert.spv",
-      app_context->config.package_path +
-          "/shaders/Circles_vk_frag.spv",
+      app_context->config.package_path + "/shaders/Circles_vk_vert.spv",
+      app_context->config.package_path + "/shaders/Circles_vk_frag.spv",
       TopologyType::Points,
   };
 

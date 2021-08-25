@@ -3,7 +3,6 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
 
-
 #include "kernels.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -104,10 +103,8 @@ void SetImage::init_set_image(AppContext *app_context,
       6,
       0,
       0,
-      app_context->config.package_path +
-          "/shaders/SetImage_vk_vert.spv",
-      app_context->config.package_path +
-          "/shaders/SetImage_vk_frag.spv",
+      app_context->config.package_path + "/shaders/SetImage_vk_vert.spv",
+      app_context->config.package_path + "/shaders/SetImage_vk_frag.spv",
       TopologyType::Triangles,
   };
 
@@ -140,13 +137,13 @@ void SetImage::create_texture() {
 
   Device::AllocParams cpu_staging_buffer_params{image_size, true, false, false,
                                                 AllocUsage::Uniform};
-  cpu_staging_buffer_ = app_context_->device().allocate_memory(
-      cpu_staging_buffer_params);
+  cpu_staging_buffer_ =
+      app_context_->device().allocate_memory(cpu_staging_buffer_params);
 
   Device::AllocParams gpu_staging_buffer_params{image_size, false, false, true,
                                                 AllocUsage::Uniform};
-  gpu_staging_buffer_ = app_context_->device().allocate_memory(
-      gpu_staging_buffer_params);
+  gpu_staging_buffer_ =
+      app_context_->device().allocate_memory(gpu_staging_buffer_params);
 
   if (app_context_->config.ti_arch == Arch::cuda) {
     auto [mem, offset, size] =

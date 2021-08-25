@@ -1,7 +1,6 @@
 #include "lines.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 
-
 #include "taichi/ui/utils/utils.h"
 
 #include "taichi/ui/backends/vulkan/renderables/kernels.h"
@@ -36,10 +35,8 @@ void Lines::init_lines(AppContext *app_context,
       indices_count,
       sizeof(UniformBufferObject),
       0,
-      app_context->config.package_path +
-          "/shaders/Lines_vk_vert.spv",
-      app_context->config.package_path +
-          "/shaders/Lines_vk_frag.spv",
+      app_context->config.package_path + "/shaders/Lines_vk_vert.spv",
+      app_context->config.package_path + "/shaders/Lines_vk_frag.spv",
       TopologyType::Lines,
   };
 

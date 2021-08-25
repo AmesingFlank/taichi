@@ -1,7 +1,6 @@
 #include "mesh.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 
-
 #include "taichi/ui/utils/utils.h"
 #include "taichi/backends/vulkan/vulkan_device.h"
 

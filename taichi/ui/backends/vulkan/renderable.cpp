@@ -11,8 +11,7 @@ namespace vulkan {
 using namespace taichi::lang;
 using namespace taichi::lang::vulkan;
 
-void Renderable::init(const RenderableConfig &config,
-                      AppContext *app_context) {
+void Renderable::init(const RenderableConfig &config, AppContext *app_context) {
   config_ = config;
   app_context_ = app_context;
 }
