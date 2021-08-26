@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "taichi/ui/backends/vulkan/swap_chain.h"
-#include "taichi/ui/backends/vulkan/renderer.h"
+#include "taichi/ui/backends/vulkan/app_context.h"
 
 using namespace taichi::lang::vulkan;
 using namespace taichi::lang;
@@ -15,9 +15,8 @@ PFN_vkVoidFunction load_vk_function_for_gui(const char *name, void *userData) {
   return result;
 }
 
-Gui::Gui(class Renderer *renderer, GLFWwindow *window) {
-  renderer_ = renderer;
-  app_context_ = &renderer->app_context();
+Gui::Gui(AppContext *app_context, GLFWwindow *window) {
+  app_context_ = app_context;
 
   create_descriptor_pool();
 
@@ -105,10 +104,10 @@ bool Gui::initialized() {
 }
 
 float Gui::abs_x(float x) {
-  return x * renderer_->swap_chain().width();
+  return x * app_context_->config.width;
 }
 float Gui::abs_y(float y) {
-  return y * renderer_->swap_chain().height();
+  return y * app_context_->config.height;
 }
 
 void Gui::begin(std::string name, float x, float y, float width, float height) {

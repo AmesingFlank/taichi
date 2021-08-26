@@ -11,7 +11,7 @@ Window::Window(const AppConfig &config) : WindowBase(config) {
 void Window::init(const AppConfig &config) {
   init_window();
   init_vulkan(config);
-  gui_ = std::make_unique<Gui>(renderer_.get(), glfw_window_);
+  gui_ = std::make_unique<Gui>(&renderer_->app_context(), glfw_window_);
   prepare_for_next_frame();
 }
 
