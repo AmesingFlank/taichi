@@ -26,8 +26,8 @@ v = ti.Vector.field(3, float, NN)
 
 @ti.kernel
 def init():
-    for i,j in x:
-        x[i] = ti.Vector([(i+0.5)*L-0.5,(j+0.5)*L-0.5,0.8])
+    for i, j in x:
+        x[i] = ti.Vector([(i + 0.5) * L - 0.5, (j + 0.5) * L - 0.5, 0.8])
 
 
 links = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
@@ -39,7 +39,7 @@ def substep():
     for i in ti.grouped(x):
         acc = x[i] * 0
         for d in ti.static(links):
-            disp =  min(max(i+d,0),NN-1) - x[i]
+            disp = min(max(i + d, 0), NN - 1) - x[i]
             length = L * float(d).norm()
             acc += disp * (disp.norm() - length) / length**2
         v[i] += stiffness * acc * dt
@@ -49,8 +49,6 @@ def substep():
     for i in ti.grouped(x):
         v[i] *= ti.exp(-damping * dt)
         x[i] += dt * v[i]
-
-
 
 
 init()

@@ -7,10 +7,9 @@ import taichi as ti
 
 ti.init(ti.gpu)
 
-vertices,centers,radius = 0,0,0
+vertices, centers, radius = 0, 0, 0
 
-
-window = ti.ui.Window("Hello Taichi", (1920,1080))
+window = ti.ui.Window("Hello Taichi", (1920, 1080))
 
 canvas = window.get_canvas()
 scene = ti.ui.Scene()
@@ -26,13 +25,7 @@ while window.running:
 
     # vertices, centers, etc. are taichi fields
     scene.mesh(vertices, ...)
-    scene.particles(centers,radius,...)
+    scene.particles(centers, radius, ...)
 
     canvas.scene(scene)
     window.show()
-
-
-    
-
-
-
