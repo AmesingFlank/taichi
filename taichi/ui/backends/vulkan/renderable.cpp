@@ -49,7 +49,7 @@ void Renderable::init_buffers() {
     auto block_size = VulkanDevice::kMemoryBlockSize;
 
     vertex_buffer_device_ptr_ =
-        (Vertex *)get_memory_pointer(vb_mem, block_size, vb_offset, vb_size,
+        (float *)get_memory_pointer(vb_mem, block_size, vb_offset, vb_size,
                                      app_context_->device().vk_device());
     index_buffer_device_ptr_ =
         (int *)get_memory_pointer(ib_mem, block_size, ib_offset, ib_size,
@@ -84,7 +84,7 @@ void Renderable::update_data(const RenderableInfo &info) {
   int num_components = info.vertices.matrix_rows;
 
   if (info.vertices.field_source == FieldSource::TaichiCuda) {
-    update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
+    update_renderables_vertices_cuda(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
                                      (float *)info.vertices.data, num_vertices,
                                      num_components, offsetof(Vertex, pos));
 
@@ -94,7 +94,7 @@ void Renderable::update_data(const RenderableInfo &info) {
             "shape of per_vertex_color should be the same as vertices");
       }
       update_renderables_vertices_cuda(
-          vertex_buffer_device_ptr_, (float *)info.per_vertex_color.data,
+          vertex_buffer_device_ptr_,sizeof(Vertex) / sizeof(float), (float *)info.per_vertex_color.data,
           num_vertices, 3, offsetof(Vertex, color));
     }
 
@@ -103,7 +103,7 @@ void Renderable::update_data(const RenderableInfo &info) {
         throw std::runtime_error(
             "shape of normals should be the same as vertices");
       }
-      update_renderables_vertices_cuda(vertex_buffer_device_ptr_,
+      update_renderables_vertices_cuda(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
                                        (float *)info.normals.data, num_vertices,
                                        3, offsetof(Vertex, normal));
     }
@@ -120,10 +120,10 @@ void Renderable::update_data(const RenderableInfo &info) {
     {
       // TODO: Support for FieldSource::Numpy, investigate how
       // packed-mode/powe4-of-2 fields/multiple level dense layouts affect this.
-      Vertex *mapped_vbo =
-          (Vertex *)app_context_->device().map(staging_vertex_buffer_);
+      float *mapped_vbo =
+          (float *)app_context_->device().map(staging_vertex_buffer_);
 
-      update_renderables_vertices_x64(mapped_vbo, (float *)info.vertices.data,
+      update_renderables_vertices_x64(mapped_vbo, sizeof(Vertex) / sizeof(float),(float *)info.vertices.data,
                                       num_vertices, num_components,
                                       offsetof(Vertex, pos));
       if (info.per_vertex_color.valid) {
@@ -132,7 +132,7 @@ void Renderable::update_data(const RenderableInfo &info) {
               "shape of per_vertex_color should be the same as vertices");
         }
         update_renderables_vertices_x64(
-            mapped_vbo, (float *)info.per_vertex_color.data, num_vertices, 3,
+            mapped_vbo, sizeof(Vertex) / sizeof(float),(float *)info.per_vertex_color.data, num_vertices, 3,
             offsetof(Vertex, color));
       }
       if (info.normals.valid) {
@@ -140,7 +140,7 @@ void Renderable::update_data(const RenderableInfo &info) {
           throw std::runtime_error(
               "shape of normals should be the same as vertices");
         }
-        update_renderables_vertices_x64(mapped_vbo, (float *)info.normals.data,
+        update_renderables_vertices_x64(mapped_vbo,sizeof(Vertex) / sizeof(float), (float *)info.normals.data,
                                         num_vertices, 3,
                                         offsetof(Vertex, normal));
       }

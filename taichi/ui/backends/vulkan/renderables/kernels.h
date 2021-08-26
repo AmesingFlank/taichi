@@ -2,13 +2,15 @@
 namespace taichi {
 namespace ui {
 
-void update_renderables_vertices_cuda(Vertex *vbo,
-                                      float *data,
+void update_renderables_vertices_cuda(float *vbo,
+                                      int stride,
+                                      float* data,
                                       int num_vertices,
                                       int num_components,
                                       int offset_bytes);
-void update_renderables_vertices_x64(Vertex *vbo,
-                                     float *vertices,
+void update_renderables_vertices_x64(float *vbo,
+                                     int stride,
+                                     float* data,
                                      int num_vertices,
                                      int num_components,
                                      int offset_bytes);

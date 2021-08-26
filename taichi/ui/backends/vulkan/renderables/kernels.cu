@@ -21,7 +21,8 @@ void set_num_blocks_threads(int N, int &num_blocks, int &num_threads) {
 #undef MAX_THREADS_PER_BLOCK
 }  // namespace
 
-__global__ void update_renderables_vertices_cuda_impl(Vertex *vbo,
+__global__ void update_renderables_vertices_cuda_impl(float *vbo,
+                                                      int stride,
                                                       float *data,
                                                       int num_vertices,
                                                       int num_components,
@@ -30,14 +31,15 @@ __global__ void update_renderables_vertices_cuda_impl(Vertex *vbo,
   if (i >= num_vertices)
     return;
 
-  float *dst = (float *)(vbo + i) + offset;
+  float *dst = vbo + i*stride + offset;
   float *src = data + i * num_components;
   for (int c = 0; c < num_components; ++c) {
     dst[c] = src[c];
   }
 }
 
-void update_renderables_vertices_cuda(Vertex *vbo,
+void update_renderables_vertices_cuda(float *vbo,
+                                      int stride,
                                       float *data,
                                       int num_vertices,
                                       int num_components,
@@ -45,17 +47,18 @@ void update_renderables_vertices_cuda(Vertex *vbo,
   int num_blocks, num_threads;
   set_num_blocks_threads(num_vertices, num_blocks, num_threads);
   update_renderables_vertices_cuda_impl<<<num_blocks, num_threads>>>(
-      vbo, data, num_vertices, num_components, offset_bytes / sizeof(float));
+      vbo, stride,data, num_vertices, num_components, offset_bytes / sizeof(float));
 }
 
-void update_renderables_vertices_x64(Vertex *vbo,
-                                     float *data,
+void update_renderables_vertices_x64(float *vbo,
+                                     int stride,
+                                     float* data,
                                      int num_vertices,
                                      int num_components,
                                      int offset_bytes) {
   int offset = offset_bytes / sizeof(float);
   for (int i = 0; i < num_vertices; ++i) {
-    float *dst = (float *)(vbo + i) + offset;
+    float *dst = vbo + i*stride + offset;
     float *src = data + i * num_components;
     for (int c = 0; c < num_components; ++c) {
       dst[c] = src[c];
