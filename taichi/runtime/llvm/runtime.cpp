@@ -1123,6 +1123,23 @@ DEFINE_REDUCTION(and, i32);
 DEFINE_REDUCTION(or, i32);
 DEFINE_REDUCTION(xor, i32);
 
+void runtime_update_renderables_vertices(float *vbo,
+                                                      int stride,
+                                                      float *data,
+                                                      int num_vertices,
+                                                      int num_components,
+                                                      int offset) {
+  int i = block_idx() *  block_dim() + thread_idx();
+  if (i >= num_vertices)
+    return;
+
+  float *dst = vbo + i*stride + offset;
+  float *src = data + i * num_components;
+  for (int c = 0; c < num_components; ++c) {
+    dst[c] = src[c];
+  }
+}
+
 // "Element", "component" are different concepts
 
 void clear_list(LLVMRuntime *runtime, StructMeta *parent, StructMeta *child) {

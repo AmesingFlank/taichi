@@ -281,6 +281,21 @@ CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,
   return result;
 }
 
+
+
+
+taichi::lang::JITSessionCUDA* InteropCUDALauncher::session(){
+  return session_;
+}
+taichi::lang::JITModuleCUDA* InteropCUDALauncher::module(){
+  return module_;
+}
+
+InteropCUDALauncher::InteropCUDALauncher(){
+  session_ = std::unique_ptr<JITSessionCUDA>{create_llvm_jit_session_cuda(Arch::cuda).release()};
+  
+}
+
 }  // namespace vulkan
 
 TI_UI_NAMESPACE_END

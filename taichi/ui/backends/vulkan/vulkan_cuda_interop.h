@@ -2,6 +2,14 @@
 
 #include "taichi/ui/utils/utils.h"
 #include "taichi/backends/cuda/cuda_driver.h"
+#include "taichi/backends/cuda/cuda_context.h"
+#include "taichi/backends/cuda/cuda_driver.h"
+#include "taichi/jit/jit_session.h"
+#include "taichi/lang_util.h"
+#include "taichi/program/program.h"
+#include "taichi/system/timer.h"
+#include "taichi/util/file_sequence_writer.h"
+#include "taichi/backends/cuda/jit_cuda.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -52,6 +60,33 @@ void cuda_vk_semaphore_signal(CUexternalSemaphore ext_smaphore,
 
 void cuda_vk_semaphore_wait(CUexternalSemaphore ext_smaphore,
                             CUstream stream = 0);
+
+
+
+
+class InteropCUDALauncher {
+ public:
+  static InteropCUDALauncher &instance() {
+    static InteropCUDALauncher instance;
+    return instance;
+  }
+
+ public:
+  InteropCUDALauncher(InteropCUDALauncher const &) = delete;
+  void operator=(InteropCUDALauncher const &) = delete;
+  taichi::lang::JITSessionCUDA* session();
+  taichi::lang::JITModuleCUDA* module();
+
+ private:
+
+  InteropCUDALauncher();
+
+
+  std::unique_ptr<taichi::lang::JITSessionCUDA> session_{nullptr};
+  std::unique_ptr<taichi::lang::JITModuleCUDA> module_{nullptr};
+
+};
+
 
 }  // namespace vulkan
 
