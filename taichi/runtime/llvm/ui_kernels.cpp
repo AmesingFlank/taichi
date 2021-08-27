@@ -24,15 +24,17 @@ void update_renderables_vertices(float *vbo,
                                                       int num_vertices,
                                                       int num_components,
                                                       int offset) {
-  int i0 = block_idx() *  block_dim() + thread_idx();
+  int i = block_idx() *  block_dim() + thread_idx();
 
-  for(int i = i0; i < num_vertices; i += grid_dim() * block_dim()){
+  //for(int i = i0; i < num_vertices; i += grid_dim() * block_dim()){
+
     float *dst = vbo + i*stride + offset;
     float *src = data + i * num_components;
     for (int c = 0; c < num_components; ++c) {
         dst[c] = src[c];
     }
-  }
+
+  //}
 
   
 }

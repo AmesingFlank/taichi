@@ -322,9 +322,9 @@ int div_up(int a, int b) {
 void set_num_blocks_threads(int N, int &num_blocks, int &num_threads) {
   // TODO remove the use of get_current_program() here ...
   // The reason that this is needed is because CUDAContext::launch complains if these limits are exceeded.
-  num_threads = min(N, get_current_program().config.max_block_dim);
+  num_threads = min(N, 1024);
   num_blocks = div_up(N, num_threads);
-  num_blocks = min(num_blocks,get_current_program().config.saturating_grid_dim);
+  //num_blocks = min(num_blocks,get_current_program().config.saturating_grid_dim);
 }
  
 }  
