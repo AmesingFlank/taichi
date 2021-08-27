@@ -114,8 +114,8 @@ void Renderer::draw_frame(Gui *gui) {
     CUDADriver::get_instance().stream_synchronize(nullptr);
   }
 
-  std::unique_ptr<CommandList> cmd_list =
-      app_context().device().new_command_list({CommandListType::Graphics});
+  auto stream = app_context_.device().get_graphics_stream();
+  auto cmd_list = stream->new_command_list();
   bool color_clear = true;
   std::vector<float> clear_colors = {background_color_[0], background_color_[1],
                                      background_color_[2], 1};
@@ -141,7 +141,7 @@ void Renderer::draw_frame(Gui *gui) {
 
   gui->draw(cmd_list.get());
   cmd_list->end_renderpass();
-  app_context_.device().submit_synced(cmd_list.get());
+  stream->submit_synced(cmd_list.get());
 }
 
 const AppContext &Renderer::app_context() const {
