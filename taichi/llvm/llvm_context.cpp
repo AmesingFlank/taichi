@@ -259,36 +259,54 @@ void TaichiLLVMContext::init_runtime_jit_module() {
 
 // Note: runtime_module = init_module < struct_module
 
+
 std::unique_ptr<llvm::Module> TaichiLLVMContext::clone_runtime_module() {
   TI_AUTO_PROF
   TI_ASSERT(std::this_thread::get_id() == main_thread_id);
   auto data = get_this_thread_data();
-  auto ctx = get_this_thread_context();
   if (!data->runtime_module) {
-    data->runtime_module = module_from_bitcode_file(
-        fmt::format("{}/{}", runtime_lib_dir(), get_runtime_fn(arch)), ctx);
+    data->runtime_module = clone_module(get_runtime_fn(arch));
+  }
+
+  std::unique_ptr<llvm::Module> cloned;
+  {
+    TI_PROFILER("clone module");
+    cloned = llvm::CloneModule(*data->runtime_module);
+  }
+
+  TI_ASSERT(cloned != nullptr);
+
+  return cloned;
+}
+
+std::unique_ptr<llvm::Module> TaichiLLVMContext::clone_module(const std::string& file) {
+    auto ctx = get_this_thread_context();
+    std::unique_ptr<llvm::Module> module = module_from_bitcode_file(
+        fmt::format("{}/{}", runtime_lib_dir(), file), ctx);
     if (arch == Arch::cuda) {
-      auto &runtime_module = data->runtime_module;
-      runtime_module->setTargetTriple("nvptx64-nvidia-cuda");
+      module->setTargetTriple("nvptx64-nvidia-cuda");
 
 #if defined(TI_WITH_CUDA)
-      auto func = runtime_module->getFunction("cuda_compute_capability");
-      TI_ERROR_UNLESS(func, "Function cuda_compute_capability not found");
-      func->deleteBody();
-      auto bb = llvm::BasicBlock::Create(*ctx, "entry", func);
-      IRBuilder<> builder(*ctx);
-      builder.SetInsertPoint(bb);
-      builder.CreateRet(
-          get_constant(CUDAContext::get_instance().get_compute_capability()));
-      TaichiLLVMContext::mark_inline(func);
+      auto func = module->getFunction("cuda_compute_capability");
+      if(func){
+        func->deleteBody();
+        auto bb = llvm::BasicBlock::Create(*ctx, "entry", func);
+        IRBuilder<> builder(*ctx);
+        builder.SetInsertPoint(bb);
+        builder.CreateRet(
+            get_constant(CUDAContext::get_instance().get_compute_capability()));
+        TaichiLLVMContext::mark_inline(func);
+      }      
 #endif
 
       auto patch_intrinsic = [&](std::string name, Intrinsic::ID intrin,
                                  bool ret = true,
                                  std::vector<llvm::Type *> types = {},
                                  std::vector<llvm::Value *> extra_args = {}) {
-        auto func = runtime_module->getFunction(name);
-        TI_ERROR_UNLESS(func, "Function {} not found", name);
+        auto func =module->getFunction(name);
+        if(!func){
+          return;
+        }
         func->deleteBody();
         auto bb = llvm::BasicBlock::Create(*ctx, "entry", func);
         IRBuilder<> builder(*ctx);
@@ -308,7 +326,10 @@ std::unique_ptr<llvm::Module> TaichiLLVMContext::clone_runtime_module() {
 
       auto patch_atomic_add = [&](std::string name,
                                   llvm::AtomicRMWInst::BinOp op) {
-        auto func = runtime_module->getFunction(name);
+        auto func = module->getFunction(name);
+        if(!func){
+          return;
+        }
         func->deleteBody();
         auto bb = llvm::BasicBlock::Create(*ctx, "entry", func);
         IRBuilder<> builder(*ctx);
@@ -365,12 +386,12 @@ std::unique_ptr<llvm::Module> TaichiLLVMContext::clone_runtime_module() {
 
       patch_intrinsic("block_memfence", Intrinsic::nvvm_membar_cta, false);
 
-      link_module_with_cuda_libdevice(data->runtime_module);
+      link_module_with_cuda_libdevice(module);
 
       // To prevent potential symbol name conflicts, we use "cuda_vprintf"
       // instead of "vprintf" in llvm/runtime.cpp. Now we change it back for
       // linking
-      for (auto &f : *runtime_module) {
+      for (auto &f : * module) {
         if (f.getName() == "cuda_vprintf") {
           f.setName("vprintf");
         }
@@ -378,17 +399,8 @@ std::unique_ptr<llvm::Module> TaichiLLVMContext::clone_runtime_module() {
 
       // runtime_module->print(llvm::errs(), nullptr);
     }
-  }
 
-  std::unique_ptr<llvm::Module> cloned;
-  {
-    TI_PROFILER("clone module");
-    cloned = llvm::CloneModule(*data->runtime_module);
-  }
-
-  TI_ASSERT(cloned != nullptr);
-
-  return cloned;
+  return module;
 }
 
 void TaichiLLVMContext::link_module_with_cuda_libdevice(

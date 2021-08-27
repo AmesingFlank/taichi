@@ -1,4 +1,5 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
+#include "taichi/llvm/llvm_context.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -284,17 +285,71 @@ CUexternalSemaphore cuda_vk_import_semaphore(VkSemaphore semaphore,
 
 
 
-taichi::lang::JITSessionCUDA* InteropCUDALauncher::session(){
-  return session_;
+JITSessionCUDA* InteropCUDALauncher::session(){
+  return session_.get();
 }
-taichi::lang::JITModuleCUDA* InteropCUDALauncher::module(){
+
+JITModuleCUDA* InteropCUDALauncher::module(){
   return module_;
 }
 
 InteropCUDALauncher::InteropCUDALauncher(){
-  session_ = std::unique_ptr<JITSessionCUDA>{create_llvm_jit_session_cuda(Arch::cuda).release()};
-  
+  session_ = std::unique_ptr<JITSessionCUDA>{(JITSessionCUDA*)create_llvm_jit_session_cuda(Arch::cuda).release()};
+  TaichiLLVMContext tlctx(Arch::cuda);
+  std::unique_ptr<llvm::Module> ll_module = tlctx.clone_module("ui_kernels_cuda.bc");
+
+
+  auto* f = ll_module->getFunction("update_renderables_vertices");
+  if(f == nullptr){
+    TI_ERROR("update_renderables_vertices  not found");
+  }
+  tlctx.mark_function_as_cuda_kernel(f);
+
+
+  module_ = static_cast<JITModuleCUDA*>(session_->add_module(std::move(ll_module),0));
 }
+
+
+namespace {
+int div_up(int a, int b) {
+  if (b == 0) {
+    return 1;
+  }
+  int result = (a % b != 0) ? (a / b + 1) : (a / b);
+  return result;
+}
+
+void set_num_blocks_threads(int N, int &num_blocks, int &num_threads) {
+  // TODO remove the use of get_current_program() here ...
+  // The reason that this is needed is because CUDAContext::launch complains if these limits are exceeded.
+  num_threads = min(N, get_current_program().config.max_block_dim);
+  num_blocks = div_up(N, num_threads);
+  num_blocks = min(num_blocks,get_current_program().config.saturating_grid_dim);
+}
+ 
+}  
+
+void InteropCUDALauncher::update_renderables_vertices(float *vbo,
+                                int stride,
+                                float* data,
+                                int num_vertices,
+                                int num_components,
+                                int offset_bytes){
+  std::string update_renderables_vertices = "update_renderables_vertices";
+  int num_blocks, num_threads;
+  set_num_blocks_threads(num_vertices,num_blocks,num_threads); 
+  std::vector<void*> args = {
+    &vbo,
+    &stride,
+    &data,
+    &num_vertices,
+    &num_components,
+    &offset_bytes
+  };
+  module_->launch(update_renderables_vertices,num_blocks, num_threads,0,args);
+}
+
+                          
 
 }  // namespace vulkan
 

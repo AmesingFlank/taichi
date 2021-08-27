@@ -77,13 +77,20 @@ class InteropCUDALauncher {
   taichi::lang::JITSessionCUDA* session();
   taichi::lang::JITModuleCUDA* module();
 
+  void update_renderables_vertices(float *vbo,
+                                int stride,
+                                float* data,
+                                int num_vertices,
+                                int num_components,
+                                int offset_bytes);
+
  private:
 
   InteropCUDALauncher();
 
 
   std::unique_ptr<taichi::lang::JITSessionCUDA> session_{nullptr};
-  std::unique_ptr<taichi::lang::JITModuleCUDA> module_{nullptr};
+  taichi::lang::JITModuleCUDA* module_{nullptr};
 
 };
 

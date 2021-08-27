@@ -83,8 +83,9 @@ void Renderable::update_data(const RenderableInfo &info) {
 
   int num_components = info.vertices.matrix_rows;
 
-  if (info.vertices.field_source == FieldSource::TaichiCuda) {
-    update_renderables_vertices_cuda(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
+  if (info.vertices.field_source == FieldSource::TaichiCuda) { 
+    //InteropCUDALauncher::instance();
+    InteropCUDALauncher::instance().update_renderables_vertices(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
                                      (float *)info.vertices.data, num_vertices,
                                      num_components, offsetof(Vertex, pos));
 

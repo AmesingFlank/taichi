@@ -79,7 +79,9 @@ if(TI_WITH_GGUI)
 endif()
 
 
+file(GLOB BYTECODE_SOURCE "taichi/runtime/llvm/runtime.cpp" "taichi/runtime/llvm/ui_kernels.cpp")
 
+list(REMOVE_ITEM TAICHI_CORE_SOURCE ${BYTECODE_SOURCE})
 
 
 # These are required, regardless of whether Vulkan is enabled or not
