@@ -196,9 +196,15 @@ class CMakeBuild(build_ext):
 
             llvm_runtime_dir = 'taichi/runtime/llvm'
             for f in os.listdir(llvm_runtime_dir):
-                if f.endswith('.bc'):
+                if f.startswith('runtime_') and f.endswith('.bc'):
                     print(f"Fetching runtime file {f} to {target} folder")
                     shutil.copy(os.path.join(llvm_runtime_dir, f), target)
+
+            ui_kernel_dir = 'taichi/ui/backends/vulkan'
+            for f in os.listdir(ui_kernel_dir):
+                if f.endswith('.bc'):
+                    print(f"Fetching ui kernel file {f} to {target} folder")
+                    shutil.copy(os.path.join(ui_kernel_dir, f), target)
 
 
 setup(name=project_name,

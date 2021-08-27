@@ -105,7 +105,7 @@ add_custom_target(
       "generate_ui_interop_kernels_cuda"
       COMMAND ${CLANG_EXECUTABLE} -S ui_kernels.cpp -o "ui_kernels_cuda.ll" -fno-exceptions -emit-llvm -std=c++17 -D "ARCH_${arch}" -I ${PROJECT_SOURCE_DIR};
       COMMAND ${LLVM_AS_EXECUTABLE} "ui_kernels_cuda.ll" -o "ui_kernels_cuda.bc"
-      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/taichi/runtime/llvm"
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/taichi/ui/backends/vulkan"
 )
 add_dependencies(${CORE_LIBRARY_NAME} "generate_ui_interop_kernels_cuda")
 
