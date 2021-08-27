@@ -2,7 +2,6 @@
 #include "taichi/ui/utils/utils.h"
 
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
-#include "taichi/ui/backends/vulkan/renderables/kernels.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -50,7 +49,7 @@ void Renderable::init_buffers() {
 
     vertex_buffer_device_ptr_ =
         (float *)get_memory_pointer(vb_mem, block_size, vb_offset, vb_size,
-                                     app_context_->device().vk_device());
+                                    app_context_->device().vk_device());
     index_buffer_device_ptr_ =
         (int *)get_memory_pointer(ib_mem, block_size, ib_offset, ib_size,
                                   app_context_->device().vk_device());
@@ -83,20 +82,22 @@ void Renderable::update_data(const RenderableInfo &info) {
 
   int num_components = info.vertices.matrix_rows;
 
-  if (info.vertices.field_source == FieldSource::TaichiCuda) { 
-    //InteropCUDALauncher::instance();
-    InteropCUDALauncher::instance().update_renderables_vertices(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
-                                     (float *)info.vertices.data, num_vertices,
-                                     num_components, offsetof(Vertex, pos));
+  if (info.vertices.field_source == FieldSource::TaichiCuda) {
+    // InteropCUDALauncher::instance();
+    InteropCUDALauncher::instance().update_renderables_vertices(
+        vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
+        (float *)info.vertices.data, num_vertices, num_components,
+        offsetof(Vertex, pos));
 
     if (info.per_vertex_color.valid) {
       if (info.per_vertex_color.shape[0] != num_vertices) {
         throw std::runtime_error(
             "shape of per_vertex_color should be the same as vertices");
       }
-      update_renderables_vertices_cuda(
-          vertex_buffer_device_ptr_,sizeof(Vertex) / sizeof(float), (float *)info.per_vertex_color.data,
-          num_vertices, 3, offsetof(Vertex, color));
+      InteropCUDALauncher::instance().update_renderables_vertices(
+          vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
+          (float *)info.per_vertex_color.data, num_vertices, 3,
+          offsetof(Vertex, color));
     }
 
     if (info.normals.valid) {
@@ -104,15 +105,16 @@ void Renderable::update_data(const RenderableInfo &info) {
         throw std::runtime_error(
             "shape of normals should be the same as vertices");
       }
-      update_renderables_vertices_cuda(vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
-                                       (float *)info.normals.data, num_vertices,
-                                       3, offsetof(Vertex, normal));
+      InteropCUDALauncher::instance().update_renderables_vertices(
+          vertex_buffer_device_ptr_, sizeof(Vertex) / sizeof(float),
+          (float *)info.normals.data, num_vertices, 3,
+          offsetof(Vertex, normal));
     }
 
     if (info.indices.valid) {
       indexed_ = true;
-      update_renderables_indices_cuda(index_buffer_device_ptr_,
-                                      (int *)info.indices.data, num_indices);
+      InteropCUDALauncher::instance().update_renderables_indices(
+          index_buffer_device_ptr_, (int *)info.indices.data, num_indices);
     } else {
       indexed_ = false;
     }
@@ -124,16 +126,18 @@ void Renderable::update_data(const RenderableInfo &info) {
       float *mapped_vbo =
           (float *)app_context_->device().map(staging_vertex_buffer_);
 
-      update_renderables_vertices_x64(mapped_vbo, sizeof(Vertex) / sizeof(float),(float *)info.vertices.data,
-                                      num_vertices, num_components,
-                                      offsetof(Vertex, pos));
+      update_renderables_vertices_x64(mapped_vbo,
+                                      sizeof(Vertex) / sizeof(float),
+                                      (float *)info.vertices.data, num_vertices,
+                                      num_components, offsetof(Vertex, pos));
       if (info.per_vertex_color.valid) {
         if (info.per_vertex_color.shape[0] != num_vertices) {
           throw std::runtime_error(
               "shape of per_vertex_color should be the same as vertices");
         }
         update_renderables_vertices_x64(
-            mapped_vbo, sizeof(Vertex) / sizeof(float),(float *)info.per_vertex_color.data, num_vertices, 3,
+            mapped_vbo, sizeof(Vertex) / sizeof(float),
+            (float *)info.per_vertex_color.data, num_vertices, 3,
             offsetof(Vertex, color));
       }
       if (info.normals.valid) {
@@ -141,9 +145,10 @@ void Renderable::update_data(const RenderableInfo &info) {
           throw std::runtime_error(
               "shape of normals should be the same as vertices");
         }
-        update_renderables_vertices_x64(mapped_vbo,sizeof(Vertex) / sizeof(float), (float *)info.normals.data,
-                                        num_vertices, 3,
-                                        offsetof(Vertex, normal));
+        update_renderables_vertices_x64(
+            mapped_vbo, sizeof(Vertex) / sizeof(float),
+            (float *)info.normals.data, num_vertices, 3,
+            offsetof(Vertex, normal));
       }
       app_context_->device().unmap(staging_vertex_buffer_);
 

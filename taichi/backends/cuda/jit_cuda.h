@@ -87,7 +87,7 @@ class JITSessionCUDA : public JITSession {
   }
 
   virtual JITModule *add_module(std::unique_ptr<llvm::Module> M,
-                                int max_reg) override ;
+                                int max_reg) override;
 
   virtual llvm::DataLayout get_data_layout() override {
     return data_layout;
@@ -96,7 +96,6 @@ class JITSessionCUDA : public JITSession {
   static std::string compile_module_to_ptx(
       std::unique_ptr<llvm::Module> &module);
 };
-
 
 #endif
 

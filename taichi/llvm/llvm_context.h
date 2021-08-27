@@ -75,7 +75,7 @@ class TaichiLLVMContext {
    */
   std::unique_ptr<llvm::Module> clone_runtime_module();
 
-  std::unique_ptr<llvm::Module> clone_module(const std::string& file);
+  std::unique_ptr<llvm::Module> clone_module(const std::string &file);
 
   JITModule *add_module(std::unique_ptr<llvm::Module> module);
 

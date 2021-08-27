@@ -196,7 +196,7 @@ class CMakeBuild(build_ext):
 
             llvm_runtime_dir = 'taichi/runtime/llvm'
             for f in os.listdir(llvm_runtime_dir):
-                if  f.endswith('.bc'):
+                if f.endswith('.bc'):
                     print(f"Fetching runtime file {f} to {target} folder")
                     shutil.copy(os.path.join(llvm_runtime_dir, f), target)
 

@@ -1123,8 +1123,6 @@ DEFINE_REDUCTION(and, i32);
 DEFINE_REDUCTION(or, i32);
 DEFINE_REDUCTION(xor, i32);
 
-
-
 // "Element", "component" are different concepts
 
 void clear_list(LLVMRuntime *runtime, StructMeta *parent, StructMeta *child) {

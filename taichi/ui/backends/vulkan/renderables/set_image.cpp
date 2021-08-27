@@ -3,8 +3,6 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
 
-#include "kernels.h"
-
 TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
@@ -49,12 +47,13 @@ void SetImage::update_data(const SetImageInfo &info) {
     unsigned char *mapped = device_ptr_;
 
     if (img.dtype == PrimitiveType::u8) {
-      copy_to_texture_buffer_cuda((unsigned char *)img.data, mapped, width,
-                                  height, actual_width, actual_height,
-                                  img.matrix_rows);
+      InteropCUDALauncher::instance().copy_to_texture_buffer(
+          (unsigned char *)img.data, mapped, width, height, actual_width,
+          actual_height, img.matrix_rows);
     } else if (img.dtype == PrimitiveType::f32) {
-      copy_to_texture_buffer_cuda((float *)img.data, mapped, width, height,
-                                  actual_width, actual_height, img.matrix_rows);
+      InteropCUDALauncher::instance().copy_to_texture_buffer(
+          (float *)img.data, mapped, width, height, actual_width, actual_height,
+          img.matrix_rows);
     } else {
       throw std::runtime_error("for set image, dtype must be u8 or f32");
     }

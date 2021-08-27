@@ -1,50 +1,48 @@
 #include "taichi/backends/cuda/jit_cuda.h"
 
-
 TLANG_NAMESPACE_BEGIN
 
 #if defined(TI_WITH_CUDA)
 
+JITModule *JITSessionCUDA ::add_module(std::unique_ptr<llvm::Module> M,
+                                       int max_reg) {
+  auto ptx = compile_module_to_ptx(M);
+  if (get_current_program().config.print_kernel_nvptx) {
+    static FileSequenceWriter writer("taichi_kernel_nvptx_{:04d}.ptx",
+                                     "module NVPTX");
+    writer.write(ptx);
+  }
+  // TODO: figure out why using the guard leads to wrong tests results
+  // auto context_guard = CUDAContext::get_instance().get_guard();
+  CUDAContext::get_instance().make_current();
+  // Create module for object
+  void *cuda_module;
+  TI_TRACE("PTX size: {:.2f}KB", ptx.size() / 1024.0);
+  auto t = Time::get_time();
+  TI_TRACE("Loading module...");
+  [[maybe_unused]] auto &&_ =
+      std::move(CUDAContext::get_instance().get_lock_guard());
 
-JITModule * JITSessionCUDA :: add_module(std::unique_ptr<llvm::Module> M,
-                                int max_reg) {
-    auto ptx = compile_module_to_ptx(M);
-    if (get_current_program().config.print_kernel_nvptx) {
-      static FileSequenceWriter writer("taichi_kernel_nvptx_{:04d}.ptx",
-                                       "module NVPTX");
-      writer.write(ptx);
-    }
-    // TODO: figure out why using the guard leads to wrong tests results
-    // auto context_guard = CUDAContext::get_instance().get_guard();
-    CUDAContext::get_instance().make_current();
-    // Create module for object
-    void *cuda_module;
-    TI_TRACE("PTX size: {:.2f}KB", ptx.size() / 1024.0);
-    auto t = Time::get_time();
-    TI_TRACE("Loading module...");
-    [[maybe_unused]] auto &&_ =
-        std::move(CUDAContext::get_instance().get_lock_guard());
+  constexpr int max_num_options = 8;
+  int num_options = 0;
+  uint32 options[max_num_options];
+  void *option_values[max_num_options];
 
-    constexpr int max_num_options = 8;
-    int num_options = 0;
-    uint32 options[max_num_options];
-    void *option_values[max_num_options];
+  // Insert options
+  if (max_reg != 0) {
+    options[num_options] = CU_JIT_MAX_REGISTERS;
+    option_values[num_options] = &max_reg;
+    num_options++;
+  }
 
-    // Insert options
-    if (max_reg != 0) {
-      options[num_options] = CU_JIT_MAX_REGISTERS;
-      option_values[num_options] = &max_reg;
-      num_options++;
-    }
+  TI_ASSERT(num_options <= max_num_options);
 
-    TI_ASSERT(num_options <= max_num_options);
-
-    CUDADriver::get_instance().module_load_data_ex(
-        &cuda_module, ptx.c_str(), num_options, options, option_values);
-    TI_TRACE("CUDA module load time : {}ms", (Time::get_time() - t) * 1000);
-    // cudaModules.push_back(cudaModule);
-    modules.push_back(std::make_unique<JITModuleCUDA>(cuda_module));
-    return modules.back().get();
+  CUDADriver::get_instance().module_load_data_ex(
+      &cuda_module, ptx.c_str(), num_options, options, option_values);
+  TI_TRACE("CUDA module load time : {}ms", (Time::get_time() - t) * 1000);
+  // cudaModules.push_back(cudaModule);
+  modules.push_back(std::make_unique<JITModuleCUDA>(cuda_module));
+  return modules.back().get();
 }
 
 std::string cuda_mattrs() {
