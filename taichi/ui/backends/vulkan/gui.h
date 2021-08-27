@@ -37,7 +37,6 @@ class Gui final : public GuiBase {
                              float old_value,
                              float minimum,
                              float maximum) override;
-  // TODO: consider renaming this?
   virtual glm::vec3 color_edit_3(std::string name,
                                  glm::vec3 old_value) override;
   virtual bool button(std::string text) override;
@@ -46,14 +45,13 @@ class Gui final : public GuiBase {
 
   void prepare_for_next_frame();
 
+  bool is_empty;
+
   VkRenderPass render_pass() {
     return render_pass_;
   }
 
-  bool is_empty();
-
  private:
-  bool is_empty_;
   AppContext *app_context_;
 
   VkRenderPass render_pass_{VK_NULL_HANDLE};
