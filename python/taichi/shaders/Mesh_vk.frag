@@ -1,13 +1,13 @@
 #version 450
 
 
-layout(location = 0) in vec3 fragPos;
-layout(location = 1) in vec3 fragNormal;
-layout(location = 2) in vec2 fragTexCoord;
+layout(location = 0) in vec3 frag_pos;
+layout(location = 1) in vec3 frag_normal;
+layout(location = 2) in vec2 frag_texcoord;
 
 
 
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec4 out_color;
 
 struct SceneUBO{
     vec3 camera_pos;
@@ -34,19 +34,19 @@ layout(binding = 1, std430) buffer SSBO {
     PointLight point_lights[];
 } ssbo;
 
-layout(location = 3) in vec3 selectedColor;
+layout(location = 3) in vec3 selected_color;
 
 vec3 lambertian(){
     
-    vec3 ambient = ubo.scene.ambient_light * selectedColor;
+    vec3 ambient = ubo.scene.ambient_light * selected_color;
     vec3 result = ambient;
 
     for(int i = 0;i<ubo.scene.point_light_count;++i){
-        vec3 lightColor = ssbo.point_lights[i].color;
+        vec3 light_color = ssbo.point_lights[i].color;
 
-        vec3 lightDir = normalize(ssbo.point_lights[i].pos - fragPos);
-        vec3 normal = normalize(fragNormal);
-        vec3 diffuse = abs(dot(lightDir, normal)) * selectedColor * lightColor;
+        vec3 light_dir = normalize(ssbo.point_lights[i].pos - frag_pos);
+        vec3 normal = normalize(frag_normal);
+        vec3 diffuse = max(dot(light_dir, normal),0) * selected_color * light_color;
         result += diffuse;
     }
 
@@ -54,5 +54,5 @@ vec3 lambertian(){
 }
 
 void main() {
-    outColor = vec4(lambertian(),1);
+    out_color = vec4(lambertian(),1);
 }

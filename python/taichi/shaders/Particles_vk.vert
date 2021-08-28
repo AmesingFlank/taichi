@@ -1,9 +1,9 @@
 #version 450
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec3 inColor;
+layout(location = 0) in vec3 in_position;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_texcoord;
+layout(location = 3) in vec3 in_color;
 
 
 struct SceneUBO{
@@ -24,26 +24,24 @@ layout(binding = 0) uniform UBO {
     float tan_half_fov;
 } ubo;
 
-layout(location = 0) out vec4 posToCamera;
-layout(location = 1) out vec3 selectedColor;
+layout(location = 0) out vec4 pos_camera_space;
+layout(location = 1) out vec3 selected_color;
  
 void main()
 {
- 	vec3 cameraToPoint = inPosition - ubo.scene.camera_pos;
-	float distance = length(cameraToPoint);
+	float distance = length(in_position - ubo.scene.camera_pos);
 
-	float sizeAtDistanceForHalfScreen = ubo.tan_half_fov * distance;
-	gl_PointSize = (ubo.window_height / 2.0) * ubo.radius / sizeAtDistanceForHalfScreen;
+	gl_PointSize = (ubo.window_height / 2.0) * ubo.radius / (ubo.tan_half_fov * distance);
 	
-	posToCamera = ubo.scene.view * vec4(inPosition, 1.0);
-    gl_Position = ubo.scene.projection * posToCamera;
+	pos_camera_space = ubo.scene.view * vec4(in_position, 1.0);
+    gl_Position = ubo.scene.projection * pos_camera_space;
     gl_Position.y *= -1;
 
     if(ubo.use_per_vertex_color == 0){
-        selectedColor = ubo.color;
+        selected_color = ubo.color;
     }
     else{
-        selectedColor = inColor;
+        selected_color = in_color;
     }
 
 }

@@ -28,35 +28,34 @@ layout(binding = 1, std430) buffer SSBO {
 } ssbo;
 
 
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec4 out_color;
 
-layout(location = 0) in vec4 posToCamera;
-layout(location = 1) in vec3 selectedColor;
+layout(location = 0) in vec4 pos_camera_space;
+layout(location = 1) in vec3 selected_color;
 
  
-float projectZ(float viewZ) {
-	vec3 dummyViewSpacePoint = vec3(0, 0, viewZ);
-	vec4 projected = ubo.scene.projection * vec4(dummyViewSpacePoint, 1);
+float project_z(float view_z) {
+	vec4 projected = ubo.scene.projection * vec4(0,0,view_z, 1);
 	return projected.z / projected.w;
 }
 
-vec3 posToCameraSpace(vec3 pos){
+vec3 to_camera_space(vec3 pos){
     vec4 temp = ubo.scene.view * vec4(pos,1.0);
     return temp.xyz/temp.w;
 }
 
 // operates in camera space !!
-vec3 lambertian(vec3 fragPos,vec3 fragNormal){
+vec3 lambertian(vec3 frag_pos,vec3 frag_normal){
     
-    vec3 ambient = ubo.scene.ambient_light * selectedColor;
+    vec3 ambient = ubo.scene.ambient_light * selected_color;
     vec3 result = ambient;
 
     for(int i = 0;i<ubo.scene.point_light_count;++i){
-        vec3 lightColor = ssbo.point_lights[i].color;
+        vec3 light_color = ssbo.point_lights[i].color;
 
-        vec3 lightDir = normalize(posToCameraSpace(ssbo.point_lights[i].pos) - fragPos);
-        vec3 normal = normalize(fragNormal);
-        vec3 diffuse = max(dot(lightDir, normal), 0.0) * selectedColor * lightColor;
+        vec3 light_dir = normalize(to_camera_space(ssbo.point_lights[i].pos) - frag_pos);
+        vec3 normal = normalize(frag_normal);
+        vec3 diffuse = max(dot(light_dir, normal), 0.0) * selected_color * light_color;
         
         result += diffuse;
     }
@@ -70,25 +69,24 @@ void main()
 	coord2D = gl_PointCoord* 2.0 - vec2(1); 
     coord2D.y *= -1;
 
-	float distanceToCenter = length(coord2D);
-	if(distanceToCenter >= 1.0) {
+	if(length(coord2D) >= 1.0) {
         discard;
     }
      
 
-	float zInSphere = sqrt(1-coord2D.x*coord2D.x - coord2D.y * coord2D.y);
-	vec3 coordInSphere = vec3(coord2D,zInSphere);
+	float z_in_sphere = sqrt(1-coord2D.x*coord2D.x - coord2D.y * coord2D.y);
+	vec3 coord_in_sphere = vec3(coord2D,z_in_sphere);
 
-    vec3 fragPos = posToCamera.xyz / posToCamera.w + coordInSphere * ubo.radius;
-    vec3 fragNormal = coordInSphere;
-    vec3 color = lambertian(fragPos,fragNormal);
-    outColor = vec4(color,1.0);
-
-
-	float depth = (posToCamera.z / posToCamera.w) + zInSphere * ubo.radius;
+    vec3 frag_pos = pos_camera_space.xyz / pos_camera_space.w + coord_in_sphere * ubo.radius;
+    vec3 frag_normal = coord_in_sphere;
+    vec3 color = lambertian(frag_pos,frag_normal);
+    out_color = vec4(color,1.0);
 
 
-	gl_FragDepth = projectZ(depth);
+	float depth = (pos_camera_space.z / pos_camera_space.w) + z_in_sphere * ubo.radius;
+
+
+	gl_FragDepth = project_z(depth);
 	gl_FragDepth = 0.5 * (1.0 + gl_FragDepth);
 
 }

@@ -1,14 +1,14 @@
 #version 450
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec3 inColor;
+layout(location = 0) in vec3 in_position;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_texcoord;
+layout(location = 3) in vec3 in_color;
 
-layout(location = 0) out vec3 fragPos;
-layout(location = 1) out vec3 fragNormal;
-layout(location = 2) out vec2 fragTexCoord;
-layout(location = 3) out vec3 selectedColor;
+layout(location = 0) out vec3 frag_pos;
+layout(location = 1) out vec3 frag_normal;
+layout(location = 2) out vec2 frag_texcoord;
+layout(location = 3) out vec3 selected_color;
 
 
 struct SceneUBO{
@@ -31,16 +31,16 @@ layout(binding = 0) uniform UBO {
 } ubo;
 
 void main() {
-    gl_Position =  ubo.scene.projection * ubo.scene.view * vec4(inPosition,1.0);
+    gl_Position =  ubo.scene.projection * ubo.scene.view * vec4(in_position,1.0);
     gl_Position.y *= -1.0;
-    fragTexCoord = inTexCoord;
-    fragPos = inPosition;
-    fragNormal = inNormal;
+    frag_texcoord = in_texcoord;
+    frag_pos = in_position;
+    frag_normal = in_normal;
 
     if(ubo.use_per_vertex_color == 0){
-        selectedColor = ubo.color;
+        selected_color = ubo.color;
     }
     else{
-        selectedColor = inColor;
+        selected_color = in_color;
     }
 }
