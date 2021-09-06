@@ -2,9 +2,6 @@
 
 #include "taichi/ui/utils/utils.h"
 
-#ifndef IMGUI_IMPL_VULKAN_NO_PROTOTYPES
-#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
-#endif
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>

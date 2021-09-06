@@ -5,9 +5,6 @@
 #endif
 
 #include <volk.h>
-#define VK_NO_PROTOTYPES
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include <taichi/backends/device.h>
 

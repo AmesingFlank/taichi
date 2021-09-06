@@ -229,13 +229,8 @@ if (TI_WITH_CUDA)
 endif()
 
 if (TI_WITH_VULKAN)
-    # Vulkan libs
-    # https://cmake.org/cmake/help/latest/module/FindVulkan.html
-    # https://github.com/PacktPublishing/Learning-Vulkan/blob/master/Chapter%2003/HandShake/CMakeLists.txt
-    find_package(Vulkan REQUIRED)
-    message(STATUS "Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR}")
-    message(STATUS "Vulkan_LIBRARY=${Vulkan_LIBRARY}")
-    include_directories(${Vulkan_INCLUDE_DIR})
+
+    include_directories(external/vulkan)
 
     # No longer link against vulkan, using volk instead
     #target_link_libraries(${CORE_LIBRARY_NAME} ${Vulkan_LIBRARY})
@@ -326,7 +321,7 @@ endif ()
 if(TI_WITH_GGUI)
 
     # Dear ImGui
-    add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+    #add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
     set(IMGUI_DIR external/imgui)
     include_directories(external/glfw/include)
     include_directories(SYSTEM ${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
