@@ -2,6 +2,10 @@
 #include "taichi/ui/backends/vulkan/swap_chain.h"
 #include "taichi/ui/backends/vulkan/app_context.h"
 
+#ifndef IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+#endif
+
 using namespace taichi::lang::vulkan;
 using namespace taichi::lang;
 
@@ -46,6 +50,7 @@ void Gui::init_render_resources(VkRenderPass render_pass) {
   init_info.Allocator = VK_NULL_HANDLE;
   init_info.MinImageCount = 1;
   init_info.ImageCount = 1;
+
   ImGui_ImplVulkan_Init(&init_info, render_pass);
   render_pass_ = render_pass;
 

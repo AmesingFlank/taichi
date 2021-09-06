@@ -230,7 +230,7 @@ endif()
 
 if (TI_WITH_VULKAN)
 
-    include_directories(external/vulkan)
+    include_directories(external/vulkan) # A dummy vulkan.h that includes volk.h
 
     # No longer link against vulkan, using volk instead
     #target_link_libraries(${CORE_LIBRARY_NAME} ${Vulkan_LIBRARY})
@@ -321,7 +321,7 @@ endif ()
 if(TI_WITH_GGUI)
 
     # Dear ImGui
-    #add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+    add_definitions(-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES)
     set(IMGUI_DIR external/imgui)
     include_directories(external/glfw/include)
     include_directories(SYSTEM ${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
