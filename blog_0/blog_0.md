@@ -32,8 +32,62 @@ Writing a real-time GPU physics simulator is rarely an easy task, but the Taichi
 
 Before we begin, take a guess of how many lines of code does this program consist of. You will find the answer at the end of the article.
 
+### Algorithmic Overview
+Before we get to coding, let's take a small detour to review the algorithmic side of our cloth simulator. Our program will model the piece of cloth as a mass-spring system. More specifically, we will represent the pice of cloth as a $N$ by $N$ grid of point-masses, where adjacent points are linked by a spring. The following image illustrates this structure:
+
+<p align="center">
+  <img width="400" height="300" src="https://graphics.stanford.edu/~mdfisher/TutorialData/ClothSag.png">
+</p>
+
+The motion of this mass-spring system is affected by 4 factors:
+
+* Gravity
+* Collision with the red ball in the middle
+* Internal forces of the springs
+* Damping
+
+Our program begins at time $t=0$. Then, at each step of the simulation, it advances the time by a small constant $dt$. The program estimates what happens to the system in this small period of time by evaluating the effect of each of the 4 factors above, and updates the the position and velocity of each mass point at the end of the timestep. The updated positions of mass points are then used to update the image rendered on screen.
+
+
 ### Getting Started
+Although Taichi is a programming language in its own right, it exists in the form of a Python package, and can be installed by simply running
+```
+pip install taichi
+```
+To start using Taichi in a python program, import it under the alias `ti`:
+```python
+import taichi as ti
+```
+The performance of a Taichi program is maximized if your machine has a CUDA-enabled nVidia GPU. If this is case, add the following line of code after the import:
+```python
+ti.init(ti.cuda)
+```
+If you don't have a CUDA GPU, Taichi can still interact with your GPU via other graphics APIs, such as `ti.metal`, `ti.vulkan`, and `ti.opengl`. However, Taichi's support for these APIs are not as complete as its CUDA support, so for now, use the CPU backend: 
+```python
+ti.init(ti.cpu)
+```
+And don't worry, taichi is blazing fast even if it only runs on the CPU.
+
+Having initialized taichi, we can start declaring the data structures used to describe the mass-spring cloth. We add the following line of code:
+
+```python
+N = 128
+x = ti.Vector.field(3, float, (N, N))
+v = ti.Vector.field(3, float, (N, N))
+```
 
 
-Although Taichi is a programming language in its own right, it exists in the form of a Python package, and can be installed by simply running `pip install taichi`. 
+### WIP
+
+
+
+
+
+Gravity is the simplest of these factors: each point mass in the system is constantly subjected to a downwards force, whose magnitude is fixed. For simplicity, we treat the mass of each point to be 1 unit, and we take gravity to be 0.5 units. This means that gravity causes the $y$ component of the velocity of each point to decrease at the rate of 0.5 units.
+
+As the cloth moves down, it will eventually come into contact with the red ball in the middle. We will use a simple model to represent this collision: for each mass point, as soon as it hits the ball, it "sticks" there and stops moving.
+
+Each spring $s$ in the system is initialized with a rest length, $l_0(s)$, and at any moment $t$, if the current length $l_t(s)$ of $s$ exceeds $l_0(s)$, the spring will exert a force on its endpoints that pulls them together, where the magnitude of the force is proportional to $l_t(s)-l_0(s)$. Conversely, if $l_t(s)$ is smaller than $l_0(s)$, then the spring will push the endpoints away from each other, with a force proportional to $l_0(s)-l_t(s)$. If you remember high school physics, this is called Hooke's law.
+
+Finally, to prevent this system from falling into perpetual and chaotic motion, we will damp the velocity of each mass point. This simply means that we slightly reduce the magnitude of its velocity at each timestep.
 
