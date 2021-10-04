@@ -75,6 +75,8 @@ def update_verts():
 
 init()
 
+paused = True
+
 window = ti.ui.Window("Cloth", (800, 800), vsync=True)
 canvas = window.get_canvas()
 scene = ti.ui.Scene()
@@ -83,8 +85,16 @@ camera = ti.ui.make_camera()
 while window.running:
     update_verts()
 
+    for e in window.get_events(ti.ui.PRESS):
+        if e.key == 'p':
+            paused = False
+        if e.key == 'r':
+            paused = True
+            init()
+
     for i in range(steps):
-        substep()
+        if not paused:
+            substep()
 
     camera.position(0, -0.5, 2)
     camera.lookat(0, -0.5, 0)
