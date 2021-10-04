@@ -23,8 +23,10 @@ The [Taichi Programming Language](https://github.com/taichi-dev/taichi) is an at
 
 The following gif shows an example program written using taichi. The program uses the GPU to run a real-time physical simulation of a piece of cloth falling onto a sphere, and simultaneously renders the result. 
 
+<p align="center">
+  <img width="400" height="400" src="https://github.com/AmesingFlank/taichi/raw/blog_0/blog_0/cloth.gif">
+</p>
 
-![Cloth](cloth.gif)
 
 Writing a real-time GPU physics simulator is rarely an easy task, but the Taichi source code behind this program is surprisingly simple. The remainder of this article will walk you through the entire implementation, so you can get a taste of the functionalities that taichi provides, and just how powerful and friendly they are.
 
