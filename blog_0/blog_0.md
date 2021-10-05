@@ -75,7 +75,7 @@ N = 128
 x = ti.Vector.field(3, float, (N, N))
 v = ti.Vector.field(3, float, (N, N))
 ```
-These three lines declares `x` and `v` to be 2D array of size `N` by `N`, where each element of the array is a 3-dimensional vector of floating point numbers. In taichi, arrays are referred to as "field"s, and these two fields respectively record the position and velocity of the point masses.
+These three lines declares `x` and `v` to be 2D array of size `N` by `N`, where each element of the array is a 3-dimensional vector of floating point numbers. In taichi, arrays are referred to as "field"s, and these two fields respectively record the position and velocity of the point masses. Notice that, if you initialized taichi to run on a CUDA GPU, these fields/arrays will automatically be stored in GPU memory.
 
 Apart from the cloth, we also need to define the ball in the middle:
 ```python
@@ -84,16 +84,16 @@ ball_center = ti.Vector.field(3, float, (1,))
 ```
 Here, ball center is a 1D field of size 1, with its single component being a 3-dimensional floating point vector.
 
-Having declared the fields needed, let's initialize these fields with the corresponding data at `t`=0:
+Having declared the fields needed, let's initialize these fields with the corresponding data at `t`=0. We wish to ensure that for any pair of adjacent points on the same row or column, the distance between them is equal to `cell_size = 1.0 / N`. This is ensured by the following initialization routine:
 ```python
 def init():
     for i, j in ti.ndrange(N, N):
-        x[i, j] = ti.Vector([(i + 0.5) * cell_size - 0.5, 
-                             (j + 0.5) * cell_size / ti.sqrt(2),
+        x[i, j] = ti.Vector([i * cell_size, 
+                             j * cell_size / ti.sqrt(2),
                              (N - j) * cell_size / ti.sqrt(2)])
-    ball_center[0] = ti.Vector([0.0, -0.5, -0.0])
+    ball_center[0] = ti.Vector([0.5, -0.5, 0.0])
 ```
-No need to worry about the meaning behind the value of `x[i,j]` -- it is only chosen so that the cloth falls down at the 45 degrees angle as shown in the gif.
+No need to worry about the meaning behind the value each `x[i,j]` -- it is only chosen so that the cloth falls down at the 45 degrees angle as shown in the gif.
 
 ### Simulation
 At each timestep, our program simulates 4 things that affect the 
@@ -106,19 +106,262 @@ def step():
     for i in ti.grouped(v):
         v[i].y -= gravity * dt
 ```
-There're two things to be noted here: firstly, `for i in ti.grouped(x)` means that the loop will iterate over all elements of `x`, regardless of how many dimensions there are in `x`. Secondly and most importantly, the annotation `ti.kernel` means that taichi will automatically parallelize any top-level for-loops inside the function. In this case, taichi will attempt to update the `y` component of each vector in `v` in parallel.
+There're two things to be noted here: firstly, `for i in ti.grouped(x)` means that the loop will iterate over all elements of `x`, regardless of how many dimensions there are in `x`. Secondly and most importantly, the annotation `ti.kernel` means that taichi will automatically parallelize any top-level for-loops inside the function. In this case, taichi will update the `y` component of each of the `N*N` vectors in `v` in parallel.
 
 
 
+Next up, we will handle the internal forces of the strings. Firstly, notice from the previous illustration that each mass point is connected to at most 8 neighbors. These links are represented in our program as follows:
+
+```python
+links = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
+links = [ti.Vector([*v]) for v in links]
+```
+
+From a physical perspective, each spring `s` in the system is initialized with a rest length, `l(s,0)`. At any time `t`, if the current length `l(s,t)` of `s` exceeds `l(s,0)`, then the spring will exert a force on its endpoints that pulls them together, where the magnitude of the force is proportional to `l(s,t)-l(s,0)`. Conversely, if `l(s,t)` is smaller than `l(s,0)`, then the spring will push the endpoints away from each other, with a force proportional to `l(s,0)-l(s,0)`. This interaction is captured by the following code snippet:
+
+```python
+    for i in ti.grouped(x):
+        force = ti.Vector([0.0,0.0,0.0])
+        for d in ti.static(links):
+            j = min(max(i + d, 0), [N-1,N-1])
+            relative_pos = x[j] - x[i]
+            current_length = relative_pos.norm()
+            original_length = cell_size * float(i-j).norm()
+            if original_length != 0:
+                force +=  stiffness * relative_pos.normalized() *
+                    (current_length - original_length) / 
+                    original_length
+        v[i] +=  force * dt
+```
+
+Notice that this `for` loop should still be placed as a top-level `for` loop in the `substep` function, which was annotated with `@ti.kernel`. This ensures that the spring forces applied to each mass point are computed in parallel. The variable `stiffness` is a constant which controls the extent to which the springs resist change in their length. In our program, we will use `stiffness = 1600`.
+
+In the real world, when springs oscillate, the energy stored in the springs dissipates into the surrounding environment, and its oscillations eventually stop. To capture this effect, at each timestep, we slightly reduce the magnitude of the velocity of each point:
+
+```python
+    for i in ti.grouped(x):
+        v[i] *= ti.exp(-damping * dt)
+```
+
+where `damping` takes the fixed value of `2`.
+
+We also need to handle the collision between the cloth and the red ball. To do this, we simply decrease the velocity of a mass point to 0 as soon as it comes into contact with the ball. This ensures that the cloth "hang"s on the ball instead of penetrating it or sliding down:
+
+```python
+        if (x[i]-ball_center[0]).norm() <= ball_radius:
+            v[i] = ti.Vector([0.0, 0.0, 0.0])
+```
+
+And finally, we update the position of each mass point using its velocity:
+
+```python
+        x[i] += dt * v[i]
+```
+
+And that's it! This is all the code that we need to perform a parallel simulation of a mass-spring-cloth.
+
+### Rendering
+
+We will use taichi's built-in GPU-based GUI system (nicknamed "GGUI") to render the cloth. GGUI uses the Vulkan graphics API for rendering, so make sure you have Vulkan installed on your machine. GGUI supports rendering two types of 3D objects: triangle meshes, and particles. We will render the cloth as a triangle mesh, and render the red ball as a single particle.
+
+GGUI represents a triangle mesh with two taichi fields: a field of `vertices`, and a field of `indices`. The `vertices` fields is a 1-dimensional field where each element extract is a 3D vector that represents the position of a vertex, possibly shared by multiple triangles. In our application, every point pass is a triangle vertex, so we can simply copy data from `x` into `vertices`:
+
+```python
+vertices = ti.Vector.field(3, float, N * N)
+
+@ti.kernel
+def set_vertices():
+    for i, j in ti.ndrange(N, N):
+        vertices[i * N + j] = x[i, j]
+```
+
+Notice that, `set_vertices` needs to be called every frame, because the vertex positions are constantly being updated by the simulation.
+
+Our cloth is represented by a `N` by `N` grid of mass points, which can also be seen as a `N-1` by `N-1` grid of small squares. Each of these square will be rendered as two triangles. Thus, there are a total of `(N - 1) * (N - 1) * 2` triangles. Each of these triangle will be represented as 3 integers in the `vertices` field, which records the indices of the vertices of the triangle in the `vertices` field. The following code snippet captures this structure:
+
+```python
+num_triangles = (N - 1) * (N - 1) * 2
+indices = ti.field(int, num_triangles * 3)
+
+@ti.kernel
+def set_indices():
+    for i, j in ti.ndrange(N, N):
+        if i < N - 1 and j < N - 1:
+            square_id = (i * (N - 1)) + j
+            # 1st triangle of the square
+            indices[square_id * 6 + 0] = i * N + j
+            indices[square_id * 6 + 1] = (i + 1) * N + j
+            indices[square_id * 6 + 2] = i * N + (j + 1)
+            # 2nd triangle of the square
+            indices[square_id * 6 + 3] = (i + 1) * N + j + 1
+            indices[square_id * 6 + 4] = i * N + (j + 1)
+            indices[square_id * 6 + 5] = (i + 1) * N + j
+```
+
+Notice that, unlike `set_vertices`, the function `set_indices` only needs to be called once. This is because the indices of the triangle vertices doesn't actually change -- it's only the positions that are changing.
+
+For rendering the red ball as a particle, we don't actually need to prepare any data, the `ball_center` and `ball_radius` variable that we previously defined are all that's needed by GGUI.
+
+### Putting everything together
+At this point, we have covered all the core functions of the program! Here's how we will call these functions
+
+```python
+init()
+set_indices()
+
+window = ti.ui.Window("Cloth", (800, 800), vsync=True)
+canvas = window.get_canvas()
+scene = ti.ui.Scene()
+camera = ti.ui.make_camera()
+
+while window.running:
+    for i in range(30):
+        step()
+    set_vertices()
+
+    camera.position(0.5, -0.5, 2)
+    camera.lookat(0.5, -0.5, 0)
+    scene.set_camera(camera)
+
+    scene.point_light(pos=(0.5, 1, 2), color=(1, 1, 1))
+    scene.mesh(vertices, indices=indices, color=(0.5, 0.5, 0.5), two_sided = True)
+    scene.particles(ball_center, radius=ball_radius, color=(0.5, 0, 0))
+    canvas.scene(scene)
+    window.show()
+```
+
+One small thing to note is that instead of calling `step()` once, we will call it 30 times for each frame in the main program loops. The purpose of this is just so the animation doesn't run too slowly.
+
+Putting everything together, the entire program should look something like this:
+
+```python
+import taichi as ti
+ti.init(arch=ti.cuda) # Alternatively, ti.init(arch=ti.cpu)
+
+N = 128
+cell_size = 1.0 / N
+gravity = 0.5
+stiffness = 1600
+damping = 2
+dt = 5e-4
+
+ball_radius = 0.2
+ball_center = ti.Vector.field(3, float, (1,))
+
+x = ti.Vector.field(3, float, (N, N))
+v = ti.Vector.field(3, float, (N, N))
+
+num_triangles = (N - 1) * (N - 1) * 2
+indices = ti.field(int, num_triangles * 3)
+vertices = ti.Vector.field(3, float, N * N)
+
+def init():
+    for i, j in ti.ndrange(N, N):
+        x[i, j] = ti.Vector([i * cell_size , 
+                             j * cell_size / ti.sqrt(2),
+                             (N - j) * cell_size / ti.sqrt(2)])        
+    ball_center[0] = ti.Vector([0.5, -0.5, -0.0])
+
+@ti.kernel
+def set_indices():
+    for i, j in ti.ndrange(N, N):
+        if i < N - 1 and j < N - 1:
+            square_id = (i * (N - 1)) + j
+            # 1st triangle of the square
+            indices[square_id * 6 + 0] = i * N + j
+            indices[square_id * 6 + 1] = (i + 1) * N + j
+            indices[square_id * 6 + 2] = i * N + (j + 1)
+            # 2nd triangle of the square
+            indices[square_id * 6 + 3] = (i + 1) * N + j + 1
+            indices[square_id * 6 + 4] = i * N + (j + 1)
+            indices[square_id * 6 + 5] = (i + 1) * N + j
+
+links = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
+links = [ti.Vector([*v]) for v in links]
+
+@ti.kernel
+def step():
+    for i in ti.grouped(x):
+        v[i].y -= gravity * dt
+    for i in ti.grouped(x):
+        force = ti.Vector([0.0,0.0,0.0])
+        for d in ti.static(links):
+            j = min(max(i + d, 0), [N-1,N-1])
+            relative_pos = x[j] - x[i]
+            current_length = relative_pos.norm()
+            original_length = cell_size * float(i-j).norm()
+            if original_length != 0:
+                force +=  stiffness * relative_pos.normalized() * (current_length - original_length) / original_length
+        v[i] +=  force * dt
+    for i in ti.grouped(x):
+        v[i] *= ti.exp(-damping * dt)
+        if (x[i]-ball_center[0]).norm() <= ball_radius:
+            v[i] = ti.Vector([0.0, 0.0, 0.0])
+        x[i] += dt * v[i]
+
+@ti.kernel
+def set_vertices():
+    for i, j in ti.ndrange(N, N):
+        vertices[i * N + j] = x[i, j]
+
+init()
+set_indices()
+
+window = ti.ui.Window("Cloth", (800, 800), vsync=True)
+canvas = window.get_canvas()
+scene = ti.ui.Scene()
+camera = ti.ui.make_camera()
+
+while window.running:
+    for i in range(30):
+        step()
+    set_vertices()
+
+    camera.position(0.5, -0.5, 2)
+    camera.lookat(0.5, -0.5, 0)
+    scene.set_camera(camera)
+
+    scene.point_light(pos=(0.5, 1, 2), color=(1, 1, 1))
+    scene.mesh(vertices, indices=indices, color=(0.5, 0.5, 0.5), two_sided = True)
+    scene.particles(ball_center, radius=ball_radius, color=(0.5, 0, 0))
+    canvas.scene(scene)
+    window.show()
+```
+
+Total number of lines: 91.
+
+## Fun things to do
+I hope you enjoyed this program! If you did, I have a few challenges for you:
+
+* \[Easy\] Mess around with the parameters: see how varying the `stiffness`, `damping`, and `dt` changes the behavior of this program.
+
+* \[Easy\] Search the program text for `vsync=True`, and change it to `vsync=False`. This will remove the 60 FPS limit on the program. Observe how fast the program can run on your machine.
+
+* \[Medium\] Implement a slightly more complicated interaction between the cloth and the ball: make it slide down the ball without penetrating it. 
 
 
+* \[Medium\] Add more balls: make the cloth interact with more than one ball.
+
+As an example of what the last two challenges may look like:
+
+<p align="center">
+  <img width="400" height="300" src="https://github.com/AmesingFlank/taichi/raw/blog_0/blog_0/cloth_1.gif">
+</p>
 
 
-Gravity is the simplest of these factors: each point mass in the system is constantly subjected to a downwards force, whose magnitude is fixed. For simplicity, we treat the mass of each point to be 1 unit, and we take gravity to be 0.5 units. This means that gravity causes the `y` component of the velocity of each point to decrease at the rate of 0.5 units.
+And finally,
 
-As the cloth moves down, it will eventually come into contact with the red ball in the middle. We will use a simple model to represent this collision: for each mass point, as soon as it hits the ball, it "sticks" there and stops moving.
 
-Each spring `s` in the system is initialized with a rest length, `l_0(s), and at any moment `t, if the current length `l_t(s)` of `s` exceeds `l_0(s), the spring will exert a force on its endpoints that pulls them together, where the magnitude of the force is proportional to `l_t(s)-l_0(s). Conversely, if `l_t(s)` is smaller than `l_0(s)`, then the spring will push the endpoints away from each other, with a force proportional to `l_0(s)-l_t(s). If you remember high school physics, this is called Hooke's law.
+* \[Hard\] Having completed the 2nd challenge, try to implement the same program in another programming language, or in Python but without Taichi. See what's the maximum FPS that you can obtain, and what's the amount of code that you need to write in order to obtain that performance.
 
-Finally, to prevent this system from falling into perpetual and chaotic motion, we will damp the velocity of each mass point. This simply means that we slightly reduce the magnitude of its velocity at each timestep.
+## Parting Words
+
+Let's review what Taichi enabled us to accomplish in 91 lines of Python:
+
+* Simulate a mass-spring system with over ten thousand mass points and around a hundred thousand springs.
+* Using the `@ti.kernel` annotation, automatically parallelize the simulation via a CUDA GPU or multi-threading on CPU
+* Render the result in real-time via a GPU renderer.
+
+And that is 
+
 
