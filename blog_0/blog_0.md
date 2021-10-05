@@ -13,7 +13,7 @@ Readability counts.
 ...
 ```
 
-Simple is better than complex. Readability counts. No doubt, Python has indeed been quite successful at these achieving these goals: it is by far the most friendly language to learn, and an average Python program is often [5-10 times shorter](https://www.python.org/doc/essays/comparisons/) than equivalent C++ code. Unfortunately, there is a catch: Python's simplicity comes at the cost of reduced performance. It is never surprising for a Python program to be [10-100 times slower](https://benchmarksgame-team.pages.debian.net/benchmarksgame/fastest/gpp-python3.html) than its C++ counterpart. It thus appears that there is a perpetual trade-off between speed and simplicity, and no programming language shall ever possess both.
+Simple is better than complex. Readability counts. No doubt, Python has indeed been quite successful at these achieving these goals: it is by far the most friendly language to learn, and an average Python program is often [5-10 times shorter](https://www.python.org/doc/essays/comparisons/) than equivalent C++ code. Unfortunately, there is a catch: Python's simplicity comes at the cost of reduced performance. In fact, it is almost never surprising for a Python program to be [10-100 times slower](https://benchmarksgame-team.pages.debian.net/benchmarksgame/fastest/gpp-python3.html) than its C++ counterpart. It thus appears that there is a perpetual trade-off between speed and simplicity, and no programming language shall ever possess both.
 
 But don't you worry, all hope is not lost.
 
@@ -345,7 +345,7 @@ I hope you enjoyed this program! If you did, I have a few challenges for you:
 As an example of what the last two challenges may look like:
 
 <p align="center">
-  <img width="400" height="300" src="https://github.com/AmesingFlank/taichi/raw/blog_0/blog_0/cloth_1.gif">
+  <img width="400" height="225" src="https://github.com/AmesingFlank/taichi/raw/blog_0/blog_0/cloth_2.gif">
 </p>
 
 
@@ -362,6 +362,9 @@ Let's review what Taichi enabled us to accomplish in 91 lines of Python:
 * Using the `@ti.kernel` annotation, automatically parallelize the simulation via a CUDA GPU or multi-threading on CPU
 * Render the result in real-time via a GPU renderer.
 
-And that is 
+Not only did Taichi allow us to implement all these complex functionalities with a small amount of code, it saved us the effort of having to lean CUDA, or multi-thread programming, or GPU rendering. With taichi, anyone can write high performance programs, and they can focus on algorithmic aspects of their code, while allow the programming language to take care of performance. This brings us to the motto upon which taichi is build: Parallel Programing for Everyone.
 
+To learn more about Taichi, please do visit its [Github Page](https://github.com/taichi-dev/taichi), where you can find detailed documentation, as well as quite a few example taichi programs, all of which are quite amusing. And finally, if you believe in our mission of making a friendly yet powerful language for parallel computation, we would be delighted to see you join us as an open-source contributor. 
+
+In our next article, we will discuss the inner workings of Taichi, and how it interacts with GPUs on different platforms for computation and rendering. Until then, happy coding~
 
