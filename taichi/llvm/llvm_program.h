@@ -132,6 +132,8 @@ class LlvmProgramImpl : public ProgramImpl {
     return device_.get();
   }
 
+  DevicePtr get_snode_device_ptr(SNode* snode) override ;
+
  private:
   std::unique_ptr<TaichiLLVMContext> llvm_context_host{nullptr};
   std::unique_ptr<TaichiLLVMContext> llvm_context_device{nullptr};
@@ -143,8 +145,11 @@ class LlvmProgramImpl : public ProgramImpl {
 
   DeviceAllocation preallocated_device_buffer_alloc{kDeviceNullAllocation};
 
+  std::unordered_map<int,DeviceAllocation> snode_tree_allocs_;
+
   std::unique_ptr<Device> device_;
   cuda::CudaDevice *cuda_device();
+  cpu::CpuDevice *cuda_device();
 };
 }  // namespace lang
 }  // namespace taichi

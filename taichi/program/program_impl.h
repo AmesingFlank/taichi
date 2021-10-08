@@ -65,6 +65,10 @@ class ProgramImpl {
     return nullptr;
   }
 
+  virtual DevicePtr get_snode_device_ptr(SNode* snode){
+    return kDeviceNullPtr;
+  }
+
   virtual ~ProgramImpl() {
   }
 
