@@ -171,15 +171,15 @@ void LlvmProgramImpl::initialize_llvm_runtime_snodes(const SNodeTree *tree,
                                           rounded_size, taichi_page_size,
                                           tree->id(), result_buffer);
   
-  // DeviceAllocation alloc{kDeviceNullAllocation};
+  DeviceAllocation alloc{kDeviceNullAllocation};
 
-  // if (config->arch == Arch::cuda) {
-  //   alloc = cuda_device()->import_memory(root_buffer, rounded_size);
-  // } else {
-  //   alloc = cpu_device()->import_memory(root_buffer, rounded_size);
-  // }
+  if (config->arch == Arch::cuda) {
+    alloc = cuda_device()->import_memory(root_buffer, rounded_size);
+  } else {
+    alloc = cpu_device()->import_memory(root_buffer, rounded_size);
+  }
 
-  // snode_tree_allocs_[tree->id()] = alloc;
+  snode_tree_allocs_[tree->id()] = alloc;
 
   runtime_jit->call<void *, std::size_t, int, int, int, std::size_t, Ptr>(
       "runtime_initialize_snodes", llvm_runtime, scomp->root_size, root_id,
