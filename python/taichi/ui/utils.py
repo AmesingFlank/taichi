@@ -49,6 +49,7 @@ def get_field_info(field):
 
     info.dtype = field.dtype
     info.data = get_field_addr(field)
+    info.snode = field.snode.ptr
 
     if hasattr(field, 'n'):
         info.field_type = _ti_core.FieldType.Matrix

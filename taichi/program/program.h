@@ -270,6 +270,10 @@ class Program {
 
   LlvmProgramImpl *get_llvm_program_impl();
 
+  DevicePtr get_snode_tree_device_ptr(int tree_id){
+    return program_impl_->get_snode_tree_device_ptr(tree_id);
+  }
+
  private:
   /**
    * Materializes a new SNodeTree.
