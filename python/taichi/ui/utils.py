@@ -19,7 +19,6 @@ def get_field_addr_0D(x: template()) -> u64:
 def get_field_addr_ND(x: template()) -> u64:
     return get_addr(x, [0 for _ in x.shape])
 
-
 field_addr_cache = {}
 
 

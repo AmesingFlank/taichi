@@ -170,7 +170,7 @@ void LlvmProgramImpl::initialize_llvm_runtime_snodes(const SNodeTree *tree,
   Ptr root_buffer = snode_tree_buffer_manager->allocate(runtime_jit, llvm_runtime,
                                           rounded_size, taichi_page_size,
                                           tree->id(), result_buffer);
-  
+    
   DeviceAllocation alloc{kDeviceNullAllocation};
 
   if (config->arch == Arch::cuda) {

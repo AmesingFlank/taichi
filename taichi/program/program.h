@@ -274,6 +274,14 @@ class Program {
     return program_impl_->get_snode_tree_device_ptr(tree_id);
   }
 
+  Device *get_compute_device() {
+    return program_impl_->get_compute_device();
+  }
+
+  Device *get_graphics_device() {
+    return program_impl_->get_graphics_device();
+  }
+
  private:
   /**
    * Materializes a new SNodeTree.
