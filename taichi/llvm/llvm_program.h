@@ -26,6 +26,10 @@ namespace cuda {
 class CudaDevice;
 }
 
+namespace cpu {
+class CpuDevice;
+}
+
 class LlvmProgramImpl : public ProgramImpl {
  public:
   LlvmProgramImpl(CompileConfig &config, KernelProfilerBase *profiler);
@@ -132,7 +136,7 @@ class LlvmProgramImpl : public ProgramImpl {
     return device_.get();
   }
 
-  DevicePtr get_snode_device_ptr(SNode* snode) override ;
+  DevicePtr get_snode_tree_device_ptr(int tree_id) override ;
 
  private:
   std::unique_ptr<TaichiLLVMContext> llvm_context_host{nullptr};
@@ -149,7 +153,7 @@ class LlvmProgramImpl : public ProgramImpl {
 
   std::unique_ptr<Device> device_;
   cuda::CudaDevice *cuda_device();
-  cpu::CpuDevice *cuda_device();
+  cpu::CpuDevice *cpu_device();
 };
 }  // namespace lang
 }  // namespace taichi

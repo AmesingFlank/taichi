@@ -2,8 +2,13 @@
 #include "taichi/ui/utils/utils.h"
 
 #include "taichi/ir/type_utils.h"
+#include "taichi/ir/snode.h"
+#include "taichi/backends/device.h"
+
 
 TI_UI_NAMESPACE_BEGIN
+
+
 
 enum class FieldSource : int {
   TaichiCuda = 0,
@@ -29,5 +34,7 @@ struct FieldInfo {
     valid = false;
   }
 };
+
+taichi::lang::DevicePtr get_device_ptr(taichi::lang::SNode* snode);
 
 TI_UI_NAMESPACE_END
