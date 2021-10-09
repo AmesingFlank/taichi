@@ -2,6 +2,7 @@
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
 #include "taichi/ui/utils/utils.h"
+#include "taichi/backends/cuda/cuda_device.h"
 
 TI_UI_NAMESPACE_BEGIN
 
@@ -49,10 +50,30 @@ void SetImage::update_data(const SetImageInfo &info) {
   copy_params.image_extent.x = height;
   copy_params.image_extent.y = width;
 
+  Program& program = get_current_program();
+  Device* compute_device = program.get_compute_device();
+
+
   if (img.field_source == FieldSource::TaichiCuda) {
+    cuda::CudaDevice* cuda_device = static_cast<cuda::CudaDevice*>(compute_device); 
+
+    auto get_ptr_from_snode = [&](SNode* snode) -> unsigned char * {
+      DevicePtr dev_ptr = get_device_ptr(snode);
+      DeviceAllocation dev_alloc(dev_ptr);
+      cuda::CudaDevice::AllocInfo alloc_info = cuda_device->get_alloc_info(dev_alloc);
+      unsigned char * data = (unsigned char *) alloc_info.ptr + dev_ptr.offset;
+      return data;
+    };
+    
+    unsigned char* img_data = get_ptr_from_snode(img.snode);
+    
+    if((int64_t)img_data != (int64_t)img.data){
+      TI_ERROR("img mismatch !  {}   vs.   {}",(int64_t) img_data, (int64_t) img.data);
+    }
+
     unsigned char *mapped = device_ptr_;
 
-    cuda_memcpy(mapped, (unsigned char *)img.data, pixels * 4);
+    cuda_memcpy(mapped, (unsigned char *)img_data, pixels * 4);
 
     auto stream = app_context_->device().get_graphics_stream();
     auto cmd_list = stream->new_command_list();

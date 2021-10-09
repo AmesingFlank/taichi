@@ -83,27 +83,36 @@ void Renderable::update_data(const RenderableInfo &info) {
   Program& program = get_current_program();
   Device* compute_device = program.get_compute_device();
 
+  
+
   if (info.vbo.field_source == FieldSource::TaichiCuda) {
-    
-    SNode* snode = info.vbo.snode;
-    DevicePtr dev_ptr = get_device_ptr(snode);
-    DeviceAllocation dev_alloc(dev_ptr);
 
     cuda::CudaDevice* cuda_device = static_cast<cuda::CudaDevice*>(compute_device); 
-    cuda::CudaDevice::AllocInfo alloc_info = cuda_device->get_alloc_info(dev_alloc);
 
-    unsigned char * data = (unsigned char *) alloc_info.ptr + dev_ptr.offset;
-
-    if((int64_t)data != (int64_t)info.vbo.data){
-      TI_ERROR("mismatch ! {} + {} = {}   vs.   {}",(int64_t)alloc_info.ptr, dev_ptr.offset,(int64_t) data, (int64_t) info.vbo.data);
+    auto get_ptr_from_snode = [&](SNode* snode) -> unsigned char * {
+      DevicePtr dev_ptr = get_device_ptr(snode);
+      DeviceAllocation dev_alloc(dev_ptr);
+      cuda::CudaDevice::AllocInfo alloc_info = cuda_device->get_alloc_info(dev_alloc);
+      unsigned char * data = (unsigned char *) alloc_info.ptr + dev_ptr.offset;
+      return data;
+    };
+    
+    unsigned char* vbo_data = get_ptr_from_snode(info.vbo.snode);
+    
+    if((int64_t)vbo_data != (int64_t)info.vbo.data){
+      TI_ERROR("vbo mismatch !  {}   vs.   {}",(int64_t) vbo_data, (int64_t) info.vbo.data);
     }
 
-    cuda_memcpy(vertex_buffer_device_ptr_, (void *)info.vbo.data,
+    cuda_memcpy(vertex_buffer_device_ptr_, (void *)vbo_data,
                 sizeof(Vertex) * num_vertices);
 
     if (info.indices.valid) {
       indexed_ = true;
-      cuda_memcpy(index_buffer_device_ptr_, (int *)info.indices.data,
+      unsigned char* ibo_data = get_ptr_from_snode(info.indices.snode);
+      if((int64_t)ibo_data != (int64_t)info.indices.data){
+        TI_ERROR("ibo mismatch ! {}   vs.   {}",(int64_t) ibo_data, (int64_t) info.indices.data);
+      }
+      cuda_memcpy(index_buffer_device_ptr_, (int *)ibo_data,
                   num_indices * sizeof(int));
 
     } else {
