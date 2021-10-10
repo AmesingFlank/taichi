@@ -1,8 +1,6 @@
 #include "renderer.h"
 #include "taichi/ui/utils/utils.h"
 
-
-
 TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {

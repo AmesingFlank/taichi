@@ -1,6 +1,5 @@
 #include "set_image.h"
 
-
 #include "taichi/ui/utils/utils.h"
 
 TI_UI_NAMESPACE_BEGIN
@@ -44,18 +43,19 @@ void SetImage::update_data(const SetImageInfo &info) {
   app_context_->device().image_transition(texture_, ImageLayout::shader_read,
                                           ImageLayout::transfer_dst);
 
-  Program& program = get_current_program();
-  DevicePtr img_dev_ptr = get_device_ptr(&program,img.snode);
+  Program &program = get_current_program();
+  DevicePtr img_dev_ptr = get_device_ptr(&program, img.snode);
   uint64_t img_size = pixels * 4;
 
-  Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(gpu_staging_buffer_.get_ptr(),img_dev_ptr,img_size);
-  if(memcpy_cap == Device::MemcpyCapability::Direct){
-    Device::memcpy_direct(gpu_staging_buffer_.get_ptr(),img_dev_ptr,img_size);
-  }
-  else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer){
-    Device::memcpy_via_staging(gpu_staging_buffer_.get_ptr(),cpu_staging_buffer_.get_ptr(),img_dev_ptr,img_size);
-  }
-  else{
+  Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(
+      gpu_staging_buffer_.get_ptr(), img_dev_ptr, img_size);
+  if (memcpy_cap == Device::MemcpyCapability::Direct) {
+    Device::memcpy_direct(gpu_staging_buffer_.get_ptr(), img_dev_ptr, img_size);
+  } else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer) {
+    Device::memcpy_via_staging(gpu_staging_buffer_.get_ptr(),
+                               cpu_staging_buffer_.get_ptr(), img_dev_ptr,
+                               img_size);
+  } else {
     TI_NOT_IMPLEMENTED;
   }
 
@@ -70,7 +70,7 @@ void SetImage::update_data(const SetImageInfo &info) {
                             ImageLayout::transfer_dst, copy_params);
 
   cmd_list->image_transition(texture_, ImageLayout::transfer_dst,
-                              ImageLayout::shader_read);
+                             ImageLayout::shader_read);
   stream->submit_synced(cmd_list.get());
 }
 
@@ -156,9 +156,9 @@ void SetImage::update_vertex_buffer_() {
     app_context_->device().unmap(staging_vertex_buffer_);
   }
 
-  app_context_->device().memcpy_internal(vertex_buffer_.get_ptr(0),
-                                staging_vertex_buffer_.get_ptr(0),
-                                config_.vertices_count * sizeof(Vertex));
+  app_context_->device().memcpy_internal(
+      vertex_buffer_.get_ptr(0), staging_vertex_buffer_.get_ptr(0),
+      config_.vertices_count * sizeof(Vertex));
 }
 
 void SetImage::update_index_buffer_() {
@@ -173,8 +173,8 @@ void SetImage::update_index_buffer_() {
   }
 
   app_context_->device().memcpy_internal(index_buffer_.get_ptr(0),
-                                staging_index_buffer_.get_ptr(0),
-                                config_.indices_count * sizeof(int));
+                                         staging_index_buffer_.get_ptr(0),
+                                         config_.indices_count * sizeof(int));
 
   indexed_ = true;
 }

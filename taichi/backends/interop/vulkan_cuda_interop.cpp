@@ -15,7 +15,7 @@
 #include <unordered_map>
 
 namespace taichi {
-namespace lang{
+namespace lang {
 
 using namespace taichi::lang::vulkan;
 using namespace taichi::lang::cuda;
@@ -23,8 +23,7 @@ using namespace taichi::lang::cpu;
 
 #if TI_WITH_VULKAN && TI_WITH_CUDA
 
-namespace{
-
+namespace {
 
 #ifdef _WIN64  // For windows
 HANDLE get_device_mem_handle(VkDeviceMemory &mem, VkDevice device) {
@@ -133,61 +132,57 @@ void *map_buffer_onto_external_memory(CUexternalMemory ext_mem,
 }
 
 void *get_cuda_memory_pointer(VkDeviceMemory mem,
-                         VkDeviceSize mem_size,
-                         VkDeviceSize offset,
-                         VkDeviceSize buffer_size,
-                         VkDevice device) {
+                              VkDeviceSize mem_size,
+                              VkDeviceSize offset,
+                              VkDeviceSize buffer_size,
+                              VkDevice device) {
   auto handle = get_device_mem_handle(mem, device);
   CUexternalMemory externalMem =
       import_vk_memory_object_from_handle(handle, mem_size, false);
   return map_buffer_onto_external_memory(externalMem, offset, buffer_size);
 }
 
-
-
 void cuda_memcpy(void *dst, void *src, size_t size) {
   CUDADriver::get_instance().memcpy_device_to_device(dst, src, size);
 }
 
-} // namespace 
+}  // namespace
 
-
-
-void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size){
-  VulkanDevice* vk_dev = dynamic_cast<VulkanDevice*>(dst.device);
-  CudaDevice* cuda_dev = dynamic_cast<CudaDevice*>(src.device);
+void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size) {
+  VulkanDevice *vk_dev = dynamic_cast<VulkanDevice *>(dst.device);
+  CudaDevice *cuda_dev = dynamic_cast<CudaDevice *>(src.device);
 
   DeviceAllocation dst_alloc(dst);
   DeviceAllocation src_alloc(src);
 
-  static std::unordered_map<int, unsigned char*> alloc_base_ptrs;
+  static std::unordered_map<int, unsigned char *> alloc_base_ptrs;
 
-  if(alloc_base_ptrs.find(dst_alloc.alloc_id) == alloc_base_ptrs.end()){
-    auto [base_mem, alloc_offset, alloc_size] = vk_dev->get_vkmemory_offset_size(dst_alloc);
+  if (alloc_base_ptrs.find(dst_alloc.alloc_id) == alloc_base_ptrs.end()) {
+    auto [base_mem, alloc_offset, alloc_size] =
+        vk_dev->get_vkmemory_offset_size(dst_alloc);
     auto block_size = VulkanDevice::kMemoryBlockSize;
-    void* alloc_base_ptr = get_cuda_memory_pointer(base_mem, /*mem_size=*/block_size, /*offset=*/alloc_offset, 
-                                    /*buffer_size=*/alloc_size, vk_dev->vk_device());
-    alloc_base_ptrs[dst_alloc.alloc_id] = (unsigned char*)alloc_base_ptr;
+    void *alloc_base_ptr = get_cuda_memory_pointer(
+        base_mem, /*mem_size=*/block_size, /*offset=*/alloc_offset,
+        /*buffer_size=*/alloc_size, vk_dev->vk_device());
+    alloc_base_ptrs[dst_alloc.alloc_id] = (unsigned char *)alloc_base_ptr;
   }
-  
-  unsigned char* dst_cuda_ptr = alloc_base_ptrs.at(dst_alloc.alloc_id) + dst.offset;
+
+  unsigned char *dst_cuda_ptr =
+      alloc_base_ptrs.at(dst_alloc.alloc_id) + dst.offset;
 
   CudaDevice::AllocInfo src_alloc_info = cuda_dev->get_alloc_info(src_alloc);
 
-  unsigned char* src_cuda_ptr = (unsigned char*)src_alloc_info.ptr + src.offset;
+  unsigned char *src_cuda_ptr =
+      (unsigned char *)src_alloc_info.ptr + src.offset;
 
-  
-  cuda_memcpy(dst_cuda_ptr,src_cuda_ptr,size);
+  cuda_memcpy(dst_cuda_ptr, src_cuda_ptr, size);
 }
 
 #else
-void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size){
+void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size) {
   TI_NOT_IMPLEMENTED;
 }
-#endif // TI_WITH_VULKAN && TI_WITH_CUDA
-
-
-
+#endif  // TI_WITH_VULKAN && TI_WITH_CUDA
 
 }  // namespace lang
-} // namespace taichi
+}  // namespace taichi

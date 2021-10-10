@@ -1,8 +1,6 @@
 #include "taichi/ui/backends/vulkan/renderable.h"
 #include "taichi/ui/utils/utils.h"
 
-
-
 TI_UI_NAMESPACE_BEGIN
 
 namespace vulkan {
@@ -59,33 +57,34 @@ void Renderable::update_data(const RenderableInfo &info) {
     init_buffers();
   }
 
-
-  Program& program = get_current_program();
+  Program &program = get_current_program();
   DevicePtr vbo_dev_ptr = get_device_ptr(&program, info.vbo.snode);
   uint64_t vbo_size = sizeof(Vertex) * num_vertices;
 
-  Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(vertex_buffer_.get_ptr(),vbo_dev_ptr,vbo_size);
-  if(memcpy_cap == Device::MemcpyCapability::Direct){
-    Device::memcpy_direct(vertex_buffer_.get_ptr(),vbo_dev_ptr.get_ptr(),vbo_size);
-  }
-  else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer){
-    Device::memcpy_via_staging(vertex_buffer_.get_ptr(),staging_vertex_buffer_.get_ptr(),vbo_dev_ptr,vbo_size);
-  }
-  else{
+  Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(
+      vertex_buffer_.get_ptr(), vbo_dev_ptr, vbo_size);
+  if (memcpy_cap == Device::MemcpyCapability::Direct) {
+    Device::memcpy_direct(vertex_buffer_.get_ptr(), vbo_dev_ptr.get_ptr(),
+                          vbo_size);
+  } else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer) {
+    Device::memcpy_via_staging(vertex_buffer_.get_ptr(),
+                               staging_vertex_buffer_.get_ptr(), vbo_dev_ptr,
+                               vbo_size);
+  } else {
     TI_NOT_IMPLEMENTED;
   }
 
-  if(info.indices.valid){
+  if (info.indices.valid) {
     indexed_ = true;
     DevicePtr ibo_dev_ptr = get_device_ptr(&program, info.indices.snode);
     uint64_t ibo_size = num_indices * sizeof(int);
-    if(memcpy_cap == Device::MemcpyCapability::Direct){
-      Device::memcpy_direct(index_buffer_.get_ptr(),ibo_dev_ptr,ibo_size);
-    }
-    else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer){
-      Device::memcpy_via_staging(index_buffer_.get_ptr(),staging_index_buffer_.get_ptr(),ibo_dev_ptr,ibo_size);
-    }
-    else{
+    if (memcpy_cap == Device::MemcpyCapability::Direct) {
+      Device::memcpy_direct(index_buffer_.get_ptr(), ibo_dev_ptr, ibo_size);
+    } else if (memcpy_cap == Device::MemcpyCapability::RequiresStagingBuffer) {
+      Device::memcpy_via_staging(index_buffer_.get_ptr(),
+                                 staging_index_buffer_.get_ptr(), ibo_dev_ptr,
+                                 ibo_size);
+    } else {
       TI_NOT_IMPLEMENTED;
     }
   }

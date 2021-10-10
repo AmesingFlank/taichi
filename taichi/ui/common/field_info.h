@@ -27,7 +27,7 @@ struct FieldInfo {
   DEFINE_PROPERTY(FieldSource, field_source);
   DEFINE_PROPERTY(taichi::lang::DataType, dtype);
 
-  using SNodePtr = taichi::lang::SNode*;
+  using SNodePtr = taichi::lang::SNode *;
   DEFINE_PROPERTY(SNodePtr, snode);
 
   FieldInfo() {
