@@ -45,7 +45,7 @@ void SetImage::update_data(const SetImageInfo &info) {
                                           ImageLayout::transfer_dst);
 
   Program& program = get_current_program();
-  DevicePtr img_dev_ptr = get_device_ptr(img.snode, &program);
+  DevicePtr img_dev_ptr = get_device_ptr(&program,img.snode);
   uint64_t img_size = pixels * 4;
 
   Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(gpu_staging_buffer_.get_ptr(),img_dev_ptr,img_size);
@@ -156,7 +156,7 @@ void SetImage::update_vertex_buffer_() {
     app_context_->device().unmap(staging_vertex_buffer_);
   }
 
-  app_context_->device().memcpy(vertex_buffer_.get_ptr(0),
+  app_context_->device().memcpy_internal(vertex_buffer_.get_ptr(0),
                                 staging_vertex_buffer_.get_ptr(0),
                                 config_.vertices_count * sizeof(Vertex));
 }
@@ -172,7 +172,7 @@ void SetImage::update_index_buffer_() {
     app_context_->device().unmap(staging_index_buffer_);
   }
 
-  app_context_->device().memcpy(index_buffer_.get_ptr(0),
+  app_context_->device().memcpy_internal(index_buffer_.get_ptr(0),
                                 staging_index_buffer_.get_ptr(0),
                                 config_.indices_count * sizeof(int));
 

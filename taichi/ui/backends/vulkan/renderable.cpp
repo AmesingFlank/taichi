@@ -61,7 +61,7 @@ void Renderable::update_data(const RenderableInfo &info) {
 
 
   Program& program = get_current_program();
-  DevicePtr vbo_dev_ptr = get_device_ptr(info.vbo.snode, &program);
+  DevicePtr vbo_dev_ptr = get_device_ptr(&program, info.vbo.snode);
   uint64_t vbo_size = sizeof(Vertex) * num_vertices;
 
   Device::MemcpyCapability memcpy_cap = Device::check_memcpy_capability(vertex_buffer_.get_ptr(),vbo_dev_ptr,vbo_size);
@@ -76,7 +76,7 @@ void Renderable::update_data(const RenderableInfo &info) {
   }
 
   if(info.indices.valid){
-    DevicePtr ibo_dev_ptr = get_device_ptr(info.indices.snode, &program);
+    DevicePtr ibo_dev_ptr = get_device_ptr(&program, info.indices.snode);
     uint64_t ibo_size = num_indices * sizeof(int);
     if(memcpy_cap == Device::MemcpyCapability::Direct){
       Device::memcpy_direct(index_buffer_.get_ptr(),ibo_dev_ptr,ibo_size);
