@@ -16,7 +16,7 @@
 #include "taichi/ui/backends/vulkan/vertex.h"
 #include "taichi/ui/backends/vulkan/app_context.h"
 #include "taichi/ui/backends/vulkan/swap_chain.h"
-#include "taichi/ui/backends/vulkan/vulkan_cuda_interop.h"
+
 #include "taichi/ui/common/renderable_info.h"
 #include "taichi/backends/vulkan/vulkan_device.h"
 
