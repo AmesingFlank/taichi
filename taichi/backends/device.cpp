@@ -3,6 +3,8 @@
 #include <taichi/backends/cpu/cpu_device.h>
 #include <taichi/backends/vulkan/vulkan_device.h>
 #include <taichi/backends/interop/vulkan_cuda_interop.h>
+#include <taichi/backends/interop/vulkan_cpu_interop.h>
+
 
 namespace taichi {
 namespace lang {
@@ -59,7 +61,7 @@ void Device::memcpy_via_staging(DevicePtr dst, DevicePtr staging,DevicePtr src, 
   // Intra-device copy
 #if TI_WITH_VULKAN 
   if (dynamic_cast<VulkanDevice*>(dst.device) && dynamic_cast<CpuDevice*>(src.device)){
-    //memcpy_cpu_to_vulkan(dst,src,size);
+    memcpy_cpu_to_vulkan_via_staging(dst,staging,src,size);
     return;
   }
 #endif
