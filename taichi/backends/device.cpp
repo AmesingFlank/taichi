@@ -25,12 +25,12 @@ Device::MemcpyCapability Device::check_memcpy_capability(DevicePtr dst, DevicePt
   }
 
   #if TI_WITH_VULKAN && TI_WITH_CUDA
-  if (auto* vk_dev = dynamic_cast<VulkanDevice>(dst.device) && auto* cuda_dev = dynamic_cast<CudaDevice>(src.device)){
+  if (dynamic_cast<VulkanDevice>(dst.device) && dynamic_cast<CudaDevice>(src.device)){
     return Device::MemcpyCapability::Direct;
   }
   #endif
 
-  if (auto* vk_dev = dynamic_cast<VulkanDevice>(dst.device) && auto* cpu_dev = dynamic_cast<CpuDevice>(src.device)){
+  if (dynamic_cast<VulkanDevice>(dst.device) &&  dynamic_cast<CpuDevice>(src.device)){
     // TODO: support direct copy if dst itself supports host write.
     return Device::MemcpyCapability::RequiresStagingBuffer;
   }
@@ -46,7 +46,7 @@ void Device::memcpy_direct(DevicePtr dst, DevicePtr src, uint64_t size) {
   }
   // Intra-device copy
 #if TI_WITH_VULKAN && TI_WITH_CUDA
-  if (auto* vk_dev = dynamic_cast<VulkanDevice>(dst.device) && auto* cuda_dev = dynamic_cast<CudaDevice>(src.device)){
+  if ( dynamic_cast<VulkanDevice>(dst.device) &&  dynamic_cast<CudaDevice>(src.device)){
     memcpy_cuda_to_vulkan(dst,src,size);
     return;
   }
@@ -58,7 +58,7 @@ void Device::memcpy_direct(DevicePtr dst, DevicePtr src, uint64_t size) {
 void Device::memcpy_via_staging(DevicePtr dst, DevicePtr staging,DevicePtr src, uint64_t size) {
   // Intra-device copy
 #if TI_WITH_VULKAN 
-  if (auto* vk_dev = dynamic_cast<VulkanDevice>(dst.device) && auto* cpu_dev = dynamic_cast<CpuDevice>(src.device)){
+  if (dynamic_cast<VulkanDevice>(dst.device) && dynamic_cast<CpuDevice>(src.device)){
     //memcpy_cpu_to_vulkan(dst,src,size);
     return;
   }
