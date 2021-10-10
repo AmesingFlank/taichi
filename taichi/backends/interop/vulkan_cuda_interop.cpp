@@ -154,8 +154,8 @@ void cuda_memcpy(void *dst, void *src, size_t size) {
 
 
 void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size){
-  VulkanDevice* vk_dev = dynamic_cast<VulkanDevice>(dst.device);
-  CudaDevice* cuda_dev = dynamic_cast<CudaDevice>(src.device);
+  VulkanDevice* vk_dev = dynamic_cast<VulkanDevice*>(dst.device);
+  CudaDevice* cuda_dev = dynamic_cast<CudaDevice*>(src.device);
 
   DeviceAllocation dst_alloc(dst);
   DeviceAllocation src_alloc(src);
@@ -174,7 +174,7 @@ void memcpy_cuda_to_vulkan(DevicePtr dst, DevicePtr src, uint64_t size){
 
   CudaDevice::AllocInfo src_alloc_info = cuda_dev->get_alloc_info(src_alloc);
 
-  unsigned char* src_cuda_ptr = src_alloc_info.ptr + src.offset;
+  unsigned char* src_cuda_ptr = (unsigned char*)src_alloc_info.ptr + src.offset;
 
   
   cuda_memcpy(dst_cuda_ptr,src_cuda_ptr,size);
