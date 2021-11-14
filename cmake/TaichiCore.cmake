@@ -6,6 +6,7 @@ option(TI_WITH_CUDA_TOOLKIT "Build with the CUDA toolkit" OFF)
 option(TI_WITH_OPENGL "Build with the OpenGL backend" ON)
 option(TI_WITH_CC "Build with the C backend" ON)
 option(TI_WITH_VULKAN "Build with the Vulkan backend" OFF)
+option(TI_EMSCRIPTENED "compile to wasm" ON)
 
 
 if(UNIX AND NOT APPLE)
@@ -14,7 +15,7 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-if (APPLE)
+if (APPLE OR TI_EMSCRIPTENED)
     if (TI_WITH_CUDA)
         set(TI_WITH_CUDA OFF)
         message(WARNING "CUDA backend not supported on OS X. Setting TI_WITH_CUDA to OFF.")
@@ -29,7 +30,7 @@ if (APPLE)
     endif()
 endif()
 
-if (WIN32)
+if (WIN32 OR TI_EMSCRIPTENED)
     if (TI_WITH_CC)
         set(TI_WITH_CC OFF)
         message(WARNING "C backend not supported on Windows. Setting TI_WITH_CC to OFF.")
@@ -39,6 +40,10 @@ endif()
 set(TI_WITH_GGUI OFF)
 if(TI_WITH_VULKAN)
     set(TI_WITH_GGUI ON)
+endif()
+
+if(TI_EMSCRIPTENED)
+    set(TI_WITH_GGUI OFF)
 endif()
 
 
@@ -206,7 +211,7 @@ endif()
 
 set(LIBRARY_NAME ${CORE_LIBRARY_NAME})
 
-if (TI_WITH_OPENGL OR TI_WITH_VULKAN)
+if ((TI_WITH_OPENGL OR TI_WITH_VULKAN) AND NOT TI_EMSCRIPTENED)
   set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
   set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
   set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)

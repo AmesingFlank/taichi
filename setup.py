@@ -113,8 +113,11 @@ class CMakeBuild(build_ext):
         return shlex.split(cmake_args.strip())
 
     def run(self):
+        env = os.environ.copy()
+
         try:
-            out = subprocess.check_output(['cmake', '--version'])
+            print(env)
+            out = subprocess.check_output(['cmake', '--version'],shell=True)
         except OSError:
             raise RuntimeError(
                 "CMake must be installed to build the following extensions: " +
@@ -150,17 +153,21 @@ class CMakeBuild(build_ext):
 
         self.build_args = build_args
 
-        env = os.environ.copy()
+        
         os.makedirs(self.build_temp, exist_ok=True)
 
         print('-' * 10, 'Running CMake prepare', '-' * 40)
-        subprocess.check_call(['cmake', cmake_list_dir] + cmake_args,
+        subprocess.check_call(['emcmake','cmake', cmake_list_dir] + cmake_args,
                               cwd=self.build_temp,
-                              env=env)
+                              env=env,shell=True)
 
         print('-' * 10, 'Building extensions', '-' * 40)
-        cmake_cmd = ['cmake', '--build', '.'] + self.build_args
-        subprocess.check_call(cmake_cmd, cwd=self.build_temp)
+
+        release_dir = os.path.join(cmake_list_dir, 'build','release')
+        os.makedirs(release_dir, exist_ok=True)
+
+        cmake_cmd = ['cmake' , '--build', '.'] + self.build_args
+        subprocess.check_call(cmake_cmd, cwd=self.build_temp,env = env,shell=True)
 
         self.prepare_package()
 
@@ -238,6 +245,7 @@ setup(name=project_name,
       python_requires=">=3.6,<3.10",
       install_requires=[
           'numpy',
+          'pybind11>=2.5.0',
           'sourceinspect>=0.0.4',
           'colorama',
           'astor',
