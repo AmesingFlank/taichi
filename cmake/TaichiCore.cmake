@@ -46,6 +46,11 @@ if(TI_EMSCRIPTENED)
     set(TI_WITH_GGUI OFF)
 endif()
 
+if(TI_EMSCRIPTENED)
+    set(TI_WITH_METAL OFF)
+    set(TI_WITH_LLVM OFF)
+endif()
+
 
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/gl.c")
     set(TI_WITH_OPENGL OFF)
