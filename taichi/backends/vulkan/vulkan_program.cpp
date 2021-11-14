@@ -1,6 +1,8 @@
 #include "taichi/backends/vulkan/vulkan_program.h"
 
+#ifndef TI_EMSCRIPTENED
 #include "GLFW/glfw3.h"
+#endif
 
 using namespace taichi::lang::vulkan;
 
@@ -64,6 +66,7 @@ void VulkanProgramImpl::materialize_runtime(MemoryPool *memory_pool,
   glfwInitVulkanLoader(vkGetInstanceProcAddr);
 #endif
 
+#ifndef TI_EMSCRIPTENED
   if (glfwInit()) {
     // glfw init success
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -75,6 +78,7 @@ void VulkanProgramImpl::materialize_runtime(MemoryPool *memory_pool,
       TI_WARN("GLFW reports no Vulkan support");
     }
   }
+#endif
 
   EmbeddedVulkanDevice::Params evd_params;
   evd_params.api_version = VulkanEnvSettings::kApiVersion();
