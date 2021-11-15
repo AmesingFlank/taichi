@@ -370,11 +370,13 @@ endforeach ()
 
 message("PYTHON_LIBRARIES: " ${PYTHON_LIBRARIES})
 
-set(CORE_WITH_PYBIND_LIBRARY_NAME taichi_core)
-add_library(${CORE_WITH_PYBIND_LIBRARY_NAME} SHARED ${TAICHI_PYBIND_SOURCE})
-# It is actually possible to link with an OBJECT library
-# https://cmake.org/cmake/help/v3.13/command/target_link_libraries.html?highlight=target_link_libraries#linking-object-libraries
-target_link_libraries(${CORE_WITH_PYBIND_LIBRARY_NAME} PUBLIC ${CORE_LIBRARY_NAME})
+if(NOT TI_EMSCRIPTENED)
+    set(CORE_WITH_PYBIND_LIBRARY_NAME taichi_core)
+    add_library(${CORE_WITH_PYBIND_LIBRARY_NAME} SHARED ${TAICHI_PYBIND_SOURCE})
+    # It is actually possible to link with an OBJECT library
+    # https://cmake.org/cmake/help/v3.13/command/target_link_libraries.html?highlight=target_link_libraries#linking-object-libraries
+    target_link_libraries(${CORE_WITH_PYBIND_LIBRARY_NAME} PUBLIC ${CORE_LIBRARY_NAME})
+endif()
 
 # These commands should apply to the DLL that is loaded from python, not the OBJECT library.
 if (MSVC)
