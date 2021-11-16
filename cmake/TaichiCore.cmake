@@ -202,7 +202,7 @@ list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_PYBIND_SOURCE})
 # But this requires more efforts, because taichi_core is already referenced
 # everywhere in python.
 set(CORE_LIBRARY_NAME taichi_isolated_core)
-add_library(${CORE_LIBRARY_NAME} OBJECT ${TAICHI_CORE_SOURCE})
+add_library(${CORE_LIBRARY_NAME} STATIC ${TAICHI_CORE_SOURCE})
 
 if (APPLE)
     # Ask OS X to minic Linux dynamic linking behavior
