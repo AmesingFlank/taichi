@@ -917,6 +917,18 @@ void VulkanCommandList::begin_renderpass(int x0,
                        VK_SUBPASS_CONTENTS_INLINE);
   buffer_->refs.push_back(current_renderpass_);
   buffer_->refs.push_back(current_framebuffer_);
+
+  VkClearAttachment clear_depth = {};
+  clear_depth.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+  VkClearValue clear_depth_value  = {};
+  clear_depth_value .depthStencil =
+        VkClearDepthStencilValue{0.0, 0};
+  clear_depth.clearValue = clear_depth_value;
+  VkClearRect clear_rect = {};
+  clear_rect.rect = VkRect2D{VkOffset2D{x0, y0}, VkExtent2D{(unsigned int)x1,(unsigned int) y1}};
+  clear_rect.layerCount = 1;
+  clear_rect.baseArrayLayer = 0;
+  vkCmdClearAttachments(buffer_->buffer,1,&clear_depth,1,&clear_rect);
 }
 
 void VulkanCommandList::end_renderpass() {
