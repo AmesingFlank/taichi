@@ -27,4 +27,8 @@ if (WIN32)
 endif()
 target_link_libraries(${EXAMPLES_NAME} taichi_isolated_core)
 
+<<<<<<< HEAD
 endif()
+=======
+endif()
+>>>>>>> f3b2e1176 (emscriptened)

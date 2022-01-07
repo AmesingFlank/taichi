@@ -4,6 +4,7 @@
 #if !defined(ANDROID) && !defined(TI_EMSCRIPTENED)
 #include "GLFW/glfw3.h"
 #endif
+#endif
 
 using namespace taichi::lang::vulkan;
 
@@ -23,11 +24,19 @@ std::vector<std::string> get_required_instance_extensions() {
 #else
   std::vector<std::string> extensions;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f3b2e1176 (emscriptened)
 #ifndef TI_EMSCRIPTENED
   uint32_t glfw_ext_count = 0;
   const char **glfw_extensions;
   glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f3b2e1176 (emscriptened)
   for (int i = 0; i < glfw_ext_count; ++i) {
     extensions.push_back(glfw_extensions[i]);
   }
@@ -131,6 +140,7 @@ void VulkanProgramImpl::materialize_runtime(MemoryPool *memory_pool,
       return surface;
     };
   }
+#endif
 #endif
 
   embedded_device_ = std::make_unique<VulkanDeviceCreator>(evd_params);
