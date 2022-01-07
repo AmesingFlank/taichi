@@ -40,6 +40,8 @@ TI_VERSION_MINOR = 8
 TI_VERSION_PATCH = 11
 version = f'{TI_VERSION_MAJOR}.{TI_VERSION_MINOR}.{TI_VERSION_PATCH}'
 
+EMSCRIPTENED = True
+
 data_files = glob.glob('python/_lib/runtime/*')
 print(data_files)
 packages = find_packages('python')
@@ -135,6 +137,14 @@ class CMakeBuild(build_ext):
             f'-DTI_VERSION_MINOR={TI_VERSION_MINOR}',
             f'-DTI_VERSION_PATCH={TI_VERSION_PATCH}',
         ]
+
+        if EMSCRIPTENED:
+            print("emscriptened")
+            cmake_args += [
+                '-DCMAKE_TOOLCHAIN_FILE=C:/Users/ldfra/Code/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake',
+                '-DCMAKE_CROSSCOMPILING_EMULATOR=C:/Users/ldfra/Code/emsdk/node/14.15.5_64bit/bin/node.exe',
+                '-DTI_EMSCRIPTENED=ON'
+            ]
 
         if shutil.which('ninja'):
             cmake_args += ['-GNinja']

@@ -163,9 +163,11 @@ serialize_kv_impl(SER &ser,
   (std::is_same<typename std::remove_reference<decltype(serializer)>::type, \
                 T>())
 
+#ifndef TI_EMSCRIPTENED
 static_assert(
     sizeof(std::size_t) == sizeof(uint64_t),
     "sizeof(std::size_t) should be 8. Try compiling with 64bit mode.");
+#endif
 
 template <typename T, typename S>
 struct IO {

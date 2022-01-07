@@ -57,6 +57,7 @@ Program::Program(Arch desired_arch)
 #if defined(TI_ARCH_x64)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 #else
+#ifndef TI_EMSCRIPTENED
   // Enforce flush to zero on arm64 CPUs
   // https://developer.arm.com/documentation/100403/0201/register-descriptions/advanced-simd-and-floating-point-registers/aarch64-register-descriptions/fpcr--floating-point-control-register?lang=en
   std::uint64_t fpcr;
@@ -67,6 +68,7 @@ Program::Program(Arch desired_arch)
                        :
                        : "ri"(fpcr | (1 << 24)));  // Bit 24 is FZ
   __asm__ __volatile__("");
+#endif
 #endif
   config = default_compile_config;
   config.arch = desired_arch;
