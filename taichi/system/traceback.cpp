@@ -15,10 +15,12 @@
 #include <mutex>
 #include "spdlog/fmt/bundled/color.h"
 
+#ifndef TI_EMSCRIPTENED
 #if defined(__APPLE__) || \
     (defined(__unix__) && !defined(__linux__)) && !defined(ANDROID)
 #include <execinfo.h>
 #include <cxxabi.h>
+#endif
 #endif
 #ifdef _WIN64
 #include <intrin.h>
@@ -302,12 +304,17 @@ TI_EXPORT void print_traceback() {
     fmt::print(fg(fmt::color::magenta),
                fmt::format(" in {}\n", stack[i].module));
   }
-#elif defined(ANDROID)
+#elif defined(ANDROID) 
   // Not supported
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
   fmt::print(fg(fmt::color::magenta), "* Taichi Compiler Stack Traceback *\n");
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
   fmt::print(fg(fmt::color::magenta), "NOT SUPPORTED ON ANDROID\n");
+#elif defined(TI_EMSCRIPTENED) 
+  // Not supported
+  fmt::print(fg(fmt::color::magenta), "***********************************\n");
+  fmt::print(fg(fmt::color::magenta), "* Emscriptened Taichi Compiler Stack Traceback *\n");
+  fmt::print(fg(fmt::color::magenta), "***********************************\n");
 #else
   // Based on http://man7.org/linux/man-pages/man3/backtrace.3.html
   constexpr int BT_BUF_SIZE = 1024;

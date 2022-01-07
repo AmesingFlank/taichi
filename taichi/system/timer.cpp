@@ -23,15 +23,22 @@ std::map<std::string, int> Time::FPSCounter::counter;
 #if defined(TI_PLATFORM_UNIX)
 
 double Time::get_time() {
+#ifdef TI_EMSCRIPTENED
+  return 0.0;
+#else
   struct timeval tv;
   gettimeofday(&tv, nullptr);
   return tv.tv_sec + 1e-6 * tv.tv_usec;
+#endif
 }
 
 #else
 #include <intrin.h>
 #pragma intrinsic(__rdtsc)
 double Time::get_time() {
+#ifdef TI_EMSCRIPTENED
+  return 0.0;
+#else
   // https://msdn.microsoft.com/en-us/library/windows/desktop/dn553408(v=vs.85).aspx
   LARGE_INTEGER EndingTime, ElapsedMicroseconds;
   LARGE_INTEGER Frequency;
@@ -54,6 +61,7 @@ double Time::get_time() {
   (ULONGLONG)tm.dwLowDateTime;
   return (double)t / 10000000.0;
 */
+#endif
 }
 #endif
 
