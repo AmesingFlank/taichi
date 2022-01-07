@@ -10,7 +10,6 @@ Ndarray::Ndarray(Program *prog,
                  const std::vector<int> &shape)
     : dtype(type),
       shape(shape),
-      prog_impl_(prog->get_llvm_program_impl()),
       num_active_indices(shape.size()),
       nelement_(std::accumulate(std::begin(shape),
                                 std::end(shape),

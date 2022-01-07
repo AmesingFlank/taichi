@@ -108,6 +108,16 @@ std::string AotModuleBuilderImpl::write_spv_file(
     const std::vector<uint32_t> &source_code) const {
   const std::string spv_path = fmt::format("{}/{}.spv", output_dir, k.name);
   std::ofstream fs(spv_path, std::ios_base::binary | std::ios::trunc);
+  std::cout << " --------------------------- "<<k.name<<"-----------"<<std::endl;
+  std::cout << "[";
+  for(int i = 0;i<source_code.size();++i){
+    std::cout << source_code[i];
+    if(i < source_code.size()-1){
+      std::cout << ",";
+    }
+  }
+  std::cout << "]\n";
+  std::cout << " ------------------------------- "<<std::endl;
   fs.write((char *)source_code.data(), source_code.size() * sizeof(uint32_t));
   fs.close();
   return spv_path;

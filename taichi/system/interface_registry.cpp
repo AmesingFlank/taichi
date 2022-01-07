@@ -2,7 +2,9 @@
 
 // No support of Python for Android Build
 #ifndef ANDROID
+#ifndef TI_EMSCRIPTENED
 #include "pybind11/pybind11.h"
+#endif
 #endif
 #include "taichi/common/interface.h"
 #include "taichi/common/task.h"
