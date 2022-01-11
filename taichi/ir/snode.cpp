@@ -75,6 +75,7 @@ SNode &SNode::create_node(std::vector<Axis> axes,
       new_node.physical_index_position[new_node.num_active_indices++] = i;
     }
   }
+  printf("sorting\n");
   std::sort(new_node.physical_index_position,
             new_node.physical_index_position + new_node.num_active_indices);
   // infer extractors
@@ -122,6 +123,8 @@ SNode &SNode::create_node(std::vector<Axis> axes,
     TI_ASSERT_INFO(active_extractor_counder == 1,
                    "Dynamic SNode can have only one index extractor.");
   }
+  printf("created node\n");
+
   return new_node;
 }
 
@@ -188,12 +191,12 @@ SNode::SNode(int depth, SNodeType t) : depth(depth), type(t) {
   dt = PrimitiveType::gen;
   _morton = false;
 }
-
+ 
 SNode::SNode(const SNode &) {
   TI_NOT_IMPLEMENTED;  // Copying an SNode is forbidden. However we need the
                        // definition here to make pybind11 happy.
 }
-
+ 
 std::string SNode::get_node_type_name() const {
   return fmt::format("S{}", id);
 }
