@@ -8,6 +8,8 @@
 
 #include <taichi/program/arch.h>
 #include <taichi/program/program.h>
+#include <taichi/ir/snode_types.h>
+#include <taichi/ir/snode.h>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -27,8 +29,24 @@ EMSCRIPTEN_BINDINGS(tint) {
         .value("vulkan", Arch::vulkan) 
     ;
 
+    enum_<SNodeType>("SNodeType")
+        .value("root", SNodeType::root) 
+        .value("dense", SNodeType::dense) 
+        .value("place", SNodeType::place) 
+    ;
+
     class_<Program>("Program")
     .constructor<Arch>()
     .function("make_aot_module_builder", &Program::make_aot_module_builder);
+
+    class_<Axis>("Axis")
+    .constructor<int>() 
+    ;
+
+    class_<SNode>("SNode")
+    .constructor<int, SNodeType>()
+    .function("dense", select_overload<SNode&(const Axis &,int,bool)>( &SNode::dense))
+    .function("insert_children",&SNode::insert_children)
+    ;
 
 }
