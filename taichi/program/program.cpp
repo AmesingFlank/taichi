@@ -51,6 +51,8 @@ Program::Program(Arch desired_arch)
     : snode_rw_accessors_bank_(this), ndarray_rw_accessors_bank_(this) {
   TI_TRACE("Program initializing...");
 
+  printf("constructing program\n");
+
   // For performance considerations and correctness of CustomFloatType
   // operations, we force floating-point operations to flush to zero on all
   // backends (including CPUs).
@@ -117,9 +119,11 @@ Program::Program(Arch desired_arch)
   TI_ASSERT(program_impl_);
 
   Device *compute_device = nullptr;
-  compute_device = program_impl_->get_compute_device();
+  //compute_device = program_impl_->get_compute_device();
   // Must have handled all the arch fallback logic by this point.
+  printf("constructing mem pool\n");
   memory_pool_ = std::make_unique<MemoryPool>(config.arch, compute_device);
+  printf("constructed mem pool\n");
   TI_ASSERT_INFO(num_instances_ == 0, "Only one instance at a time");
   total_compilation_time_ = 0;
   num_instances_ += 1;
@@ -162,6 +166,9 @@ Program::Program(Arch desired_arch)
 
   TI_TRACE("Program ({}) arch={} initialized.", fmt::ptr(this),
            arch_name(config.arch));
+#if defined(TI_EMSCRIPTENED)
+  config.advanced_optimization = false;
+#endif
 }
 
 TypeFactory &Program::get_type_factory() {
