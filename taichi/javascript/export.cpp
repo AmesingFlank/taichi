@@ -45,8 +45,8 @@ EMSCRIPTEN_BINDINGS(tint) {
 
     class_<SNode>("SNode")
     .constructor<int, SNodeType>()
-    .function("dense", select_overload<SNode&(const Axis &,int,bool)>( &SNode::dense))
-    .function("insert_children",&SNode::insert_children)
+    .function("dense", select_overload<SNode*(const Axis &,int,bool)>( &SNode::dense_ptr), allow_raw_pointers())
+    .function("insert_children",&SNode::insert_children_ptr, allow_raw_pointers())
     ;
 
 }
