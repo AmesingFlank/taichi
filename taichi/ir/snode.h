@@ -167,6 +167,10 @@ class SNode {
 
   SNode &insert_children(SNodeType t);
 
+  SNode *insert_children_ptr(SNodeType t){
+    return &insert_children(t);
+  }
+
   SNode &create_node(std::vector<Axis> axes,
                      std::vector<int> sizes,
                      SNodeType type,
@@ -185,6 +189,10 @@ class SNode {
 
   SNode &dense(const Axis &axis, int size, bool packed) {
     return SNode::dense(std::vector<Axis>{axis}, size, packed);
+  }
+
+  SNode *dense_ptr(const Axis &axis, int size, bool packed) {
+    return &SNode::dense(axis,size,packed);
   }
 
   SNode &pointer(const std::vector<Axis> &axes,
