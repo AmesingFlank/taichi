@@ -30,6 +30,13 @@ using namespace taichi::lang::aot;
 float lerp(float a, float b, float t) {
     return (1 - t) * a + t * b;
 } 
+
+std::unique_ptr<Kernel> create_kernel(Program &program,
+         Block& block,
+         const std::string &name,
+         bool grad){
+    return std::make_unique<Kernel>(program,block.clone(),name,grad);
+};
  
 EMSCRIPTEN_BINDINGS(tint) {
     function("lerp", &lerp);
@@ -45,6 +52,7 @@ EMSCRIPTEN_BINDINGS(tint) {
     ;
 
     class_<AotModuleBuilder>("AotModuleBuilder")
+    //.function("add_field", &AotModuleBuilder::add_field)
     ;
 
     class_<Program>("Program")
@@ -88,14 +96,14 @@ EMSCRIPTEN_BINDINGS(tint) {
     //.smart_ptr<std::unique_ptr<Block>>("Block");
 
     class_<Callable>("Callable");
-
+ 
     class_<Kernel>("Kernel")
-    .constructor<Program & ,
-         std::unique_ptr<IRNode> & ,
-         const std::string & ,
-         bool  >();
+    . class_function("create_kernel",&create_kernel);
+
 
     register_vector<Stmt*>("StdVectorOfStmtPtr");
+    register_vector<int>("StdVectorOfInt");
+
 
 
     class_<IRBuilder>("IRBuilder")
