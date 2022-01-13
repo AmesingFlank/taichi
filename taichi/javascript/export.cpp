@@ -12,9 +12,12 @@
 #include <taichi/ir/snode.h>
 #include <taichi/ir/type.h>
 #include <taichi/program/aot_module.h>
+#include <taichi/ir/ir_builder.h>
+#include <taichi/ir/statements.h>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
+
 
 using namespace emscripten;
 using namespace taichi;
@@ -64,5 +67,20 @@ EMSCRIPTEN_BINDINGS(tint) {
     ;
 
 
+    class_<Stmt>("Stmt");
+    class_<ConstStmt, base<Stmt>>("ConstStmt");
+    class_<RangeForStmt, base<Stmt>>("RangeForStmt");
+    class_<LoopIndexStmt, base<Stmt>>("LoopIndexStmt");
+
+    class_<IRBuilder::LoopGuard>("LoopGuard");
+
+
+    class_<IRBuilder>("IRBuilder")
+    .constructor<>()
+    .function("get_int32",&IRBuilder::get_int32, allow_raw_pointers())
+    .function("create_range_for",&IRBuilder::create_range_for, allow_raw_pointers())
+    .function("get_range_loop_guard",&IRBuilder::get_loop_guard<RangeForStmt>, allow_raw_pointers())
+    .function("get_loop_index",&IRBuilder::get_loop_index, allow_raw_pointers())
+    ;
 
 }
