@@ -10,6 +10,8 @@
 #include <taichi/program/program.h>
 #include <taichi/ir/snode_types.h>
 #include <taichi/ir/snode.h>
+#include <taichi/ir/type.h>
+#include <taichi/program/aot_module.h>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -17,6 +19,7 @@
 using namespace emscripten;
 using namespace taichi;
 using namespace taichi::lang;
+using namespace taichi::lang::aot;
  
 float lerp(float a, float b, float t) {
     return (1 - t) * a + t * b;
@@ -35,6 +38,9 @@ EMSCRIPTEN_BINDINGS(tint) {
         .value("place", SNodeType::place) 
     ;
 
+    class_<AotModuleBuilder>("AotModuleBuilder")
+    ;
+
     class_<Program>("Program")
     .constructor<Arch>()
     .function("make_aot_module_builder", &Program::make_aot_module_builder);
@@ -47,6 +53,16 @@ EMSCRIPTEN_BINDINGS(tint) {
     .constructor<int, SNodeType>()
     .function("dense", select_overload<SNode*(const Axis &,int,bool)>( &SNode::dense_ptr), allow_raw_pointers())
     .function("insert_children",&SNode::insert_children_ptr, allow_raw_pointers())
+    .property("dt",&SNode::dt)
     ;
+
+    class_<DataType>("DataType")
+    ;
+
+    class_<PrimitiveType>("PrimitiveType")
+    .class_property("i32", &PrimitiveType::i32)//[](){return PrimitiveType::i32;}, [](const DataType& dt){PrimitiveType::i32 = dt;})
+    ;
+
+
 
 }
