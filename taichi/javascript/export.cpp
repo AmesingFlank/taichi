@@ -12,7 +12,10 @@
 #include <taichi/ir/snode.h>
 #include <taichi/ir/type.h>
 #include <taichi/program/aot_module.h>
+#include <taichi/program/callable.h>
+#include <taichi/program/kernel.h>
 #include <taichi/ir/ir_builder.h>
+#include <taichi/ir/ir.h>
 #include <taichi/ir/statements.h>
 
 #include <emscripten.h>
@@ -71,16 +74,42 @@ EMSCRIPTEN_BINDINGS(tint) {
     class_<ConstStmt, base<Stmt>>("ConstStmt");
     class_<RangeForStmt, base<Stmt>>("RangeForStmt");
     class_<LoopIndexStmt, base<Stmt>>("LoopIndexStmt");
+    class_<GlobalPtrStmt, base<Stmt>>("GlobalPtrStmt");
+    
 
     class_<IRBuilder::LoopGuard>("LoopGuard");
+
+    class_<IRNode>("IRNode");
+    //class_<std::unique_ptr<IRNode>>("StdUniquePtrOfIRNode");
+    //.smart_ptr<std::unique_ptr<IRNode>>("IRNode");
+
+    class_<Block, base<IRNode>>("Block");
+    //class_<std::unique_ptr<Block>>("StdUniquePtrOfBlock");
+    //.smart_ptr<std::unique_ptr<Block>>("Block");
+
+    class_<Callable>("Callable");
+
+    class_<Kernel>("Kernel")
+    .constructor<Program & ,
+         std::unique_ptr<IRNode> & ,
+         const std::string & ,
+         bool  >();
+
+    register_vector<Stmt*>("StdVectorOfStmtPtr");
 
 
     class_<IRBuilder>("IRBuilder")
     .constructor<>()
+    .function("extract_ir",&IRBuilder::extract_ir)
     .function("get_int32",&IRBuilder::get_int32, allow_raw_pointers())
     .function("create_range_for",&IRBuilder::create_range_for, allow_raw_pointers())
     .function("get_range_loop_guard",&IRBuilder::get_loop_guard<RangeForStmt>, allow_raw_pointers())
     .function("get_loop_index",&IRBuilder::get_loop_index, allow_raw_pointers())
+    .function("create_global_ptr",&IRBuilder::create_global_ptr, allow_raw_pointers())
+    .function("create_global_ptr_global_store",&IRBuilder::create_global_store<GlobalPtrStmt>, allow_raw_pointers())
     ;
+
+    
+
 
 }
