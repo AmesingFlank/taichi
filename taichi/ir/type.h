@@ -101,6 +101,8 @@ class DataType {
 
   DataType ptr_removed() const;
 
+  void printPrimitiveTypeID() const;
+
  private:
   Type *ptr_;
 };

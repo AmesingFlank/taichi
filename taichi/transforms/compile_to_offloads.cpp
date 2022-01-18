@@ -19,11 +19,18 @@ make_pass_printer(bool verbose, const std::string &kernel_name, IRNode *ir) {
     return [](const std::string &) {};
   }
   return [ir, kernel_name](const std::string &pass) {
+#if defined(TI_EMSCRIPTENED)
+    printf("[%s] {%s}\n",kernel_name.c_str(),pass.c_str());
+    irpass::re_id(ir);
+    irpass::print(ir);
+    printf("\n");
+#else
     TI_INFO("[{}] {}:", kernel_name, pass);
     std::cout << std::flush;
     irpass::re_id(ir);
     irpass::print(ir);
     std::cout << std::flush;
+#endif
   };
 }
 
@@ -38,6 +45,8 @@ void compile_to_offloads(IRNode *ir,
                          bool ad_use_stack,
                          bool start_from_ast) {
   TI_AUTO_PROF;
+
+  printf("in compile_to_offloads %d\n",int(verbose));
 
   auto print = make_pass_printer(verbose, kernel->get_name(), ir);
   print("Initial IR");
@@ -126,6 +135,7 @@ void compile_to_offloads(IRNode *ir,
   print("Simplified II");
   irpass::analysis::verify(ir);
 
+  printf("before offload\n");
   irpass::offload(ir, config);
   print("Offloaded");
   irpass::analysis::verify(ir);

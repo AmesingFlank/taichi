@@ -20,6 +20,7 @@ class StructCompiler {
 
  private:
   std::size_t compute_snode_size(SNode *sn) {
+    printf("computing snode size\n");
     const bool is_place = sn->is_place();
 
     SNodeDescriptor sn_desc;
@@ -27,6 +28,7 @@ class StructCompiler {
     if (is_place) {
       sn_desc.cell_stride = data_type_size(sn->dt);
       sn_desc.container_stride = sn_desc.cell_stride;
+      printf("is place\n");
     } else {
       std::size_t cell_stride = 0;
       for (auto &ch : sn->ch) {
@@ -48,9 +50,12 @@ class StructCompiler {
         sn_desc.container_stride =
             cell_stride * sn_desc.cells_per_container_pot();
       }
+      printf("is not place\n");
     }
 
     sn->cell_size_bytes = sn_desc.cell_stride;
+
+    printf("cell size bytes %d\n",int(sn_desc.cell_stride));
 
     sn_desc.total_num_cells_from_root = 1;
     for (const auto &e : sn->extractors) {
