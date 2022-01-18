@@ -784,7 +784,9 @@ class AssociateContinueScope : public BasicStmtVisitor {
 
 void offload(IRNode *root, const CompileConfig &config) {
   TI_AUTO_PROF;
+  printf("before offloader::run\n");
   auto offloaded_ranges = Offloader::run(root, config);
+  printf("after offloader::run\n");
   type_check(root, config);
   {
     auto stmt_to_offloaded = StmtToOffloaded::run(root);

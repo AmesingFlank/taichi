@@ -31,6 +31,13 @@ DataType PrimitiveType::get(PrimitiveTypeID t) {
   }
 }
 
+void DataType::printPrimitiveTypeID() const{
+  PrimitiveType* pt = ptr_->cast<PrimitiveType>();
+  if(pt){
+    printf("primitive type id: %d %s\n",int(pt->type),pt->to_string().c_str());
+  }
+}
+
 std::size_t DataType::hash() const {
   if (auto primitive = ptr_->cast<PrimitiveType>()) {
     return (std::size_t)primitive->type;

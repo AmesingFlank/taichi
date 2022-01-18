@@ -126,15 +126,14 @@ class SNode {
   std::size_t offset_bytes_in_parent_cell{0};
   PrimitiveType *physical_type{nullptr};  // for bit_struct and bit_array only
   DataType dt;
-  // DataType& get_dt(){
-  //   return dt;
-  // }
-  // const DataType& get_dt() const{
-  //   return dt;
-  // }
-  // void set_dt(const DataType& dt){
-  //   this->dt = dt;
-  // }
+  DataType* dt_get(){
+    return &dt;
+  }
+  void dt_set(const DataType& dt){
+    printf("calling dt set\n");
+    dt.printPrimitiveTypeID();
+    this->dt = dt;
+  }
   bool has_ambient{false};
   TypedConstant ambient_val;
   // Note: parent will not be set until structural nodes are compiled!
