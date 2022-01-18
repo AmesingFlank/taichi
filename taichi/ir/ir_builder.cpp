@@ -54,6 +54,7 @@ void IRBuilder::set_insertion_point_to_false_branch(IfStmt *if_stmt) {
 }
 
 IRBuilder::LoopGuard::~LoopGuard() {
+  printf("deleting loop guard\n");
   if (stmt_location_did_not_change(loop_, location_)) {
     // faster than set_insertion_point_to_after()
     builder_.set_insertion_point({loop_->parent, location_ + 1});

@@ -168,6 +168,7 @@ Program::Program(Arch desired_arch)
            arch_name(config.arch));
 #if defined(TI_EMSCRIPTENED)
   config.advanced_optimization = false;
+  config.print_ir = true;
 #endif
 }
 
