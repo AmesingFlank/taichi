@@ -125,6 +125,20 @@ std::string AotModuleBuilderImpl::write_spv_file(
 
 void AotModuleBuilderImpl::dump(const std::string &output_dir,
                                 const std::string &filename) const {
+#if defined(TI_EMSCRIPTENED)
+  for (int i = 0; i < ti_aot_data_.kernels.size(); ++i) {
+    printf("kernel %d\n",i);
+    auto k = ti_aot_data_.kernels[i];
+    for (int j = 0; j < k.tasks_attribs.size(); ++j) {
+      printf("kernel %d, task %d, %s \n",i,j,k.tasks_attribs[j].name.c_str());
+      const auto& code = ti_aot_data_.spirv_codes[i][j];
+      for(auto c:code){
+        printf("%d ",c);
+      }
+      printf("\n");
+    }
+  }
+#endif
   TI_WARN_IF(!filename.empty(),
              "Filename prefix is ignored on vulkan backend.");
   const std::string bin_path = fmt::format("{}/metadata.tcb", output_dir);
@@ -144,9 +158,12 @@ void AotModuleBuilderImpl::dump(const std::string &output_dir,
   converted.dump_json(json_path);
 }
 
+
 void AotModuleBuilderImpl::add_per_backend(const std::string &identifier,
                                            Kernel *kernel) {
+   printf("calling vk add kernel per backend\n");
   spirv::lower(kernel);
+  printf("lowered\n");
   auto compiled =
       run_codegen(kernel, aot_target_device_.get(), compiled_structs_);
   compiled.kernel_attribs.name = identifier;
@@ -168,10 +185,8 @@ void AotModuleBuilderImpl::add_field_per_backend(const std::string &identifier,
   // matter too much for now.
   TI_ERROR_IF(!all_fields_are_dense_in_container(rep_snode->parent),
               "AOT: only supports dense field");
-
   const auto &dense_desc =
       compiled_structs_[0].snode_descriptors.at(rep_snode->parent->id);
-
   aot::CompiledFieldData field_data;
   field_data.field_name = identifier;
   field_data.is_scalar = is_scalar;

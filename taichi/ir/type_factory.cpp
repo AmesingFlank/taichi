@@ -13,6 +13,7 @@ TypeFactory::TypeFactory() {
 }
 
 Type *TypeFactory::get_primitive_type(PrimitiveTypeID id) {
+  printf("running get primitive type\n");
   std::lock_guard<std::mutex> _(mut_);
 
   if (primitive_types_.find(id) == primitive_types_.end()) {

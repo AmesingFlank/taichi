@@ -31,15 +31,26 @@ float lerp(float a, float b, float t) {
     return (1 - t) * a + t * b;
 } 
 
+struct TestClass{
+    bool testProperty = false;
+};
+
+class TestBigClass{
+public:
+    TestClass config;
+};
+
 std::unique_ptr<Kernel> create_kernel(Program &program,
-         Block& block,
+         IRBuilder& builder,
          const std::string &name,
          bool grad){
-    return std::make_unique<Kernel>(program,block.clone(),name,grad);
+    return std::make_unique<Kernel>(program,builder.extract_ir(),name,grad);
 };
  
 EMSCRIPTEN_BINDINGS(tint) {
     function("lerp", &lerp);
+
+
 
     enum_<Arch>("Arch")
         .value("vulkan", Arch::vulkan) 
@@ -51,13 +62,19 @@ EMSCRIPTEN_BINDINGS(tint) {
         .value("place", SNodeType::place) 
     ;
 
-    class_<AotModuleBuilder>("AotModuleBuilder")
-    //.function("add_field", &AotModuleBuilder::add_field)
-    ;
+    class_<SNodeTree>("SNodeTree");
 
+    class_<AotModuleBuilder>("AotModuleBuilder")
+    .function("add_field", &AotModuleBuilder::add_field, allow_raw_pointers())
+    .function("add", &AotModuleBuilder::add, allow_raw_pointers())
+    .function("dump", &AotModuleBuilder::dump, allow_raw_pointers())
+    ;
+ 
     class_<Program>("Program")
     .constructor<Arch>()
-    .function("make_aot_module_builder", &Program::make_aot_module_builder);
+    .function("add_snode_tree", &Program::add_snode_tree, allow_raw_pointers())
+    .function("make_aot_module_builder", &Program::make_aot_module_builder)
+     ;
 
     class_<Axis>("Axis")
     .constructor<int>() 
@@ -67,7 +84,8 @@ EMSCRIPTEN_BINDINGS(tint) {
     .constructor<int, SNodeType>()
     .function("dense", select_overload<SNode*(const Axis &,int,bool)>( &SNode::dense_ptr), allow_raw_pointers())
     .function("insert_children",&SNode::insert_children_ptr, allow_raw_pointers())
-    .property("dt",&SNode::dt)
+    .function("dt_get",&SNode::dt_get, allow_raw_pointers())
+    .function("dt_set",&SNode::dt_set, allow_raw_pointers())
     ;
 
     class_<DataType>("DataType")
@@ -111,7 +129,7 @@ EMSCRIPTEN_BINDINGS(tint) {
     .function("extract_ir",&IRBuilder::extract_ir)
     .function("get_int32",&IRBuilder::get_int32, allow_raw_pointers())
     .function("create_range_for",&IRBuilder::create_range_for, allow_raw_pointers())
-    .function("get_range_loop_guard",&IRBuilder::get_loop_guard<RangeForStmt>, allow_raw_pointers())
+    .function("get_range_loop_guard",&IRBuilder::allocate_loop_guard<RangeForStmt>, allow_raw_pointers())
     .function("get_loop_index",&IRBuilder::get_loop_index, allow_raw_pointers())
     .function("create_global_ptr",&IRBuilder::create_global_ptr, allow_raw_pointers())
     .function("create_global_ptr_global_store",&IRBuilder::create_global_store<GlobalPtrStmt>, allow_raw_pointers())
