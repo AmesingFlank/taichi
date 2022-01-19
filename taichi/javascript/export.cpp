@@ -46,6 +46,18 @@ std::unique_ptr<Kernel> create_kernel(Program &program,
          bool grad){
     return std::make_unique<Kernel>(program,builder.extract_ir(),name,grad);
 };
+
+std::vector<std::vector<uint32_t>> get_kernel_spirv(AotModuleBuilder& aot_builder, const std::string& name){
+    std::vector<std::vector<uint32_t>> result;
+    auto kernel = aot_builder.get_compiled_kernel(name);
+    for(auto& task:kernel.tasks){
+        size_t num_words = task.code.size()/4;
+        std::vector<uint32_t> code(num_words);
+        std::memcpy(code.data(),task.code.data(),num_words*4);
+        result.push_back(std::move(code));
+    }
+    return result;
+};
  
 EMSCRIPTEN_BINDINGS(tint) {
     function("lerp", &lerp);
@@ -64,11 +76,16 @@ EMSCRIPTEN_BINDINGS(tint) {
 
     class_<SNodeTree>("SNodeTree");
 
+    register_vector<uint32_t>("VectorOfUnsignedInt32");
+    register_vector<std::vector<uint32_t>>("VectorOfVectorOfUnsignedInt32");
+
     class_<AotModuleBuilder>("AotModuleBuilder")
     .function("add_field", &AotModuleBuilder::add_field, allow_raw_pointers())
     .function("add", &AotModuleBuilder::add, allow_raw_pointers())
     .function("dump", &AotModuleBuilder::dump, allow_raw_pointers())
     ;
+
+    function("get_kernel_spirv", &get_kernel_spirv);
  
     class_<Program>("Program")
     .constructor<Arch>()
@@ -119,8 +136,8 @@ EMSCRIPTEN_BINDINGS(tint) {
     . class_function("create_kernel",&create_kernel);
 
 
-    register_vector<Stmt*>("StdVectorOfStmtPtr");
-    register_vector<int>("StdVectorOfInt");
+    register_vector<Stmt*>("VectorOfStmtPtr");
+    register_vector<int>("VectorOfInt");
 
 
 

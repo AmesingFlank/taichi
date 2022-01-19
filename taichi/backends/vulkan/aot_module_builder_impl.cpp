@@ -23,8 +23,15 @@ class AotDataConverter {
 
   aot::ModuleData visit(const TaichiAotData &in) const {
     aot::ModuleData res{};
-    for (const auto &ker : in.kernels) {
+    for (int i = 0; i < in.kernels.size(); ++i) {
+      const auto& ker = in.kernels[i];
       auto val = visit(ker);
+      for(int j = 0;j < ker.tasks_attribs.size(); ++j){
+        auto& code = in.spirv_codes[i][j];
+        size_t code_num_bytes = code.size() * 4;
+        val.tasks[i].code = std::vector<unsigned char>(code_num_bytes);
+        std::memcpy(val.tasks[i].code.data(),code.data(),code_num_bytes);
+      }
       res.kernels[ker.name] = val;
     }
     res.fields = in.fields;
@@ -121,6 +128,11 @@ std::string AotModuleBuilderImpl::write_spv_file(
   fs.write((char *)source_code.data(), source_code.size() * sizeof(uint32_t));
   fs.close();
   return spv_path;
+}
+
+aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(const std::string& name) const{
+   auto converted = AotDataConverter::convert(ti_aot_data_);
+   return converted.kernels.at(name);
 }
 
 void AotModuleBuilderImpl::dump(const std::string &output_dir,

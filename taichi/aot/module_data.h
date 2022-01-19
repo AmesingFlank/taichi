@@ -35,6 +35,8 @@ struct CompiledOffloadedTask {
   std::string source_path;
   int gpu_block_size{0};
 
+  std::vector<unsigned char> code;
+
   TI_IO_DEF(type, name, source_path, gpu_block_size);
 };
 
