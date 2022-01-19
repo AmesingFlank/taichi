@@ -22,6 +22,8 @@ class AotModuleBuilderImpl : public AotModuleBuilder {
   void dump(const std::string &output_dir,
             const std::string &filename) const override;
 
+  aot::CompiledTaichiKernel get_compiled_kernel(const std::string& name) const override;
+
  private:
   void add_per_backend(const std::string &identifier, Kernel *kernel) override;
 
