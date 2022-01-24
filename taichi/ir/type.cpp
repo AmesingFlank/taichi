@@ -31,10 +31,11 @@ DataType PrimitiveType::get(PrimitiveTypeID t) {
   }
 }
 
-void DataType::printPrimitiveTypeID() const{
-  PrimitiveType* pt = ptr_->cast<PrimitiveType>();
-  if(pt){
-    printf("primitive type id: %d %s\n",int(pt->type),pt->to_string().c_str());
+void DataType::printPrimitiveTypeID() const {
+  PrimitiveType *pt = ptr_->cast<PrimitiveType>();
+  if (pt) {
+    printf("primitive type id: %d %s\n", int(pt->type),
+           pt->to_string().c_str());
   }
 }
 

@@ -304,16 +304,17 @@ TI_EXPORT void print_traceback() {
     fmt::print(fg(fmt::color::magenta),
                fmt::format(" in {}\n", stack[i].module));
   }
-#elif defined(ANDROID) 
+#elif defined(ANDROID)
   // Not supported
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
   fmt::print(fg(fmt::color::magenta), "* Taichi Compiler Stack Traceback *\n");
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
   fmt::print(fg(fmt::color::magenta), "NOT SUPPORTED ON ANDROID\n");
-#elif defined(TI_EMSCRIPTENED) 
+#elif defined(TI_EMSCRIPTENED)
   // Not supported
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
-  fmt::print(fg(fmt::color::magenta), "* Emscriptened Taichi Compiler Stack Traceback *\n");
+  fmt::print(fg(fmt::color::magenta),
+             "* Emscriptened Taichi Compiler Stack Traceback *\n");
   fmt::print(fg(fmt::color::magenta), "***********************************\n");
 #else
   // Based on http://man7.org/linux/man-pages/man3/backtrace.3.html
