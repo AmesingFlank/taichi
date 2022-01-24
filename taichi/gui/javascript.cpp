@@ -1,6 +1,6 @@
-#include "taichi/gui/gui.h" 
+#include "taichi/gui/gui.h"
 #if defined(TI_EMSCRIPTENED)
- 
+
 TI_NAMESPACE_BEGIN
 
 void GUI::process_event() {

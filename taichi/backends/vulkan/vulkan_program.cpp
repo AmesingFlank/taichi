@@ -2,7 +2,7 @@
 #include "taichi/backends/vulkan/aot_module_builder_impl.h"
 
 #ifndef TI_EMSCRIPTENED
-#ifdef ANDROID 
+#ifdef ANDROID
 #else
 #include "GLFW/glfw3.h"
 #endif
@@ -26,12 +26,10 @@ std::vector<std::string> get_required_instance_extensions() {
 #else
   std::vector<std::string> extensions;
 
-
 #ifndef TI_EMSCRIPTENED
   uint32_t glfw_ext_count = 0;
   const char **glfw_extensions;
   glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
-
 
   for (int i = 0; i < glfw_ext_count; ++i) {
     extensions.push_back(glfw_extensions[i]);

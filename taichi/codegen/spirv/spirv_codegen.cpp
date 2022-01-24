@@ -366,7 +366,8 @@ class TaskCodegen : public IRVisitor {
       const auto &snode_descs = compiled_structs_[root_id].snode_descriptors;
       const auto &desc = snode_descs.at(sn->id);
 
-      printf("input index name %s, cell stride %d\n",stmt->input_index->raw_name().c_str(), int(desc.cell_stride));
+      printf("input index name %s, cell stride %d\n",
+             stmt->input_index->raw_name().c_str(), int(desc.cell_stride));
 
       spirv::Value input_index_val = ir_->cast(
           parent_val.stype, ir_->query_value(stmt->input_index->raw_name()));
@@ -1784,11 +1785,11 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
 
     TI_TRACE("SPIRV-Tools-opt: binary size, before={}, after={}",
              task_res.spirv_code.size(), optimized_spv.size());
-    
+
     std::string spirv_asm;
     spirv_tools_->Disassemble(optimized_spv, &spirv_asm);
-    printf("SPIR-V Assembly dump for %s :\n%s\n\n", params_.ti_kernel_name.c_str(),
-            spirv_asm.c_str());
+    printf("SPIR-V Assembly dump for %s :\n%s\n\n",
+           params_.ti_kernel_name.c_str(), spirv_asm.c_str());
     // Enable to dump SPIR-V assembly of kernels
 #if 0
     std::string spirv_asm;

@@ -24,13 +24,13 @@ class AotDataConverter {
   aot::ModuleData visit(const TaichiAotData &in) const {
     aot::ModuleData res{};
     for (int i = 0; i < in.kernels.size(); ++i) {
-      const auto& ker = in.kernels[i];
+      const auto &ker = in.kernels[i];
       auto val = visit(ker);
-      for(int j = 0;j < ker.tasks_attribs.size(); ++j){
-        auto& code = in.spirv_codes[i][j];
+      for (int j = 0; j < ker.tasks_attribs.size(); ++j) {
+        auto &code = in.spirv_codes[i][j];
         size_t code_num_bytes = code.size() * 4;
         val.tasks[i].code = std::vector<unsigned char>(code_num_bytes);
-        std::memcpy(val.tasks[i].code.data(),code.data(),code_num_bytes);
+        std::memcpy(val.tasks[i].code.data(), code.data(), code_num_bytes);
       }
       res.kernels[ker.name] = val;
     }
@@ -121,37 +121,40 @@ std::string AotModuleBuilderImpl::write_spv_file(
     const std::vector<uint32_t> &source_code) const {
   const std::string spv_path = fmt::format("{}/{}.spv", output_dir, k.name);
   std::ofstream fs(spv_path, std::ios_base::binary | std::ios::trunc);
-  std::cout << " --------------------------- "<<k.name<<"-----------"<<std::endl;
+  std::cout << " --------------------------- " << k.name << "-----------"
+            << std::endl;
   std::cout << "[";
-  for(int i = 0;i<source_code.size();++i){
+  for (int i = 0; i < source_code.size(); ++i) {
     std::cout << source_code[i];
-    if(i < source_code.size()-1){
+    if (i < source_code.size() - 1) {
       std::cout << ",";
     }
   }
   std::cout << "]\n";
-  std::cout << " ------------------------------- "<<std::endl;
+  std::cout << " ------------------------------- " << std::endl;
   fs.write((char *)source_code.data(), source_code.size() * sizeof(uint32_t));
   fs.close();
   return spv_path;
 }
 
-aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(const std::string& name) const{
-   auto converted = AotDataConverter::convert(ti_aot_data_);
-   return converted.kernels.at(name);
+aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(
+    const std::string &name) const {
+  auto converted = AotDataConverter::convert(ti_aot_data_);
+  return converted.kernels.at(name);
 }
 
 void AotModuleBuilderImpl::dump(const std::string &output_dir,
                                 const std::string &filename) const {
 #if defined(TI_EMSCRIPTENED)
   for (int i = 0; i < ti_aot_data_.kernels.size(); ++i) {
-    printf("kernel %d\n",i);
+    printf("kernel %d\n", i);
     auto k = ti_aot_data_.kernels[i];
     for (int j = 0; j < k.tasks_attribs.size(); ++j) {
-      printf("kernel %d, task %d, %s \n",i,j,k.tasks_attribs[j].name.c_str());
-      const auto& code = ti_aot_data_.spirv_codes[i][j];
-      for(auto c:code){
-        printf("%d ",c);
+      printf("kernel %d, task %d, %s \n", i, j,
+             k.tasks_attribs[j].name.c_str());
+      const auto &code = ti_aot_data_.spirv_codes[i][j];
+      for (auto c : code) {
+        printf("%d ", c);
       }
       printf("\n");
     }
@@ -176,10 +179,9 @@ void AotModuleBuilderImpl::dump(const std::string &output_dir,
   converted.dump_json(json_path);
 }
 
-
 void AotModuleBuilderImpl::add_per_backend(const std::string &identifier,
                                            Kernel *kernel) {
-   printf("calling vk add kernel per backend\n");
+  printf("calling vk add kernel per backend\n");
   spirv::lower(kernel);
   printf("lowered\n");
   auto compiled =

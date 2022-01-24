@@ -119,7 +119,7 @@ Program::Program(Arch desired_arch)
   TI_ASSERT(program_impl_);
 
   Device *compute_device = nullptr;
-  //compute_device = program_impl_->get_compute_device();
+  // compute_device = program_impl_->get_compute_device();
   // Must have handled all the arch fallback logic by this point.
   printf("constructing mem pool\n");
   memory_pool_ = std::make_unique<MemoryPool>(config.arch, compute_device);

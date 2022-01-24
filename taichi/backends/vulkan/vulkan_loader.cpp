@@ -17,7 +17,7 @@ bool VulkanLoader::init() {
     if (initialized) {
       return;
     }
-#if  defined(__APPLE__) || defined(TI_EMSCRIPTENED)
+#if defined(__APPLE__) || defined(TI_EMSCRIPTENED)
     initialized = true;
 #else
     VkResult result = volkInitialize();

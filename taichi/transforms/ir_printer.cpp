@@ -68,7 +68,7 @@ class IRPrinter : public IRVisitor {
       ss << f;
     } else {
 #if defined(TI_EMSCRIPTENED)
-      printf("%s",f.c_str());
+      printf("%s", f.c_str());
 #else
       std::cout << f;
 #endif

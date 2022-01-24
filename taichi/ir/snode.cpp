@@ -191,12 +191,12 @@ SNode::SNode(int depth, SNodeType t) : depth(depth), type(t) {
   dt = PrimitiveType::gen;
   _morton = false;
 }
- 
+
 SNode::SNode(const SNode &) {
   TI_NOT_IMPLEMENTED;  // Copying an SNode is forbidden. However we need the
                        // definition here to make pybind11 happy.
 }
- 
+
 std::string SNode::get_node_type_name() const {
   return fmt::format("S{}", id);
 }

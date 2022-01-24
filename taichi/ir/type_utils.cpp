@@ -60,16 +60,19 @@ int data_type_size(DataType t) {
   if (false) {
   } else if (t->is_primitive(PrimitiveTypeID::f16))
     return 2;
-  else if (t->is_primitive(PrimitiveTypeID::gen)){
+  else if (t->is_primitive(PrimitiveTypeID::gen)) {
     printf("t->is_primitive(PrimitiveTypeID::gen)\n");
     return 0;
   }
-    
+
   else if (t->is_primitive(PrimitiveTypeID::unknown))
     return -1;
 
-#define REGISTER_DATA_TYPE(i, j) \
-  else if (t->is_primitive(PrimitiveTypeID::i)) {  printf("%s %d\n", #i, int(sizeof(j))); return sizeof(j);}
+#define REGISTER_DATA_TYPE(i, j)                  \
+  else if (t->is_primitive(PrimitiveTypeID::i)) { \
+    printf("%s %d\n", #i, int(sizeof(j)));        \
+    return sizeof(j);                             \
+  }
 
   REGISTER_DATA_TYPE(f32, float32)
   REGISTER_DATA_TYPE(f64, float64)

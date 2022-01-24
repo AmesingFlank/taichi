@@ -97,7 +97,7 @@ class IRBuilder {
   }
 
   template <typename XStmt>
-  [[nodiscard]] LoopGuard* allocate_loop_guard(XStmt *loop) {
+  [[nodiscard]] LoopGuard *allocate_loop_guard(XStmt *loop) {
     return new LoopGuard(*this, loop);
   }
 

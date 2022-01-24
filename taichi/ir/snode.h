@@ -126,10 +126,10 @@ class SNode {
   std::size_t offset_bytes_in_parent_cell{0};
   PrimitiveType *physical_type{nullptr};  // for bit_struct and bit_array only
   DataType dt;
-  DataType* dt_get(){
+  DataType *dt_get() {
     return &dt;
   }
-  void dt_set(const DataType& dt){
+  void dt_set(const DataType &dt) {
     printf("calling dt set\n");
     dt.printPrimitiveTypeID();
     this->dt = dt;
@@ -175,7 +175,7 @@ class SNode {
 
   SNode &insert_children(SNodeType t);
 
-  SNode *insert_children_ptr(SNodeType t){
+  SNode *insert_children_ptr(SNodeType t) {
     return &insert_children(t);
   }
 
@@ -200,7 +200,7 @@ class SNode {
   }
 
   SNode *dense_ptr(const Axis &axis, int size, bool packed) {
-    return &SNode::dense(axis,size,packed);
+    return &SNode::dense(axis, size, packed);
   }
 
   SNode &pointer(const std::vector<Axis> &axes,

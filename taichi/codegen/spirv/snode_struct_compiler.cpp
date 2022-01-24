@@ -55,7 +55,7 @@ class StructCompiler {
 
     sn->cell_size_bytes = sn_desc.cell_stride;
 
-    printf("cell size bytes %d\n",int(sn_desc.cell_stride));
+    printf("cell size bytes %d\n", int(sn_desc.cell_stride));
 
     sn_desc.total_num_cells_from_root = 1;
     for (const auto &e : sn->extractors) {
