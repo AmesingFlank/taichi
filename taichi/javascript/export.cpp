@@ -107,7 +107,7 @@ EMSCRIPTEN_BINDINGS(tint) {
       .class_property(
           "i32",
           &PrimitiveType::i32)  //[](){return PrimitiveType::i32;}, [](const
-                                //DataType& dt){PrimitiveType::i32 = dt;})
+                                // DataType& dt){PrimitiveType::i32 = dt;})
       ;
 
   class_<Stmt>("Stmt");
