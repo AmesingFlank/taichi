@@ -61,7 +61,7 @@ elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" OR "${CMAKE_SYSTEM_PROCES
     set(ARCH "arm64")
 elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_ARCH_x86")
-    set(ARCH "arm64")
+    set(ARCH "x86")
 else()
     message(FATAL_ERROR "Unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
