@@ -53,7 +53,7 @@ bool arch_is_gpu(Arch arch) {
 }
 
 Arch host_arch() {
-#if defined(TI_ARCH_x64)
+#if defined(TI_ARCH_x64) || defined(TI_ARCH_x86)
   return Arch::x64;
 #endif
 #if defined(TI_ARCH_ARM)

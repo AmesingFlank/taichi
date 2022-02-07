@@ -101,7 +101,7 @@ class TaskCodegen : public IRVisitor {
     kernel_function_ = ir_->new_function();  // void main();
     ir_->debug(spv::OpName, kernel_function_, "main");
 
-    compile_args_struct();
+    //compile_args_struct();
 
     if (task_ir_->task_type == OffloadedTaskType::serial) {
       generate_serial_kernel(task_ir_);
@@ -221,7 +221,7 @@ class TaskCodegen : public IRVisitor {
   void visit(GetRootStmt *stmt) override {
     const int root_id = snode_to_root_.at(stmt->root()->id);
     root_stmts_[root_id] = stmt;
-    // get_buffer_value({BufferType::Root, root_id}, PrimitiveType::u32);
+    get_buffer_value({BufferType::Root, root_id}, PrimitiveType::u32);
     spirv::Value root_val = make_pointer(0);
     ir_->register_value(stmt->raw_name(), root_val);
   }
@@ -487,6 +487,9 @@ class TaskCodegen : public IRVisitor {
   }
 
   void visit(ArgLoadStmt *stmt) override {
+    if(args_buffer_value_.id == 0){
+      compile_args_struct();
+    }
     const auto arg_id = stmt->arg_id;
     const auto &arg_attribs = ctx_attribs_->args()[arg_id];
     const auto offset_in_mem = arg_attribs.offset_in_mem;
@@ -1319,20 +1322,20 @@ class TaskCodegen : public IRVisitor {
     // https://www.khronos.org/opengl/wiki/Compute_Shader#Inputs
 
     // HLSL & WGSL cross compilers do not support this builtin
+    /*
     spirv::Value total_invocs = ir_->cast(
         ir_->i32_type(),
         ir_->mul(ir_->get_num_work_groups(0),
                  ir_->uint_immediate_number(
                      ir_->u32_type(),
                      task_attribs_.advisory_num_threads_per_group, true)));
-    /*
+    */
     const int group_x = (task_attribs_.advisory_total_num_threads +
                          task_attribs_.advisory_num_threads_per_group - 1) /
                         task_attribs_.advisory_num_threads_per_group;
     spirv::Value total_invocs = ir_->uint_immediate_number(
         ir_->i32_type(), group_x * task_attribs_.advisory_num_threads_per_group,
-        false);
-        */
+        false); 
 
     ir_->debug(spv::OpName, total_invocs, total_invocs_name);
 
@@ -1676,6 +1679,8 @@ class TaskCodegen : public IRVisitor {
   }
 
   void compile_args_struct() {
+    if (!ctx_attribs_->has_args())
+      return;
     std::vector<std::tuple<spirv::SType, std::string, size_t>>
         struct_components_;
     for (auto &arg : ctx_attribs_->args()) {
@@ -1834,6 +1839,7 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     tp.device = params_.device;
 
     TaskCodegen cgen(tp);
+
     auto task_res = cgen.run();
 
     std::vector<uint32_t> optimized_spv;
@@ -1846,7 +1852,11 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     TI_TRACE("SPIRV-Tools-opt: binary size, before={}, after={}",
              task_res.spirv_code.size(), optimized_spv.size());
 
-    // Enable to dump SPIR-V assembly of kernels
+    // std::string spirv_asm;
+    // spirv_tools_->Disassemble(optimized_spv, &spirv_asm);
+    // printf("SPIR-V Assembly dump for %s :\n%s\n\n",
+    //        params_.ti_kernel_name.c_str(), spirv_asm.c_str());
+    //Enable to dump SPIR-V assembly of kernels
 #if 0
     std::string spirv_asm;
     spirv_tools_->Disassemble(optimized_spv, &spirv_asm);

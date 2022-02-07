@@ -192,6 +192,10 @@ ReturnStmt *IRBuilder::create_return(Stmt *value) {
   return insert(Stmt::make_typed<ReturnStmt>(value));
 }
 
+ReturnStmt *IRBuilder::create_return_vec(const std::vector<Stmt *> &values) {
+  return insert(Stmt::make_typed<ReturnStmt>(values));
+}
+
 UnaryOpStmt *IRBuilder::create_cast(Stmt *value, DataType output_type) {
   auto &&result = Stmt::make_typed<UnaryOpStmt>(UnaryOpType::cast_value, value);
   result->cast_type = output_type;

@@ -37,6 +37,7 @@ struct CompiledOffloadedTask {
   int gpu_block_size{0};
 
   TI_IO_DEF(type, range_hint, name, source_path, gpu_block_size);
+  std::vector<unsigned char> code;
 };
 
 struct ScalarArg {

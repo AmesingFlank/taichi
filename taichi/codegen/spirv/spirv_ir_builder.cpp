@@ -438,11 +438,12 @@ Value IRBuilder::buffer_struct_argument(const SType &struct_type,
     storage_class = spv::StorageClassStorageBuffer;
   }
 
-  this->debug(spv::OpName, struct_type, name + "_t");
+
+  //this->debug(spv::OpName, struct_type, name + "_t");
 
   SType ptr_type = get_pointer_type(struct_type, storage_class);
 
-  this->debug(spv::OpName, ptr_type, name + "_ptr");
+  //this->debug(spv::OpName, ptr_type, name + "_ptr");
 
   Value val = new_value(ptr_type, ValueKind::kStructArrayPtr);
   ib_.begin(spv::OpVariable)
@@ -454,6 +455,8 @@ Value IRBuilder::buffer_struct_argument(const SType &struct_type,
   this->decorate(spv::OpDecorate, val, spv::DecorationDescriptorSet,
                  descriptor_set);
   this->decorate(spv::OpDecorate, val, spv::DecorationBinding, binding);
+  this->decorate(spv::OpDecorate, struct_type, spv::DecorationBlock);
+
   return val;
 }
 
