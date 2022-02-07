@@ -23,8 +23,15 @@ class AotDataConverter {
 
   aot::ModuleData visit(const TaichiAotData &in) const {
     aot::ModuleData res{};
-    for (const auto &ker : in.kernels) {
+    for (int i = 0; i < in.kernels.size(); ++i) {
+      const auto &ker = in.kernels[i];
       auto val = visit(ker);
+      for (int j = 0; j < ker.tasks_attribs.size(); ++j) {
+        auto &code = in.spirv_codes[i][j];
+        size_t code_num_bytes = code.size() * 4;
+        val.tasks[j].code = std::vector<unsigned char>(code_num_bytes);
+        std::memcpy(val.tasks[j].code.data(), code.data(), code_num_bytes);
+      }
       res.kernels[ker.name] = val;
     }
     res.fields = in.fields;
@@ -114,9 +121,26 @@ std::string AotModuleBuilderImpl::write_spv_file(
     const std::vector<uint32_t> &source_code) const {
   const std::string spv_path = fmt::format("{}/{}.spv", output_dir, k.name);
   std::ofstream fs(spv_path, std::ios_base::binary | std::ios::trunc);
+  std::cout << " --------------------------- " << k.name << "-----------"
+            << std::endl;
+  std::cout << "[";
+  for (int i = 0; i < source_code.size(); ++i) {
+    std::cout << source_code[i];
+    if (i < source_code.size() - 1) {
+      std::cout << ",";
+    }
+  }
+  std::cout << "]\n";
+  std::cout << " ------------------------------- " << std::endl;
   fs.write((char *)source_code.data(), source_code.size() * sizeof(uint32_t));
   fs.close();
   return spv_path;
+}
+
+aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(
+    const std::string &name) const {
+  auto converted = AotDataConverter::convert(ti_aot_data_);
+  return converted.kernels.at(name);
 }
 
 void AotModuleBuilderImpl::dump(const std::string &output_dir,
@@ -164,10 +188,8 @@ void AotModuleBuilderImpl::add_field_per_backend(const std::string &identifier,
   // matter too much for now.
   TI_ERROR_IF(!all_fields_are_dense_in_container(rep_snode->parent),
               "AOT: only supports dense field");
-
   const auto &dense_desc =
       compiled_structs_[0].snode_descriptors.at(rep_snode->parent->id);
-
   aot::CompiledFieldData field_data;
   field_data.field_name = identifier;
   field_data.is_scalar = is_scalar;

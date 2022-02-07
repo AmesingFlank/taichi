@@ -160,6 +160,11 @@ Program::Program(Arch desired_arch)
 
   TI_TRACE("Program ({}) arch={} initialized.", fmt::ptr(this),
            arch_name(config.arch));
+#if defined(TI_EMSCRIPTENED)
+  config.constant_folding = false;
+  config.packed = true;
+  // config.print_ir = true;
+#endif
 }
 
 TypeFactory &Program::get_type_factory() {

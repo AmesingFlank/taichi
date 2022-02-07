@@ -1779,6 +1779,7 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     tp.device = params_.device;
 
     TaskCodegen cgen(tp);
+
     auto task_res = cgen.run();
 
     std::vector<uint32_t> optimized_spv;
@@ -1791,6 +1792,10 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     TI_TRACE("SPIRV-Tools-opt: binary size, before={}, after={}",
              task_res.spirv_code.size(), optimized_spv.size());
 
+    // std::string spirv_asm;
+    // spirv_tools_->Disassemble(optimized_spv, &spirv_asm);
+    // printf("SPIR-V Assembly dump for %s :\n%s\n\n",
+    //        params_.ti_kernel_name.c_str(), spirv_asm.c_str());
     // Enable to dump SPIR-V assembly of kernels
 #if 0
     std::string spirv_asm;
