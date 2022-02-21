@@ -7,6 +7,7 @@ option(TI_WITH_OPENGL "Build with the OpenGL backend" ON)
 option(TI_WITH_CC "Build with the C backend" ON)
 option(TI_WITH_VULKAN "Build with the Vulkan backend" OFF)
 option(TI_WITH_DX11 "Build with the DX11 backend" OFF)
+option(TI_WITH_WEBGPU "Build with the WEBGPU backend" OFF)
 option(TI_EMSCRIPTENED "Build using emscripten" OFF)
 set(_TI_SYMBOL_VISIBILITY default)
 
@@ -19,6 +20,7 @@ if(TI_EMSCRIPTENED)
     set(TI_WITH_DX11 OFF)
 
     set(TI_WITH_VULKAN ON)
+    set(TI_WITH_WEBGPU ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_EMSCRIPTENED")
 endif()
 
@@ -82,6 +84,7 @@ file(GLOB TAICHI_OPENGL_SOURCE "taichi/backends/opengl/*.h" "taichi/backends/ope
 file(GLOB TAICHI_DX11_SOURCE "taichi/backends/dx/*.h" "taichi/backends/dx/*.cpp")
 file(GLOB TAICHI_CC_SOURCE "taichi/backends/cc/*.h" "taichi/backends/cc/*.cpp")
 file(GLOB TAICHI_VULKAN_SOURCE "taichi/backends/vulkan/*.h" "taichi/backends/vulkan/*.cpp" "external/SPIRV-Reflect/spirv_reflect.c")
+file(GLOB TAICHI_WEBGPU_SOURCE "taichi/backends/webgpu/*.h" "taichi/backends/webgpu/*.cpp")
 file(GLOB TAICHI_INTEROP_SOURCE "taichi/backends/interop/*.cpp" "taichi/backends/interop/*.h")
 
 
@@ -174,6 +177,10 @@ if (TI_WITH_CC)
   list(APPEND TAICHI_CORE_SOURCE ${TAICHI_CC_SOURCE})
 endif()
 
+if (TI_WITH_WEBGPU)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_WITH_WEBGPU")
+    list(APPEND TAICHI_CORE_SOURCE ${TAICHI_WEBGPU_SOURCE})
+endif()
 
 if (TI_WITH_VULKAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_WITH_VULKAN")

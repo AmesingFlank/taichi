@@ -50,11 +50,15 @@ Function *create_function(Program &program,
 class TaskParams {
  public:
   std::vector<uint32_t> spirv;
+  std::string wgsl;
   std::string range_hint;
   int gpu_block_size;
 
   std::vector<uint32_t> *get_spirv_ptr() {
     return &spirv;
+  }
+  std::string *get_wgsl_ptr() {
+    return &wgsl;
   }
   std::string get_range_hint() {
     return range_hint;
@@ -69,11 +73,18 @@ std::vector<TaskParams> get_kernel_params(AotModuleBuilder &aot_builder,
   std::vector<TaskParams> result;
   auto kernel = aot_builder.get_compiled_kernel(name);
   for (auto &task : kernel.tasks) {
+    // don't know if we're using spirv or wgsl, so copy both.
     size_t num_words = task.code.size() / 4;
-    std::vector<uint32_t> code(num_words);
-    std::memcpy(code.data(), task.code.data(), num_words * 4);
+    std::vector<uint32_t> spirv(num_words);
+    std::memcpy(spirv.data(), task.code.data(), num_words * 4);
+
+    size_t num_chars = task.code.size();
+    std::string wgsl(num_chars, ' ');
+    std::memcpy(wgsl.data(), task.code.data(), num_chars);
+
     TaskParams params;
-    params.spirv = std::move(code);
+    params.spirv = std::move(spirv);
+    params.wgsl = std::move(wgsl);
     params.range_hint = task.range_hint;
     params.gpu_block_size = task.gpu_block_size;
     result.push_back(params);
@@ -90,7 +101,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   register_vector<Axis>("VectorOfAxis");
   register_vector<TaskParams>("VectorOfTaskParams");
 
-  enum_<Arch>("Arch").value("vulkan", Arch::vulkan);
+  enum_<Arch>("Arch").value("vulkan", Arch::vulkan).value("webgpu", Arch::webgpu);
 
   enum_<SNodeType>("SNodeType")
       .value("root", SNodeType::root)
@@ -106,6 +117,8 @@ EMSCRIPTEN_BINDINGS(tint) {
 
   class_<TaskParams>("TaskParams")
       .function("get_spirv_ptr", &TaskParams::get_spirv_ptr,
+                allow_raw_pointers())
+      .function("get_wgsl_ptr", &TaskParams::get_wgsl_ptr,
                 allow_raw_pointers())
       .function("get_range_hint", &TaskParams::get_range_hint,
                 allow_raw_pointers())
