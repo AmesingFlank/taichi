@@ -216,7 +216,7 @@ class TaskCodegen : public IRVisitor {
 
     const auto &desc = snode_descs.at(out_snode->id);
     emit_let(stmt->raw_name(), get_pointer_int_type_name());
-    body_ << stmt->input_ptr->raw_name() <<" + "<<desc.mem_offset_in_parent_cell<<";\n";
+    body_ << stmt->input_ptr->raw_name() <<" + "<< (desc.mem_offset_in_parent_cell/4)<<";\n";
     pointer_infos[stmt->raw_name()] = {root};
   }
 
@@ -237,7 +237,7 @@ class TaskCodegen : public IRVisitor {
     const auto &snode_descs = compiled_structs_[root_id].snode_descriptors;
     const auto &desc = snode_descs.at(sn->id);
     emit_let(stmt->raw_name(), get_pointer_int_type_name());
-    body_ << parent <<" + ("<<desc.cell_stride<<" * "<< (stmt->input_index->raw_name()) << ");\n";
+    body_ << parent <<" + ("<< (desc.cell_stride/4) <<" * "<< (stmt->input_index->raw_name()) << ");\n";
     pointer_infos[stmt->raw_name()] = {root_id};
   }
 
@@ -245,7 +245,7 @@ class TaskCodegen : public IRVisitor {
     TI_ASSERT(stmt->width() == 1);
     int root_id = pointer_infos.at(stmt->dest->raw_name()).root_id;
     std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
-    body_ << body_indent() << buffer_name << "[" << stmt->dest->raw_name() << "/4"<<"] = bitcast<i32>("<<(stmt->val->raw_name())<<");\n";
+    body_ << body_indent() << buffer_name << "[" << stmt->dest->raw_name() <<"] = bitcast<i32>("<<(stmt->val->raw_name())<<");\n";
   }
 
  private: 
