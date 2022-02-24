@@ -20,7 +20,7 @@ namespace webgpu {
  * Per offloaded task attributes.
  */
 struct TaskAttributes {
-  enum class BufferType { Root, GlobalTmps, Context, ListGen, ExtArr };
+  enum class BufferType { RootNormal };
 
   struct BufferInfo {
     BufferType type;
@@ -39,7 +39,7 @@ struct TaskAttributes {
       if (type != other.type) {
         return false;
       }
-      if (type == BufferType::Root) {
+      if (type == BufferType::RootNormal) {
         return root_id == other.root_id;
       }
       return true;
@@ -56,16 +56,7 @@ struct TaskAttributes {
 
       return hash<BufferType>()(buf.type) ^ buf.root_id;
     }
-  };
-
-  struct BufferBind {
-    BufferInfo buffer;
-    int binding{0};
-
-    std::string debug_string() const;
-
-    TI_IO_DEF(buffer, binding);
-  };
+  }; 
 
   std::string name;
   std::string source_path;
@@ -94,19 +85,19 @@ struct TaskAttributes {
 
     TI_IO_DEF(begin, end, const_begin, const_end);
   };
-  std::vector<BufferBind> buffer_binds;
+
+  std::unordered_map<BufferInfo, int, BufferInfoHasher> buffer_bindings;
+
   // Only valid when |task_type| is range_for.
   std::optional<RangeForAttributes> range_for_attribs;
 
   static std::string buffers_name(BufferInfo b);
 
-  std::string debug_string() const;
-
   TI_IO_DEF(name,
             advisory_total_num_threads,
             advisory_num_threads_per_group,
             task_type,
-            buffer_binds,
+            buffer_bindings,
             range_for_attribs);
 };
 

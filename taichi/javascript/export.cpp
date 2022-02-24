@@ -57,8 +57,8 @@ class TaskParams {
   std::vector<uint32_t> *get_spirv_ptr() {
     return &spirv;
   }
-  std::string *get_wgsl_ptr() {
-    return &wgsl;
+  std::string get_wgsl() {
+    return wgsl;
   }
   std::string get_range_hint() {
     return range_hint;
@@ -118,7 +118,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<TaskParams>("TaskParams")
       .function("get_spirv_ptr", &TaskParams::get_spirv_ptr,
                 allow_raw_pointers())
-      .function("get_wgsl_ptr", &TaskParams::get_wgsl_ptr,
+      .function("get_wgsl", &TaskParams::get_wgsl,
                 allow_raw_pointers())
       .function("get_range_hint", &TaskParams::get_range_hint,
                 allow_raw_pointers())

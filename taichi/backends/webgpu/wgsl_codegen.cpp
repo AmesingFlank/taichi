@@ -1,6 +1,7 @@
 #include "taichi/backends/webgpu/wgsl_codegen.h"
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include "taichi/program/program.h"
@@ -17,7 +18,41 @@ namespace taichi {
 namespace lang {
 namespace webgpu {
 
+using BufferInfo = TaskAttributes::BufferInfo;
+using BufferType = TaskAttributes::BufferType;
 namespace{
+
+class StringBuilder {
+public:
+  const std::string& getString(){
+    return buffer_;
+  }
+
+  template<typename T>
+  StringBuilder& operator<< (const T& t){
+    std::ostringstream os;
+    os << t;
+    buffer_ += os.str();
+    return *this;
+  }
+
+private:
+  std::string buffer_;
+};
+
+struct PointerInfo {
+  int root_id;
+};
+
+void string_replace_all(std::string& str, const std::string& from, const std::string& to) {
+    if(from.empty())
+        return;
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
     
 class TaskCodegen : public IRVisitor {
  public:
@@ -74,7 +109,7 @@ class TaskCodegen : public IRVisitor {
                task_ir_->task_name());
     } 
     Result res;
-    res.wgsl_code = "12321";
+    res.wgsl_code = assemble_shader();
     res.task_attribs = std::move(task_attribs_);
 
     return res;
@@ -89,10 +124,160 @@ class TaskCodegen : public IRVisitor {
       s->accept(this);
     }
   }  
+
+  void visit(ConstStmt * stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    auto& const_val = stmt->val[0];
+    auto dt = const_val.dt.ptr_removed();
+    emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+    if (dt->is_primitive(PrimitiveTypeID::f32)){
+      float f = const_val.val_float32();
+      body_ << f;
+    }
+    else if (dt->is_primitive(PrimitiveTypeID::i32)){
+      int i = const_val.val_int32();
+      body_ << i;
+    }
+    else{
+      TI_ERROR("unsupported const type");
+    }
+    
+    body_ << ";\n";
+  }
+
+  void visit(BinaryOpStmt * stmt) override {
+    const auto lhs = stmt->lhs->raw_name();
+    const auto rhs = stmt->rhs->raw_name();
+    const auto op = stmt->op_type;
+    DataType dt = stmt->element_type();
+    emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+
+    std::string value;
+    if(false){
+
+    }
+#define HANDLE_INFIX_OP(op_name, infix_token)\
+    else if(op == BinaryOpType::op_name){ \
+      value = lhs + " "+ infix_token + " " + rhs; \
+    }
+#define HANDLE_FUNC_OP(op_name, func)\
+    else if(op == BinaryOpType::op_name){ \
+      value = std::string(func) + "("+lhs +", "+rhs+")"; \
+    }
+    HANDLE_INFIX_OP(mul, "*")
+    HANDLE_INFIX_OP(add, "+")
+    HANDLE_INFIX_OP(sub, "-")
+    HANDLE_INFIX_OP(mod, "%")
+    HANDLE_INFIX_OP(bit_and, "&")
+    HANDLE_INFIX_OP(bit_or, "|")
+    HANDLE_INFIX_OP(bit_xor, "^")
+    HANDLE_INFIX_OP(bit_shl, "<<")
+    HANDLE_INFIX_OP(bit_shr, ">>") // TODO: fix
+    HANDLE_INFIX_OP(bit_sar, ">>") // TODO: fix
+    HANDLE_INFIX_OP(cmp_lt, "<")
+    HANDLE_INFIX_OP(cmp_le, "<=")
+    HANDLE_INFIX_OP(cmp_gt, ">")
+    HANDLE_INFIX_OP(cmp_ge, ">=")
+    HANDLE_INFIX_OP(cmp_eq, "==")
+    HANDLE_INFIX_OP(cmp_ne, "!=")
+    HANDLE_FUNC_OP(pow,"pow")
+    HANDLE_FUNC_OP(atan2,"atan2")
+    HANDLE_FUNC_OP(max,"max")
+    HANDLE_FUNC_OP(min,"min")
+#undef HANDLE_INFIX_OP
+#undef HANDLE_FUNC_OP
+    else if(op == BinaryOpType :: div){
+      value = lhs + " / " + rhs;
+    }
+    else if(op == BinaryOpType :: truediv){
+      value = "1.0 * "+ lhs + " / " + rhs;
+    }
+    else if(op == BinaryOpType :: floordiv){
+      value = "floor(1.0 * "+ lhs + " / " + rhs+")";
+    }
+
+    body_ <<value<<";\n";
+  }
+
+  void visit(GetRootStmt *stmt) override {
+    const int root_id = snode_to_root_.at(stmt->root()->id);
+    emit_let(stmt->raw_name(), get_pointer_int_type_name());
+    body_ << "0;\n";
+    pointer_infos[stmt->raw_name()] = {root_id};
+  }
+  void visit(GetChStmt *stmt) override {
+    // TODO: GetChStmt -> GetComponentStmt ?
+    const int root = snode_to_root_.at(stmt->input_snode->id);
+
+    const auto &snode_descs = compiled_structs_[root].snode_descriptors;
+    auto *out_snode = stmt->output_snode;
+    TI_ASSERT(snode_descs.at(stmt->input_snode->id).get_child(stmt->chid) ==
+              out_snode);
+
+    const auto &desc = snode_descs.at(out_snode->id);
+    emit_let(stmt->raw_name(), get_pointer_int_type_name());
+    body_ << stmt->input_ptr->raw_name() <<" + "<<desc.mem_offset_in_parent_cell<<";\n";
+    pointer_infos[stmt->raw_name()] = {root};
+  }
+
+  void visit(SNodeLookupStmt *stmt) override {
+    // TODO: SNodeLookupStmt -> GetSNodeCellStmt ?
+    bool is_root{false};  // Eliminate first root snode access
+    const int root_id = snode_to_root_.at(stmt->snode->id);
+    std::string parent;
+
+    if (stmt->input_snode) {
+      parent = stmt->input_snode->raw_name();
+    } else {
+      TI_ASSERT(root_stmts_.at(root_id) != nullptr);
+      parent = root_stmts_.at(root_id)->raw_name();
+    }
+    const auto *sn = stmt->snode;
+ 
+    const auto &snode_descs = compiled_structs_[root_id].snode_descriptors;
+    const auto &desc = snode_descs.at(sn->id);
+    emit_let(stmt->raw_name(), get_pointer_int_type_name());
+    body_ << parent <<" + ("<<desc.cell_stride<<" * "<< (stmt->input_index->raw_name()) << ");\n";
+    pointer_infos[stmt->raw_name()] = {root_id};
+  }
+
+  void visit(GlobalStoreStmt *stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    int root_id = pointer_infos.at(stmt->dest->raw_name()).root_id;
+    std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+    body_ << body_indent() << buffer_name << "[" << stmt->dest->raw_name() << "/4"<<"] = bitcast<i32>("<<(stmt->val->raw_name())<<");\n";
+  }
+
  private: 
 
+  void emit_let(std::string name, std::string type){
+    body_ << body_indent() << "let " << name << " : "<<type<<" = ";
+  }
+
+  const char* get_pointer_int_type_name(){
+    return "i32";
+  }
+
+  const char* get_primitive_type_name(DataType dt){
+    if (dt->is_primitive(PrimitiveTypeID::f32)){
+      return "f32";
+    }
+    if (dt->is_primitive(PrimitiveTypeID::i32)){
+      return "i32";
+    }
+    TI_ERROR("unsupported primitive type");
+    return "";
+  }
+
   void generate_serial_kernel(OffloadedStmt *stmt) {
- 
+    task_attribs_.name = task_name_;
+    task_attribs_.task_type = OffloadedTaskType::serial;
+    // task_attribs_.buffer_binds = get_common_buffer_binds();
+    task_attribs_.advisory_total_num_threads = 1;
+    task_attribs_.advisory_num_threads_per_group = 1;
+
+    start_function(1);
+    stmt->body->accept(this);
   }
 
   void generate_range_for_kernel(OffloadedStmt *stmt) {
@@ -101,6 +286,94 @@ class TaskCodegen : public IRVisitor {
  
   void generate_struct_for_kernel(OffloadedStmt *stmt) {
     
+  }
+
+  StringBuilder buffer_decls_;
+  StringBuilder function_signature_;
+  StringBuilder function_body_prologue_;
+  StringBuilder body_;
+  StringBuilder function_body_epilogue_;
+  StringBuilder function_end_;
+
+  std::string assemble_shader(){
+    return 
+    buffer_decls_.getString() +
+    function_signature_.getString() +
+    function_body_prologue_.getString() +
+    body_ .getString()+
+    function_body_epilogue_ .getString() + 
+    function_end_.getString();
+  }
+
+  void start_function(int block_size_x){
+    TI_ASSERT(function_signature_.getString().size()==0);
+    std::string signature_template = 
+R"(
+
+[[stage(compute), workgroup_size(BLOCK_SIZE_X, 1, 1)]]
+fn main([[builtin(global_invocation_id)]] gid3 : vec3<u32>) {
+
+)";
+    string_replace_all(signature_template,"BLOCK_SIZE_X",std::to_string(block_size_x));
+    function_signature_ << signature_template;
+    function_end_ << "\n}\n";
+
+  }
+
+  int body_indent_count_ = 1;
+  void indent(){
+    body_indent_count_++;
+  }
+  void dedent(){
+    body_indent_count_--;
+  }
+  std::string body_indent(){
+    return std::string(body_indent_count_ * 2, ' ');
+  }
+
+  std::unordered_map<std::string, PointerInfo> pointer_infos;
+
+  std::string get_buffer_member_name(BufferInfo buffer){
+    return get_buffer_name(buffer)+".member";
+  }
+
+  std::string get_buffer_name(BufferInfo buffer){
+    std::string name;
+    switch(buffer.type){
+      case BufferType::RootNormal: {
+        name = "root_buffer_"+std::to_string(buffer.root_id)+"_";
+        break;
+      }
+    }
+    if(task_attribs_.buffer_bindings.find(buffer) == task_attribs_.buffer_bindings.end()){
+      int binding = task_attribs_.buffer_bindings.size();
+      task_attribs_.buffer_bindings[buffer] = binding;
+      declare_new_buffer(buffer,name,binding);
+    }
+    return name;
+  }
+
+  void declare_new_buffer(BufferInfo buffer, std::string name, int binding){
+    switch(buffer.type){
+      case BufferType::RootNormal: {
+        std::string decl_template =
+R"(
+
+[[block]]
+struct BUFFER_TYPE_NAME {
+    member: [[stride(4)]] array<i32>;
+};
+[[group(0), binding(BUFFER_BINDING)]]
+var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
+
+)";
+        string_replace_all(decl_template,"BUFFER_TYPE_NAME", name+"_type");
+        string_replace_all(decl_template,"BUFFER_NAME", name);
+        string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
+        buffer_decls_ << decl_template;
+        break;
+      }
+    }
   }
    
 

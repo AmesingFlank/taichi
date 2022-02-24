@@ -30,7 +30,7 @@ class AotDataConverter {
       auto val = visit(ker);
       for (int j = 0; j < ker.tasks_attribs.size(); ++j) {
         auto &code = in.wgsl_codes[i][j];
-        printf("%s\n",code.c_str());
+        //printf("%s\n",code.c_str());
         size_t code_num_bytes = code.size();
         val.tasks[j].code = std::vector<unsigned char>(code_num_bytes);
         std::memcpy(val.tasks[j].code.data(), code.data(), code_num_bytes);

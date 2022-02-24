@@ -11,40 +11,6 @@ namespace taichi {
 namespace lang {
 namespace webgpu {
 
-// static
-std::string TaskAttributes::buffers_name(BufferInfo b) {
-  if (b.type == BufferType::Context) {
-    return "Context";
-  }
-  if (b.type == BufferType::GlobalTmps) {
-    return "GlobalTmps";
-  }
-  if (b.type == BufferType::Root) {
-    return std::string("Root: ") + std::to_string(b.root_id);
-  }
-  TI_ERROR("unrecognized buffer type");
-}
-
-std::string TaskAttributes::debug_string() const {
-  std::string result;
-  result += fmt::format(
-      "<TaskAttributes name={} advisory_total_num_threads={} "
-      "task_type={} buffers=[ ",
-      name, advisory_total_num_threads, offloaded_task_type_name(task_type));
-  for (auto b : buffer_binds) {
-    result += buffers_name(b.buffer) + " ";
-  }
-  result += "]";  // closes |buffers|
-  // TODO(k-ye): show range_for
-  result += ">";
-  return result;
-}
-
-std::string TaskAttributes::BufferBind::debug_string() const {
-  return fmt::format("<type={} binding={}>",
-                     TaskAttributes::buffers_name(buffer), binding);
-}
-
 KernelContextAttributes::KernelContextAttributes(const Kernel &kernel)
     : args_bytes_(0),
       rets_bytes_(0),
