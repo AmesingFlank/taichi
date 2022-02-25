@@ -41,6 +41,7 @@ private:
 };
 
 struct PointerInfo {
+  bool is_root;
   int root_id;
 };
 
@@ -102,8 +103,6 @@ class TaskCodegen : public IRVisitor {
     } else if (task_ir_->task_type == OffloadedTaskType::range_for) {
       // struct_for is automatically lowered to ranged_for for dense snodes
       generate_range_for_kernel(task_ir_);
-    } else if (task_ir_->task_type == OffloadedTaskType::struct_for) {
-      generate_struct_for_kernel(task_ir_);
     } else {
       TI_ERROR("Unsupported offload type={} on WGSL codegen",
                task_ir_->task_name());
@@ -145,6 +144,72 @@ class TaskCodegen : public IRVisitor {
     body_ << ";\n";
   }
 
+  void visit(UnaryOpStmt *stmt) override {
+    const auto operand = stmt->operand->raw_name();
+
+    const auto src_dt = stmt->operand->element_type();
+    const auto dst_dt = stmt->element_type();
+    std::string dst_dt_name = get_primitive_type_name(dst_dt);
+    UnaryOpType op = stmt->op_type;
+    
+    std::string value;
+    if(false){
+
+    }
+#define HANDLE_FUNC_OP(op_name, func)\
+    else if(op == UnaryOpType::op_name){ \
+      value = std::string(func) + "("+operand+")"; \
+    }
+    HANDLE_FUNC_OP(sqrt,"sqrt")
+    HANDLE_FUNC_OP(round,"round")
+    HANDLE_FUNC_OP(floor,"floor")
+    HANDLE_FUNC_OP(ceil,"ceil")
+    HANDLE_FUNC_OP(abs,"abs")
+    HANDLE_FUNC_OP(sgn,"sign")
+    HANDLE_FUNC_OP(sin,"sin")
+    HANDLE_FUNC_OP(asin,"asin")
+    HANDLE_FUNC_OP(cos,"cos")
+    HANDLE_FUNC_OP(acos,"acos")
+    HANDLE_FUNC_OP(tan,"tan")
+    HANDLE_FUNC_OP(tanh,"tanh")
+    HANDLE_FUNC_OP(tan,"inv")
+    HANDLE_FUNC_OP(exp,"exp")
+    HANDLE_FUNC_OP(log,"log")
+    HANDLE_FUNC_OP(rsqrt,"inverseSqrt")
+#undef HANDLE_FUNC_OP
+    else if(op == UnaryOpType::neg){
+      value = "-"+operand;
+    }
+    else if(op == UnaryOpType::logic_not){
+      std::string zero ;
+      if(src_dt->is_primitive(PrimitiveTypeID::f32)){
+        zero = "0.0f";
+      }
+      else if(src_dt->is_primitive(PrimitiveTypeID::f32)){
+        zero = "0";
+      }
+      else{
+        TI_ERROR("unsupported prim type in unary op");
+      } 
+      value = std::string(dst_dt_name)+"(" + operand + " == "+zero+");\n"; 
+    }
+    else if(op == UnaryOpType::bit_not){
+      value = "~" + operand;
+    }
+    else if(op == UnaryOpType::inv || op == UnaryOpType::rcp){
+      value = "(1.0f / f32("+operand+"))";
+    }
+    else if(op == UnaryOpType::cast_value){
+      value = std::string(dst_dt_name)+"(" + operand + ")"; 
+    }
+    else if(op == UnaryOpType::cast_bits){
+      value = "bitcast<"+std::string(dst_dt_name)+">(" + operand + ")"; 
+    }
+    emit_let(stmt->raw_name(),dst_dt_name);
+    value = std::string(dst_dt_name) + "(" + value + ")";
+    body_ << value<<";\n";
+  }
+
   void visit(BinaryOpStmt * stmt) override {
     const auto lhs = stmt->lhs->raw_name();
     const auto rhs = stmt->rhs->raw_name();
@@ -160,6 +225,10 @@ class TaskCodegen : public IRVisitor {
     else if(op == BinaryOpType::op_name){ \
       value = lhs + " "+ infix_token + " " + rhs; \
     }
+#define HANDLE_INFIX_OP_U32(op_name, infix_token)\
+    else if(op == BinaryOpType::op_name){ \
+      value = lhs + " "+ infix_token + " u32(" + rhs+")"; \
+    }
 #define HANDLE_FUNC_OP(op_name, func)\
     else if(op == BinaryOpType::op_name){ \
       value = std::string(func) + "("+lhs +", "+rhs+")"; \
@@ -171,9 +240,9 @@ class TaskCodegen : public IRVisitor {
     HANDLE_INFIX_OP(bit_and, "&")
     HANDLE_INFIX_OP(bit_or, "|")
     HANDLE_INFIX_OP(bit_xor, "^")
-    HANDLE_INFIX_OP(bit_shl, "<<")
-    HANDLE_INFIX_OP(bit_shr, ">>") // TODO: fix
-    HANDLE_INFIX_OP(bit_sar, ">>") // TODO: fix
+    HANDLE_INFIX_OP_U32(bit_shl, "<<")
+    HANDLE_INFIX_OP_U32(bit_shr, ">>") // TODO: fix
+    HANDLE_INFIX_OP_U32(bit_sar, ">>") // TODO: fix
     HANDLE_INFIX_OP(cmp_lt, "<")
     HANDLE_INFIX_OP(cmp_le, "<=")
     HANDLE_INFIX_OP(cmp_gt, ">")
@@ -195,16 +264,53 @@ class TaskCodegen : public IRVisitor {
     else if(op == BinaryOpType :: floordiv){
       value = "floor(1.0 * "+ lhs + " / " + rhs+")";
     }
+    
+    value = std::string(get_primitive_type_name(dt)) + "(" + value + ")";
 
-    body_ <<value<<";\n";
+    body_ << value<<";\n";
+  }
+
+  
+  void visit(RangeForStmt *stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    emit_var(stmt->raw_name(),"i32");
+    body_<< stmt->begin->raw_name() <<";\n";
+    body_ << body_indent() << "loop {\n";
+    indent();
+    body_ << body_indent() << "if ("<< stmt->raw_name() << " >= "<<stmt->end->raw_name() << "){ break; }\n";
+
+    stmt->body->accept(this);
+
+    body_ << body_indent() << stmt->raw_name() << " = "<< stmt->raw_name() << " + 1;\n";
+    dedent();
+    body_ << body_indent() << "}\n";
+  }
+
+  void visit(AllocaStmt *stmt) override {
+    auto dt = stmt->element_type();
+    // not using emit_var() because it emits an extra equals token..
+    body_ << body_indent() << "var "<<stmt->raw_name() << " : "<<get_primitive_type_name(dt)<<";\n";
+  }
+
+  void visit(LocalLoadStmt *stmt) override {
+    TI_ASSERT(stmt->src.size() == 1);
+    TI_ASSERT(stmt->src[0].offset == 0);
+    auto dt = stmt->element_type();
+    emit_let(stmt->raw_name(),get_primitive_type_name(dt));
+    body_ << stmt->src[0].var->raw_name() << ";\n";
+  }
+
+  void visit(LocalStoreStmt *stmt) override {
+    body_ << body_indent()<< stmt->dest->raw_name() <<" = "<<stmt->val->raw_name()<<";\n";
   }
 
   void visit(GetRootStmt *stmt) override {
     const int root_id = snode_to_root_.at(stmt->root()->id);
     emit_let(stmt->raw_name(), get_pointer_int_type_name());
     body_ << "0;\n";
-    pointer_infos[stmt->raw_name()] = {root_id};
+    pointer_infos_[stmt->raw_name()] = {true, root_id};
   }
+
   void visit(GetChStmt *stmt) override {
     // TODO: GetChStmt -> GetComponentStmt ?
     const int root = snode_to_root_.at(stmt->input_snode->id);
@@ -217,7 +323,7 @@ class TaskCodegen : public IRVisitor {
     const auto &desc = snode_descs.at(out_snode->id);
     emit_let(stmt->raw_name(), get_pointer_int_type_name());
     body_ << stmt->input_ptr->raw_name() <<" + "<< (desc.mem_offset_in_parent_cell/4)<<";\n";
-    pointer_infos[stmt->raw_name()] = {root};
+    pointer_infos_[stmt->raw_name()] = {true, root};
   }
 
   void visit(SNodeLookupStmt *stmt) override {
@@ -238,20 +344,75 @@ class TaskCodegen : public IRVisitor {
     const auto &desc = snode_descs.at(sn->id);
     emit_let(stmt->raw_name(), get_pointer_int_type_name());
     body_ << parent <<" + ("<< (desc.cell_stride/4) <<" * "<< (stmt->input_index->raw_name()) << ");\n";
-    pointer_infos[stmt->raw_name()] = {root_id};
+    pointer_infos_[stmt->raw_name()] = {true, root_id};
+  }
+
+  void visit(GlobalTemporaryStmt *stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    emit_let(stmt->raw_name(), get_pointer_int_type_name());
+    body_ << (stmt->offset) / 4 << ";\n";
+    pointer_infos_[stmt->raw_name()] = {false, -1};
   }
 
   void visit(GlobalStoreStmt *stmt) override {
     TI_ASSERT(stmt->width() == 1);
-    int root_id = pointer_infos.at(stmt->dest->raw_name()).root_id;
-    std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+    PointerInfo info = pointer_infos_.at(stmt->dest->raw_name());
+    std::string buffer_name;
+    if(info.is_root){
+      int root_id = info.root_id;
+      buffer_name = get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+    }
+    else{
+      buffer_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+    }
     body_ << body_indent() << buffer_name << "[" << stmt->dest->raw_name() <<"] = bitcast<i32>("<<(stmt->val->raw_name())<<");\n";
+  }
+
+  void visit(GlobalLoadStmt *stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    auto dt = stmt->element_type();
+    PointerInfo info = pointer_infos_.at(stmt->src->raw_name());
+    std::string buffer_name;
+    if(info.is_root){
+      int root_id = info.root_id;
+      buffer_name = get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+    }
+    else{
+      buffer_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+    }
+    emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+    body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << stmt->src->raw_name() <<"]);\n";
+  }
+
+
+  void visit(LoopIndexStmt *stmt) override {
+    const auto stmt_name = stmt->raw_name();
+    if (stmt->loop->is<OffloadedStmt>()) {
+      const auto type = stmt->loop->as<OffloadedStmt>()->task_type;
+      if (type == OffloadedTaskType::range_for) {
+        TI_ASSERT(stmt->index == 0);
+        emit_let(stmt->raw_name(), "i32");
+        body_ << "ii;\n";
+      } else {
+        TI_NOT_IMPLEMENTED;
+      }
+    } else if (stmt->loop->is<RangeForStmt>()) {
+      TI_ASSERT(stmt->index == 0);
+      emit_let(stmt->raw_name(), "i32");
+      body_ << stmt->loop->raw_name() <<";\n";
+    } else {
+      TI_NOT_IMPLEMENTED;
+    }
   }
 
  private: 
 
   void emit_let(std::string name, std::string type){
     body_ << body_indent() << "let " << name << " : "<<type<<" = ";
+  }
+
+  void emit_var(std::string name, std::string type){
+    body_ << body_indent() << "var " << name << " : "<<type<<" = ";
   }
 
   const char* get_pointer_int_type_name(){
@@ -281,12 +442,76 @@ class TaskCodegen : public IRVisitor {
   }
 
   void generate_range_for_kernel(OffloadedStmt *stmt) {
-     
-  }
- 
-  void generate_struct_for_kernel(OffloadedStmt *stmt) {
-    
-  }
+     task_attribs_.name = task_name_;
+    task_attribs_.task_type = OffloadedTaskType::range_for;
+    // task_attribs_.buffer_binds = get_common_buffer_binds();
+
+    task_attribs_.range_for_attribs = TaskAttributes::RangeForAttributes();
+    auto &range_for_attribs = task_attribs_.range_for_attribs.value();
+    range_for_attribs.const_begin = stmt->const_begin;
+    range_for_attribs.const_end = stmt->const_end;
+    range_for_attribs.begin =
+        (stmt->const_begin ? stmt->begin_value : stmt->begin_offset);
+    range_for_attribs.end =
+        (stmt->const_end ? stmt->end_value : stmt->end_offset);
+    int block_size = stmt->block_dim;
+    task_attribs_.advisory_num_threads_per_group = block_size;
+    start_function(block_size);
+
+    std::string total_elems_value;
+    std::string begin_expr_value;  
+    std::string end_expr_value;
+    if (range_for_attribs.const_range()) {
+      const int num_elems = range_for_attribs.end - range_for_attribs.begin;
+      begin_expr_value = std::to_string(stmt->begin_value);
+      total_elems_value = std::to_string( num_elems);
+      end_expr_value = std::to_string(stmt->begin_value + num_elems);
+      task_attribs_.advisory_total_num_threads = num_elems;
+    } else {
+      if (!stmt->const_begin) {
+        emit_let("begin_idx","i32");
+        body_ << std::to_string(stmt->begin_offset / 4) << ";\n";
+
+        std::string gtmps_buffer_member_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+        begin_expr_value = gtmps_buffer_member_name + "[begin_idx]";
+      } else {
+        begin_expr_value = std::to_string(stmt->begin_value); 
+      }
+      
+      if (!stmt->const_end) {
+        emit_let("end_idx","i32");
+        body_ << std::to_string(stmt->end_offset / 4) << ";\n";
+        std::string gtmps_buffer_member_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+        end_expr_value = gtmps_buffer_member_name + "[end_idx]";
+      } else {
+        end_expr_value = std::to_string(stmt->end_value); 
+      }
+      total_elems_value = "end_ - begin_";
+      task_attribs_.advisory_total_num_threads = 65536;
+    }
+    emit_let("begin_","i32");
+    body_ << begin_expr_value << ";\n";
+    emit_let("end_","i32");
+    body_<< body_indent()<< end_expr_value<<";\n";
+    emit_let("total_elems","i32");
+    body_ << total_elems_value << ";\n";
+
+    emit_let("total_invocs","i32");
+    body_ << block_size << " * i32(n_workgroups.x);\n";
+
+    emit_var("ii", "i32");
+    body_ << "i32(gid3.x) + begin_;\n";
+
+    body_ << body_indent() << "loop {\n";
+    indent();
+    body_ << body_indent() << "if(ii >= end_) { break;  }\n";
+
+    stmt->body->accept(this);
+
+    body_ << body_indent() << "ii = ii + total_invocs;\n";
+    dedent();
+    body_ << body_indent() << "}\n";
+  } 
 
   StringBuilder buffer_decls_;
   StringBuilder function_signature_;
@@ -311,7 +536,10 @@ class TaskCodegen : public IRVisitor {
 R"(
 
 [[stage(compute), workgroup_size(BLOCK_SIZE_X, 1, 1)]]
-fn main([[builtin(global_invocation_id)]] gid3 : vec3<u32>) {
+fn main(
+  [[builtin(global_invocation_id)]] gid3 : vec3<u32>, 
+  [[builtin(num_workgroups)]] n_workgroups : vec3<u32>) 
+{
 
 )";
     string_replace_all(signature_template,"BLOCK_SIZE_X",std::to_string(block_size_x));
@@ -331,7 +559,7 @@ fn main([[builtin(global_invocation_id)]] gid3 : vec3<u32>) {
     return std::string(body_indent_count_ * 2, ' ');
   }
 
-  std::unordered_map<std::string, PointerInfo> pointer_infos;
+  std::unordered_map<std::string, PointerInfo> pointer_infos_;
 
   std::string get_buffer_member_name(BufferInfo buffer){
     return get_buffer_name(buffer)+".member";
@@ -342,6 +570,10 @@ fn main([[builtin(global_invocation_id)]] gid3 : vec3<u32>) {
     switch(buffer.type){
       case BufferType::RootNormal: {
         name = "root_buffer_"+std::to_string(buffer.root_id)+"_";
+        break;
+      }
+      case BufferType::GlobalTemps: {
+        name = "global_tmps_";
         break;
       }
     }
@@ -355,6 +587,7 @@ fn main([[builtin(global_invocation_id)]] gid3 : vec3<u32>) {
 
   void declare_new_buffer(BufferInfo buffer, std::string name, int binding){
     switch(buffer.type){
+      case BufferType::GlobalTemps:
       case BufferType::RootNormal: {
         std::string decl_template =
 R"(
