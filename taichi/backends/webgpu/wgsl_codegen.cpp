@@ -131,7 +131,7 @@ class TaskCodegen : public IRVisitor {
     emit_let(stmt->raw_name(), get_primitive_type_name(dt));
     if (dt->is_primitive(PrimitiveTypeID::f32)){
       float f = const_val.val_float32();
-      body_ << f;
+      body_ << std::to_string(f) << "f";
     }
     else if (dt->is_primitive(PrimitiveTypeID::i32)){
       int i = const_val.val_int32();
@@ -338,24 +338,19 @@ class TaskCodegen : public IRVisitor {
     body_ << body_indent() << "}\n";
   }
 
-  // void visit(ArgLoadStmt *stmt) override {
-  //   const auto arg_id = stmt->arg_id;
-  //   const auto &arg_attribs = ctx_attribs_->args()[arg_id];
-  //   const auto offset_in_mem = arg_attribs.offset_in_mem;
-  //   if (stmt->is_ptr) {
-  //     TI_ERROR("arg is ptr... what does that mean lol");
-  //   } else {
-  //     const auto dt = arg_attribs.dt;
-  //     const auto val_type = ir_->get_primitive_type(dt);
-  //     spirv::Value buffer_val = ir_->make_value(
-  //         spv::OpAccessChain, ir_->get_storage_pointer_type(val_type),
-  //         get_buffer_value(BufferType::Context, PrimitiveType::i32),
-  //         ir_->int_immediate_number(ir_->i32_type(), arg_id));
-  //     buffer_val.flag = ValueKind::kVariablePtr;
-  //     spirv::Value val = ir_->load_variable(buffer_val, val_type);
-  //     ir_->register_value(stmt->raw_name(), val);
-  //   }
-  // }
+  void visit(ArgLoadStmt *stmt) override {
+    const auto arg_id = stmt->arg_id;
+    const auto &arg_attribs = ctx_attribs_->args()[arg_id];
+    const auto offset_in_mem = arg_attribs.offset_in_mem;
+    if (stmt->is_ptr) {
+      TI_ERROR("arg is ptr... what does that mean lol");
+    } else {
+      const auto dt = arg_attribs.dt;
+      std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::Args));
+      emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+      body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << std::to_string(offset_in_mem/4) <<"]);\n";
+    }
+  }
 
   void visit(AllocaStmt *stmt) override {
     auto dt = stmt->element_type();
@@ -647,6 +642,10 @@ fn main(
         name = "global_tmps_";
         break;
       }
+      case BufferType::Args: {
+        name = "args_";
+        break;
+      }
     }
     if(task_attribs_.buffer_bindings.find(buffer) == task_attribs_.buffer_bindings.end()){
       int binding = task_attribs_.buffer_bindings.size();
@@ -658,6 +657,7 @@ fn main(
 
   void declare_new_buffer(BufferInfo buffer, std::string name, int binding){
     switch(buffer.type){
+      case BufferType::Args:
       case BufferType::GlobalTemps:
       case BufferType::RootNormal: {
         std::string decl_template =
