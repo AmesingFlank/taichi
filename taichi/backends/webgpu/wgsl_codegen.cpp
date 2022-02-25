@@ -185,13 +185,13 @@ class TaskCodegen : public IRVisitor {
       if(src_dt->is_primitive(PrimitiveTypeID::f32)){
         zero = "0.0f";
       }
-      else if(src_dt->is_primitive(PrimitiveTypeID::f32)){
+      else if(src_dt->is_primitive(PrimitiveTypeID::i32)){
         zero = "0";
       }
       else{
         TI_ERROR("unsupported prim type in unary op");
       } 
-      value = std::string(dst_dt_name)+"(" + operand + " == "+zero+");\n"; 
+      value = std::string(dst_dt_name)+"(" + operand + " == "+zero+")"; 
     }
     else if(op == UnaryOpType::bit_not){
       value = "~" + operand;
@@ -285,6 +285,77 @@ class TaskCodegen : public IRVisitor {
     dedent();
     body_ << body_indent() << "}\n";
   }
+
+  void visit(IfStmt *stmt) override {
+    body_ << body_indent() << "if (bool("<< stmt->cond->raw_name() << ")){\n";
+    indent();
+
+    if (stmt->true_statements) {
+      stmt->true_statements->accept(this);
+    }
+
+    dedent();
+    body_ << body_indent() << "}\n";
+    if (stmt->false_statements) {
+      body_ << body_indent() << "else {\n";
+      indent();
+      stmt->false_statements->accept(this);
+      dedent();
+      body_ << body_indent() << "}\n";
+    }
+  }
+
+  void visit(WhileControlStmt *stmt) override {
+    body_ <<  body_indent() << "break;\n";
+  }
+
+  void visit(ContinueStmt *stmt) override {
+    auto stmt_in_off_for = [stmt]() {
+      TI_ASSERT(stmt->scope != nullptr);
+      if (auto *offl = stmt->scope->cast<OffloadedStmt>(); offl) {
+        TI_ASSERT(offl->task_type == OffloadedStmt::TaskType::range_for ||
+                  offl->task_type == OffloadedStmt::TaskType::struct_for);
+        return true;
+      }
+      return false;
+    };
+    if(stmt_in_off_for()){
+      // then this parallel task is done; 
+      body_ << body_indent() << "ii = ii + total_invocs;\n";
+      // continue in grid-strided loop;
+      body_ <<  body_indent() << "continue;\n";
+    }
+    else{
+      body_ <<  body_indent() << "continue;\n";
+    }
+  }
+
+  void visit(WhileStmt *stmt) override {
+    body_ << body_indent() << "loop {\n";
+    indent();
+    stmt->body->accept(this);
+    dedent();
+    body_ << body_indent() << "}\n";
+  }
+
+  // void visit(ArgLoadStmt *stmt) override {
+  //   const auto arg_id = stmt->arg_id;
+  //   const auto &arg_attribs = ctx_attribs_->args()[arg_id];
+  //   const auto offset_in_mem = arg_attribs.offset_in_mem;
+  //   if (stmt->is_ptr) {
+  //     TI_ERROR("arg is ptr... what does that mean lol");
+  //   } else {
+  //     const auto dt = arg_attribs.dt;
+  //     const auto val_type = ir_->get_primitive_type(dt);
+  //     spirv::Value buffer_val = ir_->make_value(
+  //         spv::OpAccessChain, ir_->get_storage_pointer_type(val_type),
+  //         get_buffer_value(BufferType::Context, PrimitiveType::i32),
+  //         ir_->int_immediate_number(ir_->i32_type(), arg_id));
+  //     buffer_val.flag = ValueKind::kVariablePtr;
+  //     spirv::Value val = ir_->load_variable(buffer_val, val_type);
+  //     ir_->register_value(stmt->raw_name(), val);
+  //   }
+  // }
 
   void visit(AllocaStmt *stmt) override {
     auto dt = stmt->element_type();
