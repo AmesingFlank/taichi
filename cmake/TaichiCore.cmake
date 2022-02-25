@@ -18,8 +18,8 @@ if(TI_EMSCRIPTENED)
     set(TI_WITH_OPENGL OFF)
     set(TI_WITH_CC OFF)
     set(TI_WITH_DX11 OFF)
+    set(TI_WITH_VULKAN OFF)
 
-    set(TI_WITH_VULKAN ON)
     set(TI_WITH_WEBGPU ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_EMSCRIPTENED")
 endif()
@@ -219,6 +219,12 @@ if (TAICHI_EMBIND_SOURCE)
   list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_EMBIND_SOURCE})
 endif()
 
+if(TI_EMSCRIPTENED)
+    file(GLOB TAICHI_SPIRV_SOURCE "taichi/codegen/spirv/*.cpp" "taichi/codegen/spirv/*.h")
+    list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_SPIRV_SOURCE})
+    list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_VULKAN_REQUIRED_SOURCE})
+endif()
+
 # TODO(#2196): Rename these CMAKE variables:
 # CORE_LIBRARY_NAME --> TAICHI_ISOLATED_CORE_LIB_NAME
 # CORE_WITH_PYBIND_LIBRARY_NAME --> TAICHI_CORE_LIB_NAME
@@ -339,13 +345,16 @@ if (TI_WITH_OPENGL)
     target_link_libraries(${CORE_LIBRARY_NAME} spirv-cross-glsl spirv-cross-core)
 endif()
 
-# SPIR-V codegen is always there, regardless of Vulkan
-set(SPIRV_SKIP_EXECUTABLES true)
-set(SPIRV-Headers_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Headers)
-add_subdirectory(external/SPIRV-Tools)
-# NOTE: SPIRV-Tools-opt must come before SPIRV-Tools
-# https://github.com/KhronosGroup/SPIRV-Tools/issues/1569#issuecomment-390250792
-target_link_libraries(${CORE_LIBRARY_NAME} SPIRV-Tools-opt ${SPIRV_TOOLS})
+if (NOT TI_EMSCRIPTENED)
+    # SPIR-V codegen is always there, regardless of Vulkan
+    set(SPIRV_SKIP_EXECUTABLES true)
+    set(SPIRV-Headers_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Headers)
+    add_subdirectory(external/SPIRV-Tools)
+    # NOTE: SPIRV-Tools-opt must come before SPIRV-Tools
+    # https://github.com/KhronosGroup/SPIRV-Tools/issues/1569#issuecomment-390250792
+    target_link_libraries(${CORE_LIBRARY_NAME} SPIRV-Tools-opt ${SPIRV_TOOLS})
+endif()
+
 
 if (TI_WITH_VULKAN)
     include_directories(SYSTEM external/Vulkan-Headers/include)

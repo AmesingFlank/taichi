@@ -144,6 +144,40 @@ class TaskCodegen : public IRVisitor {
     body_ << ";\n";
   }
 
+  void visit(RandStmt *stmt) override {
+    // https://stackoverflow.com/questions/4508043/on-xorshift-random-number-generator-algorithm
+    init_rand();
+    auto t = get_temp();
+    emit_let(t,"u32");
+    body_ << "_rand_x ^ ( _rand_x << 11u);\n";
+
+    body_ << body_indent() << "_rand_x = _rand_y;\n";
+    body_ << body_indent() << "_rand_y = _rand_z;\n";
+    body_ << body_indent() << "_rand_z = _rand_w;\n";
+
+    auto res_u32 = get_temp();
+    emit_let(res_u32,"u32");
+    std::string res_u32_value = "_rand_w ^ (_rand_w >> 19u) ^ (t ^ (t >> 8u))";
+    string_replace_all(res_u32_value,"t",t);
+    body_ << res_u32_value << ";\n";
+
+    body_ << body_indent() << "_rand_w = "<<  res_u32 << ";\n";
+
+    auto dt = stmt->element_type();
+    auto dt_name = get_primitive_type_name(dt);
+    emit_let(stmt->raw_name(),dt_name);
+    if(dt->is_primitive( PrimitiveTypeID::i32)){
+      body_ << "i32("<< res_u32<< ");\n";
+    }
+    else if(dt->is_primitive( PrimitiveTypeID::f32)){
+      std::string factor = "f32(2.3283064365386963e-10)"; // 1.0f / 4294967296.0f 
+      body_ << "f32("<< res_u32<< ") * " << factor << ";\n";
+    }
+    else{
+      TI_ERROR("unsupported prim type in rand")
+    }
+  }
+
   void visit(UnaryOpStmt *stmt) override {
     const auto operand = stmt->operand->raw_name();
 
@@ -623,6 +657,33 @@ fn main(
   }
   std::string body_indent(){
     return std::string(body_indent_count_ * 2, ' ');
+  }
+
+  bool rand_initiated_ = false;
+  void init_rand(){
+    if(rand_initiated_){
+      return;
+    }
+    std::string rand_init_code = 
+R"(
+  var _rand_seed : u32 = bitcast<u32>(GTEMPS_MEMBER[1024u]);
+  var _rand_x : u32 = 1000000007u * (123456789u * ((7654321u + gid3.x) * (1234567u + (9723451u * _rand_seed ))));
+  var _rand_y : u32 = 362436069u;
+  var _rand_z : u32 = 521288629u;
+  var _rand_w : u32 = 88675123u;
+  _rand_seed = _rand_seed + 1u;
+  if (gid3.x == 0u){
+    global_tmps_.member[1024u] = bitcast<i32>(_rand_seed);
+  }
+)";
+    string_replace_all(rand_init_code,"GTEMPS_MEMBER", get_buffer_member_name(BufferInfo(BufferType::GlobalTemps)));
+    function_body_prologue_ << rand_init_code;
+    rand_initiated_ = true;
+  }
+
+  int next_internal_temp = 0;
+  std::string get_temp(){
+    return std::string("_internal_temp")+std::to_string(next_internal_temp++);
   }
 
   std::unordered_map<std::string, PointerInfo> pointer_infos_;
