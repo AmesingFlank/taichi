@@ -20,7 +20,7 @@ namespace webgpu {
  * Per offloaded task attributes.
  */
 struct TaskAttributes {
-  enum class BufferType { RootNormal, GlobalTemps, Args };
+  enum class BufferType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args };
 
   struct BufferInfo {
     BufferType type;
@@ -39,7 +39,7 @@ struct TaskAttributes {
       if (type != other.type) {
         return false;
       }
-      if (type == BufferType::RootNormal) {
+      if (type == BufferType::RootNormal || type == BufferType::RootAtomicI32) {
         return root_id == other.root_id;
       }
       return true;

@@ -145,33 +145,15 @@ class TaskCodegen : public IRVisitor {
   }
 
   void visit(RandStmt *stmt) override {
-    // https://stackoverflow.com/questions/4508043/on-xorshift-random-number-generator-algorithm
     init_rand();
-    auto t = get_temp();
-    emit_let(t,"u32");
-    body_ << "_rand_x ^ ( _rand_x << 11u);\n";
-
-    body_ << body_indent() << "_rand_x = _rand_y;\n";
-    body_ << body_indent() << "_rand_y = _rand_z;\n";
-    body_ << body_indent() << "_rand_z = _rand_w;\n";
-
-    auto res_u32 = get_temp();
-    emit_let(res_u32,"u32");
-    std::string res_u32_value = "_rand_w ^ (_rand_w >> 19u) ^ (t ^ (t >> 8u))";
-    string_replace_all(res_u32_value,"t",t);
-    body_ << res_u32_value << ";\n";
-
-    body_ << body_indent() << "_rand_w = "<<  res_u32 << ";\n";
-
     auto dt = stmt->element_type();
     auto dt_name = get_primitive_type_name(dt);
     emit_let(stmt->raw_name(),dt_name);
     if(dt->is_primitive( PrimitiveTypeID::i32)){
-      body_ << "i32("<< res_u32<< ");\n";
+      body_ << "rand_i32(gid3.x);\n";
     }
     else if(dt->is_primitive( PrimitiveTypeID::f32)){
-      std::string factor = "f32(2.3283064365386963e-10)"; // 1.0f / 4294967296.0f 
-      body_ << "f32("<< res_u32<< ") * " << factor << ";\n";
+      body_ << "rand_f32(gid3.x);\n";
     }
     else{
       TI_ERROR("unsupported prim type in rand")
@@ -484,6 +466,119 @@ class TaskCodegen : public IRVisitor {
     body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << stmt->src->raw_name() <<"]);\n";
   }
 
+  void visit(AtomicOpStmt *stmt) override {
+    TI_ASSERT(stmt->width() == 1);
+    const auto dt = stmt->dest->element_type().ptr_removed();
+    std::string dt_name = get_primitive_type_name(dt);
+    std::string buffer_member_name;
+    PointerInfo info = pointer_infos_.at(stmt->dest->raw_name());
+    TI_ASSERT(info.is_root);
+    int root_id = info.root_id;
+    buffer_member_name = get_buffer_member_name(BufferInfo(BufferType::RootAtomicI32, root_id));
+    std::string atomic_func_name;
+    switch(stmt->op_type){
+      case AtomicOpType::add:{
+        atomic_func_name = "atomicAdd";
+        break;
+      }
+      case AtomicOpType::sub:{
+        atomic_func_name = "atomicSub";
+        break;
+      }
+      case AtomicOpType::max:{
+        atomic_func_name = "atomicMax";
+        break;
+      }
+      case AtomicOpType::min:{
+        atomic_func_name = "atomicMin";
+        break;
+      }
+      case AtomicOpType::bit_and:{
+        atomic_func_name = "atomicAnd";
+        break;
+      }
+      case AtomicOpType::bit_or:{
+        atomic_func_name = "atomicOr";
+        break;
+      }
+      case AtomicOpType::bit_xor:{
+        atomic_func_name = "atomicXor";
+        break;
+      }
+    }
+
+    /*
+fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
+  loop {
+    let old_val : f32 = bitcast<f32>(atomicLoad(dest));
+    let new_val : f32 = old_val + v;
+    if(atomicCompareExchangeWeak(dest, bitcast<i32>(old_val), bitcast<i32>(new_val)).y != 0){
+      return old_val;
+    }
+  }
+}
+*/
+    
+    // WGSL doesn't allow declaring a function whose argument is a pointer to SSBO... so we inline it
+
+    auto result = get_temp("atomic_op_result");
+
+    body_<<body_indent()<<"var " << result << " : "<< dt_name<<";\n";
+
+    std::string ptr = "&(" + buffer_member_name + "[" + stmt->dest->raw_name() + "])";
+
+    if(dt->is_primitive(PrimitiveTypeID::i32)){
+      body_<<body_indent()<< result << " = "<< atomic_func_name << "(" << ptr << ", "<<stmt->val->raw_name()<<");\n";
+    }
+    else if(dt->is_primitive(PrimitiveTypeID::f32)){
+      body_<<body_indent()<<"loop {\n";
+      indent();
+      std::string old_val = get_temp("old_val");
+      emit_let(old_val,"f32");
+      body_<< "bitcast<f32>(atomicLoad("<<ptr<<"));\n";
+
+      std::string new_val_expr;
+       switch(stmt->op_type){
+        case AtomicOpType::add:{
+          new_val_expr = old_val +" + "+stmt->val->raw_name();
+          break;
+        }
+        case AtomicOpType::sub:{
+          new_val_expr = old_val +" - "+stmt->val->raw_name();
+          break;
+        }
+        case AtomicOpType::max:{
+          new_val_expr = "max(" +old_val +", "+stmt->val->raw_name()+ ")";
+          break;
+        }
+        case AtomicOpType::min:{
+          new_val_expr = "min(" +old_val +", "+stmt->val->raw_name()+ ")";
+          break;
+        }
+        default:
+        TI_ERROR("unsupported atomic op for f32");
+      }
+
+      std::string new_val = get_temp("new_val");
+      emit_let(new_val,"f32");
+      body_<< new_val_expr <<";\n";
+      body_<<body_indent()<<"if(atomicCompareExchangeWeak("<<ptr<< ", bitcast<i32>("<<  old_val << "), bitcast<i32>("<<new_val<<")).y!=0){\n";
+      indent();
+      body_<<body_indent() << result << " = "<<old_val<<";\n";
+      body_<<body_indent()<<"break;\n";
+      dedent();
+      body_<<body_indent()<<"}\n";
+      dedent();
+      body_<<body_indent()<<"}\n";
+    }
+    else{
+      TI_ERROR("unsupported prim type in atomic op")
+    }
+    //body_<<body_indent()<<"storageBarrier();\n";
+    emit_let(stmt->raw_name(),dt_name);
+    body_<< result <<";\n";
+  }
+
 
   void visit(LoopIndexStmt *stmt) override {
     const auto stmt_name = stmt->raw_name();
@@ -613,7 +708,7 @@ class TaskCodegen : public IRVisitor {
     body_ << body_indent() << "}\n";
   } 
 
-  StringBuilder buffer_decls_;
+  StringBuilder global_decls_;
   StringBuilder function_signature_;
   StringBuilder function_body_prologue_;
   StringBuilder body_;
@@ -622,7 +717,7 @@ class TaskCodegen : public IRVisitor {
 
   std::string assemble_shader(){
     return 
-    buffer_decls_.getString() +
+    global_decls_.getString() +
     function_signature_.getString() +
     function_body_prologue_.getString() +
     body_ .getString()+
@@ -659,31 +754,9 @@ fn main(
     return std::string(body_indent_count_ * 2, ' ');
   }
 
-  bool rand_initiated_ = false;
-  void init_rand(){
-    if(rand_initiated_){
-      return;
-    }
-    std::string rand_init_code = 
-R"(
-  var _rand_seed : u32 = bitcast<u32>(GTEMPS_MEMBER[1024u]);
-  var _rand_x : u32 = 1000000007u * (123456789u * ((7654321u + gid3.x) * (1234567u + (9723451u * _rand_seed ))));
-  var _rand_y : u32 = 362436069u;
-  var _rand_z : u32 = 521288629u;
-  var _rand_w : u32 = 88675123u;
-  _rand_seed = _rand_seed + 1u;
-  if (gid3.x == 0u){
-    global_tmps_.member[1024u] = bitcast<i32>(_rand_seed);
-  }
-)";
-    string_replace_all(rand_init_code,"GTEMPS_MEMBER", get_buffer_member_name(BufferInfo(BufferType::GlobalTemps)));
-    function_body_prologue_ << rand_init_code;
-    rand_initiated_ = true;
-  }
-
   int next_internal_temp = 0;
-  std::string get_temp(){
-    return std::string("_internal_temp")+std::to_string(next_internal_temp++);
+  std::string get_temp(std::string hint = ""){
+    return std::string("_internal_temp")+std::to_string(next_internal_temp++)+"_"+hint;
   }
 
   std::unordered_map<std::string, PointerInfo> pointer_infos_;
@@ -694,13 +767,26 @@ R"(
 
   std::string get_buffer_name(BufferInfo buffer){
     std::string name;
+    std::string element_type = "i32";
+    std::string stride = "4";
     switch(buffer.type){
       case BufferType::RootNormal: {
         name = "root_buffer_"+std::to_string(buffer.root_id)+"_";
         break;
       }
+      case BufferType::RootAtomicI32: {
+        name = "root_buffer_"+std::to_string(buffer.root_id)+"_atomic_";
+        element_type = "atomic<i32>";
+        break;
+      }
       case BufferType::GlobalTemps: {
         name = "global_tmps_";
+        break;
+      }
+      case BufferType::RandStates: {
+        name = "rand_states_";
+        element_type = "RandState";
+        stride = "16";
         break;
       }
       case BufferType::Args: {
@@ -711,35 +797,88 @@ R"(
     if(task_attribs_.buffer_bindings.find(buffer) == task_attribs_.buffer_bindings.end()){
       int binding = task_attribs_.buffer_bindings.size();
       task_attribs_.buffer_bindings[buffer] = binding;
-      declare_new_buffer(buffer,name,binding);
+      declare_new_buffer(buffer,name,binding,stride, element_type);
     }
     return name;
   }
 
-  void declare_new_buffer(BufferInfo buffer, std::string name, int binding){
-    switch(buffer.type){
-      case BufferType::Args:
-      case BufferType::GlobalTemps:
-      case BufferType::RootNormal: {
-        std::string decl_template =
+  void declare_new_buffer(BufferInfo buffer, std::string name, int binding,std::string stride, std::string element_type){
+    std::string decl_template =
 R"(
 
 [[block]]
 struct BUFFER_TYPE_NAME {
-    member: [[stride(4)]] array<i32>;
+    member: [[stride(STRIDE)]] array<ELEMENT_TYPE>;
 };
 [[group(0), binding(BUFFER_BINDING)]]
 var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
 
-)";
-        string_replace_all(decl_template,"BUFFER_TYPE_NAME", name+"_type");
-        string_replace_all(decl_template,"BUFFER_NAME", name);
-        string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
-        buffer_decls_ << decl_template;
-        break;
-      }
-    }
+)"; 
+
+    string_replace_all(decl_template,"BUFFER_TYPE_NAME", name+"_type");
+    string_replace_all(decl_template,"BUFFER_NAME", name);
+    string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
+    string_replace_all(decl_template,"ELEMENT_TYPE", element_type);
+    string_replace_all(decl_template,"STRIDE", stride);
+    global_decls_ << decl_template;
   }
+
+
+  bool rand_initiated_ = false;
+  void init_rand(){
+    if(rand_initiated_){
+      return;
+    }
+    std::string struct_decl =
+R"(
+
+struct RandState{
+  x: u32;
+  y: u32;
+  z: u32;
+  w: u32;
+};
+
+)"; 
+    global_decls_ << struct_decl;
+    std::string rand_states_member_name = get_buffer_member_name(BufferInfo(BufferType::RandStates));
+    std::string rand_func_decl = 
+R"(
+
+fn rand_u32(id: u32) -> u32 {
+  var state : RandState = STATES[id];
+  if(state.x == 0u && state.y == 0u && state.z == 0u && state.w == 0u){
+    state.x = 123456789u * id * 1000000007u;
+    state.y = 362436069u;
+    state.z = 521288629u;
+    state.w = 88675123u;
+  }
+  let t : u32 = state.x ^ (state.x << 11u);
+  state.x = state.y;
+  state.y = state.z;
+  state.z = state.w;
+  state.w = (state.w ^ (state.w >> 19u)) ^ (t ^ (t >> 8u)); 
+  let result : u32 = state.w * 1000000007u;
+  STATES[id] = state;
+  return result;
+}
+
+fn rand_f32(id:u32) -> f32 {
+  let u32_res : u32 = rand_u32(id);
+  return f32(u32_res) * (1.0f / 4294967296.0f);
+}
+
+fn rand_i32(id:u32) -> i32 {
+  let u32_res : u32 = rand_u32(id);
+  return i32(u32_res);
+}
+
+)"; 
+    string_replace_all(rand_func_decl,"STATES",rand_states_member_name);
+    global_decls_ << rand_func_decl;
+    rand_initiated_ = true;
+  }
+
    
 
   OffloadedStmt *const task_ir_;  // not owned

@@ -171,6 +171,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<RandStmt, base<Stmt>>("RandStmt");
   class_<ReturnStmt, base<Stmt>>("ReturnStmt");
   class_<FuncCallStmt, base<Stmt>>("FuncCallStmt");
+  class_<AtomicOpStmt, base<Stmt>>("AtomicOpStmt");
 
   class_<IRBuilder::LoopGuard>("LoopGuard");
   class_<IRBuilder::IfGuard>("IfGuard");
@@ -277,5 +278,13 @@ EMSCRIPTEN_BINDINGS(tint) {
       EXPORT_FUNCTION(create_rand)                                          
       EXPORT_FUNCTION(create_return)
       EXPORT_FUNCTION(create_return_vec)
-      EXPORT_FUNCTION(create_func_call);
+      EXPORT_FUNCTION(create_func_call)
+
+      EXPORT_FUNCTION(create_atomic_add)
+      EXPORT_FUNCTION(create_atomic_sub)
+      EXPORT_FUNCTION(create_atomic_max)
+      EXPORT_FUNCTION(create_atomic_min)
+      EXPORT_FUNCTION(create_atomic_and)
+      EXPORT_FUNCTION(create_atomic_or)
+      EXPORT_FUNCTION(create_atomic_xor); 
 }
