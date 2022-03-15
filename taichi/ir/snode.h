@@ -129,6 +129,13 @@ class SNode {
   std::size_t offset_bytes_in_parent_cell{0};
   PrimitiveType *physical_type{nullptr};  // for bit_struct and bit_array only
   DataType dt;
+  DataType *dt_get() {
+    return &dt;
+  }
+  void dt_set(const DataType &dt) {
+    dt.printPrimitiveTypeID();
+    this->dt = dt;
+  }
   bool has_ambient{false};
   TypedConstant ambient_val;
   // Note: parent will not be set until structural nodes are compiled!
@@ -174,6 +181,10 @@ class SNode {
 
   SNode &insert_children(SNodeType t);
 
+  SNode *insert_children_ptr(SNodeType t) {
+    return &insert_children(t);
+  }
+
   SNode &create_node(std::vector<Axis> axes,
                      std::vector<int> sizes,
                      SNodeType type,
@@ -192,6 +203,12 @@ class SNode {
 
   SNode &dense(const Axis &axis, int size, bool packed) {
     return SNode::dense(std::vector<Axis>{axis}, size, packed);
+  }
+
+  SNode *dense_ptr(const std::vector<Axis> &axes,
+                   const std::vector<int> &sizes,
+                   bool packed) {
+    return &SNode::dense(axes, sizes, packed);
   }
 
   SNode &pointer(const std::vector<Axis> &axes,

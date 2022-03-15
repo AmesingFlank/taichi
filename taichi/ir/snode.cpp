@@ -127,6 +127,7 @@ SNode &SNode::create_node(std::vector<Axis> axes,
     TI_ASSERT_INFO(active_extractor_counder == 1,
                    "Dynamic SNode can have only one index extractor.");
   }
+
   return new_node;
 }
 

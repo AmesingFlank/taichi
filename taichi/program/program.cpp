@@ -36,6 +36,10 @@
 #include "taichi/backends/dx/dx_program.h"
 #include "taichi/backends/dx/dx_api.h"
 #endif
+#ifdef TI_WITH_WEBGPU
+#include "taichi/backends/webgpu/webgpu_program.h" 
+#include "taichi/backends/webgpu/aot_module_builder_impl.h" 
+#endif
 
 #if defined(TI_ARCH_x64)
 // For _MM_SET_FLUSH_ZERO_MODE
@@ -93,6 +97,12 @@ Program::Program(Arch desired_arch)
     program_impl_ = std::make_unique<VulkanProgramImpl>(config);
 #else
     TI_ERROR("This taichi is not compiled with Vulkan")
+#endif
+  } else if (config.arch == Arch::webgpu) {
+#ifdef TI_WITH_WEBGPU
+    program_impl_ = std::make_unique<WebgpuProgramImpl>(config);
+#else
+    TI_ERROR("This taichi is not compiled with WebGPU")
 #endif
   } else if (config.arch == Arch::dx11) {
 #ifdef TI_WITH_DX11
@@ -161,6 +171,11 @@ Program::Program(Arch desired_arch)
 
   TI_TRACE("Program ({}) arch={} initialized.", fmt::ptr(this),
            arch_name(config.arch));
+#if defined(TI_EMSCRIPTENED)
+  config.constant_folding = false;
+  config.packed = true;
+  //config.print_ir = true;
+#endif
 }
 
 TypeFactory &Program::get_type_factory() {
@@ -568,7 +583,7 @@ std::unique_ptr<AotModuleBuilder> Program::make_aot_module_builder(Arch arch) {
 #endif
   }
   if (arch_uses_llvm(config.arch) || config.arch == Arch::metal ||
-      config.arch == Arch::vulkan || config.arch == Arch::opengl) {
+      config.arch == Arch::vulkan || config.arch == Arch::opengl|| config.arch == Arch::webgpu) {
     return program_impl_->make_aot_module_builder();
   }
   return nullptr;

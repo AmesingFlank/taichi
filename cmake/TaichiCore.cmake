@@ -7,6 +7,7 @@ option(TI_WITH_OPENGL "Build with the OpenGL backend" ON)
 option(TI_WITH_CC "Build with the C backend" ON)
 option(TI_WITH_VULKAN "Build with the Vulkan backend" OFF)
 option(TI_WITH_DX11 "Build with the DX11 backend" OFF)
+option(TI_WITH_WEBGPU "Build with the WEBGPU backend" OFF)
 option(TI_EMSCRIPTENED "Build using emscripten" OFF)
 
 # Force symbols to be 'hidden' by default so nothing is exported from the Taichi
@@ -35,8 +36,9 @@ if(TI_EMSCRIPTENED)
     set(TI_WITH_OPENGL OFF)
     set(TI_WITH_CC OFF)
     set(TI_WITH_DX11 OFF)
+    set(TI_WITH_VULKAN OFF)
 
-    set(TI_WITH_VULKAN ON)
+    set(TI_WITH_WEBGPU ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_EMSCRIPTENED")
 endif()
 
@@ -100,6 +102,7 @@ file(GLOB TAICHI_OPENGL_SOURCE "taichi/backends/opengl/*.h" "taichi/backends/ope
 file(GLOB TAICHI_DX11_SOURCE "taichi/backends/dx/*.h" "taichi/backends/dx/*.cpp")
 file(GLOB TAICHI_CC_SOURCE "taichi/backends/cc/*.h" "taichi/backends/cc/*.cpp")
 file(GLOB TAICHI_VULKAN_SOURCE "taichi/backends/vulkan/*.h" "taichi/backends/vulkan/*.cpp" "external/SPIRV-Reflect/spirv_reflect.c")
+file(GLOB TAICHI_WEBGPU_SOURCE "taichi/backends/webgpu/*.h" "taichi/backends/webgpu/*.cpp")
 file(GLOB TAICHI_INTEROP_SOURCE "taichi/backends/interop/*.cpp" "taichi/backends/interop/*.h")
 
 
@@ -192,6 +195,10 @@ if (TI_WITH_CC)
   list(APPEND TAICHI_CORE_SOURCE ${TAICHI_CC_SOURCE})
 endif()
 
+if (TI_WITH_WEBGPU)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_WITH_WEBGPU")
+    list(APPEND TAICHI_CORE_SOURCE ${TAICHI_WEBGPU_SOURCE})
+endif()
 
 if (TI_WITH_VULKAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTI_WITH_VULKAN")
@@ -228,6 +235,12 @@ file(GLOB TAICHI_EMBIND_SOURCE
 )
 if (TAICHI_EMBIND_SOURCE)
   list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_EMBIND_SOURCE})
+endif()
+
+if(TI_EMSCRIPTENED)
+    file(GLOB TAICHI_SPIRV_SOURCE "taichi/codegen/spirv/*.cpp" "taichi/codegen/spirv/*.h")
+    list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_SPIRV_SOURCE})
+    list(REMOVE_ITEM TAICHI_CORE_SOURCE ${TAICHI_VULKAN_REQUIRED_SOURCE})
 endif()
 
 # TODO(#2196): Rename these CMAKE variables:
@@ -356,13 +369,16 @@ if (TI_WITH_DX11)
     target_link_libraries(${CORE_LIBRARY_NAME} spirv-cross-hlsl spirv-cross-core)
 endif()
 
-# SPIR-V codegen is always there, regardless of Vulkan
-set(SPIRV_SKIP_EXECUTABLES true)
-set(SPIRV-Headers_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Headers)
-add_subdirectory(external/SPIRV-Tools)
-# NOTE: SPIRV-Tools-opt must come before SPIRV-Tools
-# https://github.com/KhronosGroup/SPIRV-Tools/issues/1569#issuecomment-390250792
-target_link_libraries(${CORE_LIBRARY_NAME} SPIRV-Tools-opt ${SPIRV_TOOLS})
+if (NOT TI_EMSCRIPTENED)
+    # SPIR-V codegen is always there, regardless of Vulkan
+    set(SPIRV_SKIP_EXECUTABLES true)
+    set(SPIRV-Headers_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Headers)
+    add_subdirectory(external/SPIRV-Tools)
+    # NOTE: SPIRV-Tools-opt must come before SPIRV-Tools
+    # https://github.com/KhronosGroup/SPIRV-Tools/issues/1569#issuecomment-390250792
+    target_link_libraries(${CORE_LIBRARY_NAME} SPIRV-Tools-opt ${SPIRV_TOOLS})
+endif()
+
 
 if (TI_WITH_VULKAN)
     include_directories(SYSTEM external/Vulkan-Headers/include)
@@ -465,10 +481,9 @@ if(TI_EMSCRIPTENED)
     set(CORE_WITH_EMBIND_LIBRARY_NAME taichi)
     add_executable(${CORE_WITH_EMBIND_LIBRARY_NAME} ${TAICHI_EMBIND_SOURCE})
     target_link_libraries(${CORE_WITH_EMBIND_LIBRARY_NAME} PUBLIC ${CORE_LIBRARY_NAME})
-    target_compile_options(${CORE_WITH_EMBIND_LIBRARY_NAME} PRIVATE "-Oz")
-    # target_compile_options(${CORE_LIBRARY_NAME} PRIVATE "-Oz")
-    set_target_properties(${CORE_LIBRARY_NAME} PROPERTIES LINK_FLAGS "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ASSERTIONS=1")
-    set_target_properties(${CORE_WITH_EMBIND_LIBRARY_NAME} PROPERTIES LINK_FLAGS "--bind -s MODULARIZE=1 -s EXPORT_NAME=createTaichiModule -s WASM=0  --memory-init-file 0 -Oz --closure 1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ASSERTIONS=1 -s NO_DISABLE_EXCEPTION_CATCHING")
+    target_compile_options(${CORE_WITH_EMBIND_LIBRARY_NAME} PRIVATE "-Oz ")
+    set_target_properties(${CORE_LIBRARY_NAME} PROPERTIES LINK_FLAGS "-s ALLOW_MEMORY_GROWTH=1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ASSERTIONS=1")
+    set_target_properties(${CORE_WITH_EMBIND_LIBRARY_NAME} PROPERTIES LINK_FLAGS "--bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME=createTaichiModule -s WASM=0  --memory-init-file 0 -Oz --closure 1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ASSERTIONS=1 -s NO_DISABLE_EXCEPTION_CATCHING")
 endif()
 
 if(TI_WITH_GGUI)

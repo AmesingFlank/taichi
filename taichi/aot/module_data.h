@@ -55,6 +55,7 @@ struct CompiledOffloadedTask {
   std::vector<BufferBind> buffer_binds;
 
   TI_IO_DEF(type, range_hint, name, source_path, gpu_block_size, buffer_binds);
+  std::vector<unsigned char> code;
 };
 
 struct ScalarArg {
