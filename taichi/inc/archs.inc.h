@@ -15,3 +15,4 @@ PER_ARCH(dx11)    // Microsoft DirectX 11, WIP
 PER_ARCH(opencl)  // OpenCL, N/A
 PER_ARCH(amdgpu)  // AMD GPU, N/A
 PER_ARCH(vulkan)  // Vulkan
+PER_ARCH(webgpu)  // WebGPU

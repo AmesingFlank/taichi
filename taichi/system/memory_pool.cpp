@@ -26,7 +26,10 @@ MemoryPool::MemoryPool(Arch arch, Device *device)
                                              CU_STREAM_NON_BLOCKING);
   }
 #endif
+
+#if !defined(TI_EMSCRIPTENED)
   th = std::make_unique<std::thread>([this] { this->daemon(); });
+#endif
 }
 
 void MemoryPool::set_queue(MemRequestQueue *queue) {

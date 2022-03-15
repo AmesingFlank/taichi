@@ -56,8 +56,10 @@ class Ndarray {
   // dynamic tensor rematerialization.
   std::shared_ptr<Device> device_{nullptr};
   void buffer_fill(uint32_t val);
+#if defined(TI_EMSCRIPTENED)
   LlvmProgramImpl *prog_impl_{nullptr};
   NdarrayRwAccessorsBank *rw_accessors_bank_{nullptr};
+#endif
 };
 
 }  // namespace lang

@@ -19,11 +19,18 @@ make_pass_printer(bool verbose, const std::string &kernel_name, IRNode *ir) {
     return [](const std::string &) {};
   }
   return [ir, kernel_name](const std::string &pass) {
+#if defined(TI_EMSCRIPTENED)
+    printf("[%s] {%s}\n", kernel_name.c_str(), pass.c_str());
+    irpass::re_id(ir);
+    irpass::print(ir);
+    printf("\n");
+#else
     TI_INFO("[{}] {}:", kernel_name, pass);
     std::cout << std::flush;
     irpass::re_id(ir);
     irpass::print(ir);
     std::cout << std::flush;
+#endif
   };
 }
 
