@@ -730,10 +730,10 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
     std::string signature_template = 
 R"(
 
-[[stage(compute), workgroup_size(BLOCK_SIZE_X, 1, 1)]]
+@stage(compute) @workgroup_size(BLOCK_SIZE_X, 1, 1)
 fn main(
-  [[builtin(global_invocation_id)]] gid3 : vec3<u32>, 
-  [[builtin(num_workgroups)]] n_workgroups : vec3<u32>) 
+  @builtin(global_invocation_id) gid3 : vec3<u32>, 
+  @builtin(num_workgroups) n_workgroups : vec3<u32>) 
 {
 
 )";
@@ -806,11 +806,10 @@ fn main(
     std::string decl_template =
 R"(
 
-[[block]]
 struct BUFFER_TYPE_NAME {
-    member: [[stride(STRIDE)]] array<ELEMENT_TYPE>;
+    member: array<ELEMENT_TYPE>;
 };
-[[group(0), binding(BUFFER_BINDING)]]
+@group(0) @binding(BUFFER_BINDING)
 var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
 
 )"; 
@@ -819,7 +818,7 @@ var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
     string_replace_all(decl_template,"BUFFER_NAME", name);
     string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
     string_replace_all(decl_template,"ELEMENT_TYPE", element_type);
-    string_replace_all(decl_template,"STRIDE", stride);
+    //string_replace_all(decl_template,"STRIDE", stride); // not needed anymore 
     global_decls_ << decl_template;
   }
 
