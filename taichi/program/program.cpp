@@ -174,7 +174,7 @@ Program::Program(Arch desired_arch)
 #if defined(TI_EMSCRIPTENED)
   config.constant_folding = false;
   config.packed = true;
-  //config.print_ir = true;
+  // config.print_ir = true;
 #endif
 }
 

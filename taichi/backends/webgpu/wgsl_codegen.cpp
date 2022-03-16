@@ -94,10 +94,7 @@ class TaskCodegen : public IRVisitor {
     TaskAttributes task_attribs;
   };
 
-  Result run() { 
-
-    //compile_args_struct();
-
+  Result run() {
     if (task_ir_->task_type == OffloadedTaskType::serial) {
       generate_serial_kernel(task_ir_);
     } else if (task_ir_->task_type == OffloadedTaskType::range_for) {
@@ -365,6 +362,22 @@ class TaskCodegen : public IRVisitor {
       std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::Args));
       emit_let(stmt->raw_name(), get_primitive_type_name(dt));
       body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << std::to_string(offset_in_mem/4) <<"]);\n";
+    }
+  }
+
+  void visit(ReturnStmt *stmt) override {    
+    for (int i = 0; i < stmt->values.size(); i++) {
+      body_ << body_indent() << get_buffer_member_name(BufferInfo(BufferType::Rets)) << "["<<std::to_string(i)<<"] = ";
+      auto dt = stmt->element_types()[i];
+      if(dt->is_primitive(PrimitiveTypeID::f32)){
+        body_ << "bitcast<i32>("<<stmt->values[i]->raw_name() << ");\n";
+      }
+      else if(dt->is_primitive(PrimitiveTypeID::i32)){
+        body_ << stmt->values[i]->raw_name() << ";\n";
+      }
+      else{
+        TI_ERROR("unsupported primitive type in return");
+      }
     }
   }
 
@@ -791,6 +804,10 @@ fn main(
       }
       case BufferType::Args: {
         name = "args_";
+        break;
+      }
+      case BufferType::Rets: {
+        name = "rets_";
         break;
       }
     }
