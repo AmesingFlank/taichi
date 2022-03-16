@@ -20,7 +20,7 @@ namespace webgpu {
  * Per offloaded task attributes.
  */
 struct TaskAttributes {
-  enum class BufferType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args };
+  enum class BufferType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args, Rets };
 
   struct BufferInfo {
     BufferType type;
