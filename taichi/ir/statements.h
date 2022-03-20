@@ -1013,13 +1013,29 @@ class VertexOutputStmt : public Stmt {
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
-class FragmentOutputStmt : public Stmt {
+class BuiltInOutputStmt : public Stmt {
  public:
+  enum class BuiltIn : int { Position = 0, Color = 1 };
+
+  static std::string get_builtin_name(BuiltIn b) {
+    switch (b) {
+      case BuiltIn::Position:
+        return "position";
+      case BuiltIn::Color:
+        return "color";
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(b));
+    }
+  }
+
+  BuiltIn built_in;
   int location;
   std::vector<Stmt *> values;
 
-  explicit FragmentOutputStmt(int location, const std::vector<Stmt *> &values)
-      : location(location), values(values) {
+  explicit BuiltInOutputStmt(BuiltIn built_in,
+                             int location,
+                             const std::vector<Stmt *> &values)
+      : built_in(built_in), location(location), values(values) {
     TI_STMT_REG_FIELDS;
   }
 
@@ -1033,7 +1049,7 @@ class FragmentOutputStmt : public Stmt {
     return names;
   }
 
-  TI_STMT_DEF_FIELDS(location, values);
+  TI_STMT_DEF_FIELDS(built_in, location, values);
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 

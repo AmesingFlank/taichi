@@ -448,9 +448,10 @@ class IRPrinter : public IRVisitor {
           stmt->location, stmt->value->name());
   }
 
-  void visit(FragmentOutputStmt *stmt) override {
-    print("{}{} = fragment output[{}] {}", stmt->type_hint(), stmt->name(),
-          stmt->location, stmt->values_raw_names());
+  void visit(BuiltInOutputStmt *stmt) override {
+    print("{}{} = built-in output {} [{}] {}", stmt->type_hint(), stmt->name(),
+          BuiltInOutputStmt::get_builtin_name(stmt->built_in), stmt->location,
+          stmt->values_raw_names());
   }
 
   void visit(FrontendReturnStmt *stmt) override {
@@ -623,7 +624,7 @@ class IRPrinter : public IRVisitor {
       details = fmt::format("vertex_for ");
     } else if (stmt->task_type == OffloadedTaskType::fragment_for) {
       details = fmt::format("fragment_for ");
-    } 
+    }
     if (stmt->task_type == OffloadedTaskType::listgen) {
       print("{} = offloaded listgen {}->{}", stmt->name(),
             stmt->snode->parent->get_node_type_name_hinted(),
