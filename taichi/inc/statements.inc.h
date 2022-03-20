@@ -94,3 +94,10 @@ PER_STATEMENT(InternalFuncStmt)
 
 // Quantization
 PER_STATEMENT(BitStructStoreStmt)
+
+PER_STATEMENT(VertexInputStmt)
+PER_STATEMENT(VertexOutputStmt)
+PER_STATEMENT(FragmentInputStmt)
+PER_STATEMENT(FragmentOutputStmt)
+PER_STATEMENT(VertexForStmt)
+PER_STATEMENT(FragmentForStmt)

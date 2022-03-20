@@ -51,6 +51,8 @@ class IRBuilder {
     if constexpr (std::is_same_v<DecayedType, RangeForStmt> ||
                   std::is_same_v<DecayedType, StructForStmt> ||
                   std::is_same_v<DecayedType, MeshForStmt> ||
+                  std::is_same_v<DecayedType, VertexForStmt> ||
+                  std::is_same_v<DecayedType, FragmentForStmt> ||
                   std::is_same_v<DecayedType, WhileStmt>) {
       set_insertion_point({loop->body.get(), 0});
     } else {
@@ -125,6 +127,9 @@ class IRBuilder {
                                int bit_vectorize = -1,
                                int num_cpu_threads = 0,
                                int block_dim = 0);
+  VertexForStmt* create_vertex_for();
+  FragmentForStmt* create_fragment_for();
+
   WhileStmt *create_while_true();
   IfStmt *create_if(Stmt *cond);
   WhileControlStmt *create_break();
@@ -150,6 +155,11 @@ class IRBuilder {
   // Load kernel arguments.
   ArgLoadStmt *create_arg_load(int arg_id, DataType dt, bool is_ptr);
 
+  VertexInputStmt* create_vertex_input(int location,  DataType dt);
+  VertexOutputStmt* create_vertex_output(int location,  Stmt* value);
+  FragmentInputStmt* create_fragment_input(int location,  DataType dt);
+  FragmentOutputStmt* create_fragment_output(int location,  const std::vector<Stmt *> &values);
+  
   // The return value of the kernel.
   ReturnStmt *create_return(Stmt *value);
   ReturnStmt *create_return_vec(const std::vector<Stmt *> &values) ;

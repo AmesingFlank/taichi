@@ -42,7 +42,9 @@ class DemoteAtomics : public BasicStmtVisitor {
       if (!demote &&
           (current_offloaded->task_type == OffloadedTaskType::range_for ||
            current_offloaded->task_type == OffloadedTaskType::mesh_for ||
-           current_offloaded->task_type == OffloadedTaskType::struct_for)) {
+           current_offloaded->task_type == OffloadedTaskType::struct_for||
+           current_offloaded->task_type == OffloadedTaskType::vertex_for ||
+           current_offloaded->task_type == OffloadedTaskType::fragment_for)) {
         if (stmt->dest->is<GlobalPtrStmt>()) {
           demote = true;
           auto dest = stmt->dest->as<GlobalPtrStmt>();
@@ -164,7 +166,9 @@ class DemoteAtomics : public BasicStmtVisitor {
     current_offloaded = stmt;
     if (stmt->task_type == OffloadedTaskType::range_for ||
         stmt->task_type == OffloadedTaskType::mesh_for ||
-        stmt->task_type == OffloadedTaskType::struct_for) {
+        stmt->task_type == OffloadedTaskType::struct_for ||
+        stmt->task_type == OffloadedTaskType::vertex_for ||
+        stmt->task_type == OffloadedTaskType::fragment_for) {
       auto uniquely_accessed_pointers =
           irpass::analysis::gather_uniquely_accessed_pointers(stmt);
       loop_unique_ptr_ = std::move(uniquely_accessed_pointers.first);

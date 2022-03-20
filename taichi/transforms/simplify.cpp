@@ -607,6 +607,14 @@ class Simplify : public IRVisitor {
     for_stmt->body->accept(this);
   }
 
+  void visit(VertexForStmt *for_stmt) override {
+    for_stmt->body->accept(this);
+  }
+
+  void visit(FragmentForStmt *for_stmt) override {
+    for_stmt->body->accept(this);
+  }
+
   void visit(WhileStmt *stmt) override {
     stmt->body->accept(this);
   }
