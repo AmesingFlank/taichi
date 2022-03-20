@@ -157,9 +157,10 @@ class IRBuilder {
 
   VertexInputStmt* create_vertex_input(int location,  DataType dt);
   VertexOutputStmt* create_vertex_output(int location,  Stmt* value);
+  BuiltInOutputStmt* create_position_output(const std::vector<Stmt *> &values);
   FragmentInputStmt* create_fragment_input(int location,  DataType dt);
-  FragmentOutputStmt* create_fragment_output(int location,  const std::vector<Stmt *> &values);
-  
+  BuiltInOutputStmt* create_color_output(int location,  const std::vector<Stmt *> &values);
+
   // The return value of the kernel.
   ReturnStmt *create_return(Stmt *value);
   ReturnStmt *create_return_vec(const std::vector<Stmt *> &values) ;

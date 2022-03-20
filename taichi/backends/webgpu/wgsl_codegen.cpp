@@ -100,7 +100,13 @@ class TaskCodegen : public IRVisitor {
     } else if (task_ir_->task_type == OffloadedTaskType::range_for) {
       // struct_for is automatically lowered to ranged_for for dense snodes
       generate_range_for_kernel(task_ir_);
-    } else {
+    } 
+    // else if (task_ir_->task_type == OffloadedTaskType::vertex_for) {
+    //   generate_vertex_for_kernel(task_ir_);
+    // } else if (task_ir_->task_type == OffloadedTaskType::fragment_for) {
+    //   generate_fragment_for_kernel(task_ir_);
+    // } 
+    else {
       TI_ERROR("Unsupported offload type={} on WGSL codegen",
                task_ir_->task_name());
     } 
@@ -645,7 +651,7 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
     task_attribs_.advisory_total_num_threads = 1;
     task_attribs_.advisory_num_threads_per_group = 1;
 
-    start_function(1);
+    start_compute_function(1);
     stmt->body->accept(this);
   }
 
@@ -664,7 +670,7 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
         (stmt->const_end ? stmt->end_value : stmt->end_offset);
     int block_size = stmt->block_dim;
     task_attribs_.advisory_num_threads_per_group = block_size;
-    start_function(block_size);
+    start_compute_function(block_size);
 
     std::string total_elems_value;
     std::string begin_expr_value;  
@@ -738,7 +744,7 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
     function_end_.getString();
   }
 
-  void start_function(int block_size_x){
+  void start_compute_function(int block_size_x){
     TI_ASSERT(function_signature_.getString().size()==0);
     std::string signature_template = 
 R"(
@@ -753,7 +759,6 @@ fn main(
     string_replace_all(signature_template,"BLOCK_SIZE_X",std::to_string(block_size_x));
     function_signature_ << signature_template;
     function_end_ << "\n}\n";
-
   }
 
   int body_indent_count_ = 1;

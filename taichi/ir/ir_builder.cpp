@@ -200,10 +200,17 @@ VertexOutputStmt *IRBuilder::create_vertex_output(int location, Stmt *value) {
 FragmentInputStmt *IRBuilder::create_fragment_input(int location, DataType dt) {
   return insert(Stmt::make_typed<FragmentInputStmt>(location, dt));
 }
-FragmentOutputStmt *IRBuilder::create_fragment_output(
+BuiltInOutputStmt *IRBuilder::create_color_output(
     int location,
     const std::vector<Stmt *> &values) {
-  return insert(Stmt::make_typed<FragmentOutputStmt>(location, values));
+  return insert(Stmt::make_typed<BuiltInOutputStmt>(
+      BuiltInOutputStmt::BuiltIn::Color, location, values));
+}
+
+BuiltInOutputStmt *IRBuilder::create_position_output(
+    const std::vector<Stmt *> &values) {
+  return insert(Stmt::make_typed<BuiltInOutputStmt>(
+      BuiltInOutputStmt::BuiltIn::Position, -1, values));
 }
 
 ArgLoadStmt *IRBuilder::create_arg_load(int arg_id, DataType dt, bool is_ptr) {
