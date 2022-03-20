@@ -99,6 +99,16 @@ class DIE : public IRVisitor {
     for_stmt->body->accept(this);
   }
 
+  void visit(VertexForStmt *for_stmt) override {
+    register_usage(for_stmt);
+    for_stmt->body->accept(this);
+  }
+
+  void visit(FragmentForStmt *for_stmt) override {
+    register_usage(for_stmt);
+    for_stmt->body->accept(this);
+  }
+
   void visit(OffloadedStmt *stmt) override {
     // TODO: A hack to make sure end_stmt is registered.
     // Ideally end_stmt should be its own Block instead.

@@ -280,6 +280,22 @@ class CFGBuilder : public IRVisitor {
     in_parallel_for_ = old_in_parallel_for;
   }
 
+  void visit(VertexForStmt *stmt) override {
+    auto old_in_parallel_for = in_parallel_for_;
+    if (!current_offload_)
+      in_parallel_for_ = true;
+    visit_loop(stmt->body.get(), new_node(-1), false);
+    in_parallel_for_ = old_in_parallel_for;
+  }
+
+  void visit(FragmentForStmt *stmt) override {
+    auto old_in_parallel_for = in_parallel_for_;
+    if (!current_offload_)
+      in_parallel_for_ = true;
+    visit_loop(stmt->body.get(), new_node(-1), false);
+    in_parallel_for_ = old_in_parallel_for;
+  }
+
   /**
    * Structure:
    *

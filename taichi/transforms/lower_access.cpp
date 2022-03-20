@@ -85,6 +85,14 @@ class LowerAccess : public IRVisitor {
     for_stmt->body->accept(this);
   }
 
+  void visit(VertexForStmt *for_stmt) override {
+    for_stmt->body->accept(this);
+  }
+
+  void visit(FragmentForStmt *for_stmt) override {
+    for_stmt->body->accept(this);
+  }
+
   void visit(StructForStmt *for_stmt) override {
     current_struct_for = for_stmt;
     for_stmt->body->accept(this);

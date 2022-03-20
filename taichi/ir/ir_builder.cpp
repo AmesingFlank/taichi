@@ -113,6 +113,13 @@ MeshForStmt *IRBuilder::create_mesh_for(mesh::Mesh *mesh,
       num_cpu_threads, block_dim));
 }
 
+VertexForStmt *IRBuilder::create_vertex_for() {
+  return insert(Stmt::make_typed<VertexForStmt>(std::make_unique<Block>()));
+}
+FragmentForStmt *IRBuilder::create_fragment_for() {
+  return insert(Stmt::make_typed<FragmentForStmt>(std::make_unique<Block>()));
+}
+
 WhileStmt *IRBuilder::create_while_true() {
   return insert(Stmt::make_typed<WhileStmt>(std::make_unique<Block>()));
 }
@@ -182,6 +189,21 @@ ConstStmt *IRBuilder::get_float64(float64 value) {
 
 RandStmt *IRBuilder::create_rand(DataType value_type) {
   return insert(Stmt::make_typed<RandStmt>(value_type));
+}
+
+VertexInputStmt *IRBuilder::create_vertex_input(int location, DataType dt) {
+  return insert(Stmt::make_typed<VertexInputStmt>(location, dt));
+}
+VertexOutputStmt *IRBuilder::create_vertex_output(int location, Stmt *value) {
+  return insert(Stmt::make_typed<VertexOutputStmt>(location, value));
+}
+FragmentInputStmt *IRBuilder::create_fragment_input(int location, DataType dt) {
+  return insert(Stmt::make_typed<FragmentInputStmt>(location, dt));
+}
+FragmentOutputStmt *IRBuilder::create_fragment_output(
+    int location,
+    const std::vector<Stmt *> &values) {
+  return insert(Stmt::make_typed<FragmentOutputStmt>(location, values));
 }
 
 ArgLoadStmt *IRBuilder::create_arg_load(int arg_id, DataType dt, bool is_ptr) {

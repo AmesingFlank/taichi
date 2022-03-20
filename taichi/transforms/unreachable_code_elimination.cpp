@@ -74,6 +74,14 @@ class UnreachableCodeEliminator : public BasicStmtVisitor {
     visit_loop(stmt->body.get());
   }
 
+  void visit(VertexForStmt *stmt) override {
+    visit_loop(stmt->body.get());
+  }
+
+  void visit(FragmentForStmt *stmt) override {
+    visit_loop(stmt->body.get());
+  }
+
   void visit(WhileStmt *stmt) override {
     visit_loop(stmt->body.get());
   }

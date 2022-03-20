@@ -364,6 +364,10 @@ std::string OffloadedStmt::task_name() const {
     return "struct_for";
   } else if (task_type == TaskType::mesh_for) {
     return "mesh_for";
+  } else if (task_type == TaskType::vertex_for) {
+    return "vertex_for";
+  } else if (task_type == TaskType::fragment_for) {
+    return "fragment_for";
   } else if (task_type == TaskType::listgen) {
     TI_ASSERT(snode);
     return fmt::format("listgen_{}", snode->get_node_type_name_hinted());

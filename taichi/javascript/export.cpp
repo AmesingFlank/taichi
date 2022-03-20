@@ -40,10 +40,10 @@ Kernel *create_kernel(Program &program,
 };
 
 Function *create_function(Program &program,
-                      IRBuilder &builder,
-                      const std::string &name,
-                      int id) {
-  Function* func = new Function(&program, FunctionKey(name,id,0));
+                          IRBuilder &builder,
+                          const std::string &name,
+                          int id) {
+  Function *func = new Function(&program, FunctionKey(name, id, 0));
   func->set_function_body(builder.extract_ir());
   return func;
 };
@@ -102,7 +102,9 @@ EMSCRIPTEN_BINDINGS(tint) {
   register_vector<Axis>("VectorOfAxis");
   register_vector<TaskParams>("VectorOfTaskParams");
 
-  enum_<Arch>("Arch").value("vulkan", Arch::vulkan).value("webgpu", Arch::webgpu);
+  enum_<Arch>("Arch")
+      .value("vulkan", Arch::vulkan)
+      .value("webgpu", Arch::webgpu);
 
   enum_<SNodeType>("SNodeType")
       .value("root", SNodeType::root)
@@ -119,8 +121,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<TaskParams>("TaskParams")
       .function("get_spirv_ptr", &TaskParams::get_spirv_ptr,
                 allow_raw_pointers())
-      .function("get_wgsl", &TaskParams::get_wgsl,
-                allow_raw_pointers())
+      .function("get_wgsl", &TaskParams::get_wgsl, allow_raw_pointers())
       .function("get_range_hint", &TaskParams::get_range_hint,
                 allow_raw_pointers())
       .function("get_gpu_block_size", &TaskParams::get_gpu_block_size,
@@ -174,6 +175,13 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<FuncCallStmt, base<Stmt>>("FuncCallStmt");
   class_<AtomicOpStmt, base<Stmt>>("AtomicOpStmt");
 
+  class_<VertexForStmt, base<Stmt>>("VertexForStmt");
+  class_<FragmentForStmt, base<Stmt>>("FragmentForStmt");
+  class_<VertexInputStmt, base<Stmt>>("VertexInputStmt");
+  class_<VertexOutputStmt, base<Stmt>>("VertexOutputStmt");
+  class_<FragmentInputStmt, base<Stmt>>("FragmentInputStmt");
+  class_<FragmentOutputStmt, base<Stmt>>("FragmentOutputStmt");
+
   class_<IRBuilder::LoopGuard>("LoopGuard");
   class_<IRBuilder::IfGuard>("IfGuard");
 
@@ -191,8 +199,8 @@ EMSCRIPTEN_BINDINGS(tint) {
 
   class_<Kernel, base<Callable>>("Kernel").class_function(
       "create_kernel", &create_kernel, allow_raw_pointers());
-  class_<Function, base<Callable>>("Function").class_function(
-      "create_function", &create_kernel, allow_raw_pointers());
+  class_<Function, base<Callable>>("Function")
+      .class_function("create_function", &create_kernel, allow_raw_pointers());
 
   class_<IRBuilder>("IRBuilder")
       .constructor<>()
@@ -202,6 +210,12 @@ EMSCRIPTEN_BINDINGS(tint) {
       .function("get_while_loop_guard",
                 &IRBuilder::allocate_loop_guard<WhileStmt>,
                 allow_raw_pointers())
+      .function("get_vertex_loop_guard",
+                &IRBuilder::allocate_loop_guard<VertexForStmt>,
+                allow_raw_pointers())
+      .function("get_fragment_loop_guard",
+                &IRBuilder::allocate_loop_guard<FragmentForStmt>,
+                allow_raw_pointers())
       .function("get_if_guard", &IRBuilder::allocate_if_guard,
                 allow_raw_pointers())
       .function("create_global_ptr_global_store",
@@ -210,82 +224,91 @@ EMSCRIPTEN_BINDINGS(tint) {
       .function("create_global_ptr_global_load",
                 &IRBuilder::create_global_load<GlobalPtrStmt>,
                 allow_raw_pointers())
-#define EXPORT_FUNCTION(f) .function(#f, &IRBuilder::f, allow_raw_pointers())
-              
-      EXPORT_FUNCTION(get_int32)
-      EXPORT_FUNCTION(get_float32)
-                  
-      EXPORT_FUNCTION(create_range_for)
-      EXPORT_FUNCTION(get_loop_index)
-      EXPORT_FUNCTION(create_global_ptr)
-                      
-      EXPORT_FUNCTION(create_local_var)
-      EXPORT_FUNCTION(create_local_load)
-      EXPORT_FUNCTION(create_local_store)
-      
-      EXPORT_FUNCTION(create_add)
-      EXPORT_FUNCTION(create_sub)
-      EXPORT_FUNCTION(create_mul)
-      EXPORT_FUNCTION(create_div)
-      EXPORT_FUNCTION(create_floordiv)
-      EXPORT_FUNCTION(create_truediv)
-      EXPORT_FUNCTION(create_mod)
-      EXPORT_FUNCTION(create_max)
-      EXPORT_FUNCTION(create_min)
-      EXPORT_FUNCTION(create_atan2)
-      EXPORT_FUNCTION(create_pow)
-      EXPORT_FUNCTION(create_and)
-      EXPORT_FUNCTION(create_or)         
-      EXPORT_FUNCTION(create_xor)             
-      EXPORT_FUNCTION(create_shl)                 
-      EXPORT_FUNCTION(create_shr)                  
-      EXPORT_FUNCTION(create_sar)
-          
-      EXPORT_FUNCTION(create_cmp_lt)
-      EXPORT_FUNCTION(create_cmp_le)
-      EXPORT_FUNCTION(create_cmp_gt)
-              
-      EXPORT_FUNCTION(create_cmp_ge)
-      EXPORT_FUNCTION(create_cmp_eq)
-      EXPORT_FUNCTION(create_cmp_ne)
-                  
-      EXPORT_FUNCTION(create_cast)
-      EXPORT_FUNCTION(create_bit_cast)
-      EXPORT_FUNCTION(create_neg)
-      EXPORT_FUNCTION(create_not)
-      EXPORT_FUNCTION(create_logical_not)
-      EXPORT_FUNCTION(create_round)
-      EXPORT_FUNCTION(create_floor)
-      EXPORT_FUNCTION(create_ceil)
-      EXPORT_FUNCTION(create_abs)
-      EXPORT_FUNCTION(create_sgn)
-      EXPORT_FUNCTION(create_sqrt)
-      EXPORT_FUNCTION(create_rsqrt)
-      EXPORT_FUNCTION(create_sin)
-      EXPORT_FUNCTION(create_asin)
-      EXPORT_FUNCTION(create_cos)
-      EXPORT_FUNCTION(create_acos)
-      EXPORT_FUNCTION(create_tan)
-      EXPORT_FUNCTION(create_tanh)
-      EXPORT_FUNCTION(create_exp)
-      EXPORT_FUNCTION(create_log)
-      
-      EXPORT_FUNCTION(create_while_true)     
-      EXPORT_FUNCTION(create_if)          
-      EXPORT_FUNCTION(create_break)           
-      EXPORT_FUNCTION(create_continue)
-                    
-      EXPORT_FUNCTION(create_arg_load)                             
-      EXPORT_FUNCTION(create_rand)                                          
-      EXPORT_FUNCTION(create_return)
-      EXPORT_FUNCTION(create_return_vec)
-      EXPORT_FUNCTION(create_func_call)
+#define EXPORT_FUNCTION(f) function(#f, &IRBuilder::f, allow_raw_pointers())
 
-      EXPORT_FUNCTION(create_atomic_add)
-      EXPORT_FUNCTION(create_atomic_sub)
-      EXPORT_FUNCTION(create_atomic_max)
-      EXPORT_FUNCTION(create_atomic_min)
-      EXPORT_FUNCTION(create_atomic_and)
-      EXPORT_FUNCTION(create_atomic_or)
-      EXPORT_FUNCTION(create_atomic_xor); 
+      .EXPORT_FUNCTION(get_int32)
+      .EXPORT_FUNCTION(get_float32)
+
+      .EXPORT_FUNCTION(create_range_for)
+      .EXPORT_FUNCTION(get_loop_index)
+      .EXPORT_FUNCTION(create_global_ptr)
+
+      .EXPORT_FUNCTION(create_local_var)
+      .EXPORT_FUNCTION(create_local_load)
+      .EXPORT_FUNCTION(create_local_store)
+
+      .EXPORT_FUNCTION(create_add)
+      .EXPORT_FUNCTION(create_sub)
+      .EXPORT_FUNCTION(create_mul)
+      .EXPORT_FUNCTION(create_div)
+      .EXPORT_FUNCTION(create_floordiv)
+      .EXPORT_FUNCTION(create_truediv)
+      .EXPORT_FUNCTION(create_mod)
+      .EXPORT_FUNCTION(create_max)
+      .EXPORT_FUNCTION(create_min)
+      .EXPORT_FUNCTION(create_atan2)
+      .EXPORT_FUNCTION(create_pow)
+      .EXPORT_FUNCTION(create_and)
+      .EXPORT_FUNCTION(create_or)
+      .EXPORT_FUNCTION(create_xor)
+      .EXPORT_FUNCTION(create_shl)
+      .EXPORT_FUNCTION(create_shr)
+      .EXPORT_FUNCTION(create_sar)
+
+      .EXPORT_FUNCTION(create_cmp_lt)
+      .EXPORT_FUNCTION(create_cmp_le)
+      .EXPORT_FUNCTION(create_cmp_gt)
+
+      .EXPORT_FUNCTION(create_cmp_ge)
+      .EXPORT_FUNCTION(create_cmp_eq)
+      .EXPORT_FUNCTION(create_cmp_ne)
+
+      .EXPORT_FUNCTION(create_cast)
+      .EXPORT_FUNCTION(create_bit_cast)
+      .EXPORT_FUNCTION(create_neg)
+      .EXPORT_FUNCTION(create_not)
+      .EXPORT_FUNCTION(create_logical_not)
+      .EXPORT_FUNCTION(create_round)
+      .EXPORT_FUNCTION(create_floor)
+      .EXPORT_FUNCTION(create_ceil)
+      .EXPORT_FUNCTION(create_abs)
+      .EXPORT_FUNCTION(create_sgn)
+      .EXPORT_FUNCTION(create_sqrt)
+      .EXPORT_FUNCTION(create_rsqrt)
+      .EXPORT_FUNCTION(create_sin)
+      .EXPORT_FUNCTION(create_asin)
+      .EXPORT_FUNCTION(create_cos)
+      .EXPORT_FUNCTION(create_acos)
+      .EXPORT_FUNCTION(create_tan)
+      .EXPORT_FUNCTION(create_tanh)
+      .EXPORT_FUNCTION(create_exp)
+      .EXPORT_FUNCTION(create_log)
+
+      .EXPORT_FUNCTION(create_while_true)
+      .EXPORT_FUNCTION(create_if)
+      .EXPORT_FUNCTION(create_break)
+      .EXPORT_FUNCTION(create_continue)
+
+      .EXPORT_FUNCTION(create_arg_load)
+      .EXPORT_FUNCTION(create_rand)
+      .EXPORT_FUNCTION(create_return)
+      .EXPORT_FUNCTION(create_return_vec)
+      .EXPORT_FUNCTION(create_func_call)
+
+      .EXPORT_FUNCTION(create_atomic_add)
+      .EXPORT_FUNCTION(create_atomic_sub)
+      .EXPORT_FUNCTION(create_atomic_max)
+      .EXPORT_FUNCTION(create_atomic_min)
+      .EXPORT_FUNCTION(create_atomic_and)
+      .EXPORT_FUNCTION(create_atomic_or)
+      .EXPORT_FUNCTION(create_atomic_xor)
+
+      .EXPORT_FUNCTION(create_vertex_input)
+      .EXPORT_FUNCTION(create_vertex_output)
+      .EXPORT_FUNCTION(create_fragment_input)
+      .EXPORT_FUNCTION(create_fragment_output)
+      .EXPORT_FUNCTION(create_vertex_for)
+      .EXPORT_FUNCTION(create_fragment_for);
+
+#undef EXPORT_FUNCTION
 }

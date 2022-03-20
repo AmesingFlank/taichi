@@ -387,6 +387,18 @@ class IRPrinter : public IRVisitor {
     print("}}");
   }
 
+  void visit(VertexForStmt *for_stmt) override {
+    print("{} : for each vertex{{", for_stmt->name());
+    for_stmt->body->accept(this);
+    print("}}");
+  }
+
+  void visit(FragmentForStmt *for_stmt) override {
+    print("{} : for each vertex{{", for_stmt->name());
+    for_stmt->body->accept(this);
+    print("}}");
+  }
+
   void visit(GlobalPtrStmt *stmt) override {
     std::string s =
         fmt::format("{}{} = global ptr [", stmt->type_hint(), stmt->name());
@@ -426,6 +438,26 @@ class IRPrinter : public IRVisitor {
 
   void visit(ArgLoadStmt *stmt) override {
     print("{}{} = arg[{}]", stmt->type_hint(), stmt->name(), stmt->arg_id);
+  }
+
+  void visit(VertexInputStmt *stmt) override {
+    print("{}{} = vertex input[{}]", stmt->type_hint(), stmt->name(),
+          stmt->location);
+  }
+
+  void visit(FragmentInputStmt *stmt) override {
+    print("{}{} = fragment input[{}]", stmt->type_hint(), stmt->name(),
+          stmt->location);
+  }
+
+  void visit(VertexOutputStmt *stmt) override {
+    print("{}{} = vertex output[{}] {}", stmt->type_hint(), stmt->name(),
+          stmt->location, stmt->value->name());
+  }
+
+  void visit(FragmentOutputStmt *stmt) override {
+    print("{}{} = fragment output[{}] {}", stmt->type_hint(), stmt->name(),
+          stmt->location, stmt->values_raw_names());
   }
 
   void visit(FrontendReturnStmt *stmt) override {
@@ -594,7 +626,11 @@ class IRPrinter : public IRVisitor {
               : mesh::element_type_name(*stmt->major_to_types.begin()),
           stmt->mesh->num_patches, stmt->grid_dim, stmt->block_dim,
           scratch_pad_info(stmt->mem_access_opt));
-    }
+    } else if (stmt->task_type == OffloadedTaskType::vertex_for) {
+      details = fmt::format("vertex_for ");
+    } else if (stmt->task_type == OffloadedTaskType::fragment_for) {
+      details = fmt::format("fragment_for ");
+    } 
     if (stmt->task_type == OffloadedTaskType::listgen) {
       print("{} = offloaded listgen {}->{}", stmt->name(),
             stmt->snode->parent->get_node_type_name_hinted(),

@@ -157,6 +157,24 @@ class Offloader {
         offloaded->minor_relation_types = std::move(st->minor_relation_types);
         offloaded->mem_access_opt = st->mem_access_opt;
         root_block->insert(std::move(offloaded));
+      } else if (auto st = stmt->cast<VertexForStmt>()) {
+        assemble_serial_statements();
+        auto offloaded = Stmt::make_typed<OffloadedStmt>(
+            OffloadedStmt::TaskType::vertex_for, arch);
+        replace_all_usages_with(st, st, offloaded.get());
+        for (int j = 0; j < (int)st->body->statements.size(); j++) {
+          offloaded->body->insert(std::move(st->body->statements[j]));
+        }
+        root_block->insert(std::move(offloaded));
+      } else if (auto st = stmt->cast<FragmentForStmt>()) {
+        assemble_serial_statements();
+        auto offloaded = Stmt::make_typed<OffloadedStmt>(
+            OffloadedStmt::TaskType::fragment_for, arch);
+        replace_all_usages_with(st, st, offloaded.get());
+        for (int j = 0; j < (int)st->body->statements.size(); j++) {
+          offloaded->body->insert(std::move(st->body->statements[j]));
+        }
+        root_block->insert(std::move(offloaded));
       } else {
         pending_serial_statements->body->insert(std::move(stmt));
       }

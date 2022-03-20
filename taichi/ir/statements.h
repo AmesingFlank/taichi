@@ -178,6 +178,32 @@ class ArgLoadStmt : public Stmt {
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
+class VertexInputStmt : public Stmt {
+ public:
+  int location;
+
+  VertexInputStmt(int location, const DataType &dt) : location(location) {
+    this->ret_type = TypeFactory::create_vector_or_scalar_type(1, dt);
+    TI_STMT_REG_FIELDS;
+  }
+
+  TI_STMT_DEF_FIELDS(ret_type, location);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
+class FragmentInputStmt : public Stmt {
+ public:
+  int location;
+
+  FragmentInputStmt(int location, const DataType &dt) : location(location) {
+    this->ret_type = TypeFactory::create_vector_or_scalar_type(1, dt);
+    TI_STMT_REG_FIELDS;
+  }
+
+  TI_STMT_DEF_FIELDS(ret_type, location);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
 /**
  * A random value. For i32, u32, i64, and u64, the result is randomly sampled
  * from all possible values with equal probability. For f32 and f64 data types,
@@ -879,6 +905,48 @@ class MeshForStmt : public Stmt {
   TI_DEFINE_ACCEPT
 };
 
+class VertexForStmt : public Stmt {
+ public:
+  std::unique_ptr<Block> body;
+  int dummy = 0;
+
+  VertexForStmt(std::unique_ptr<Block> &&body) : body(std::move(body)) {
+    TI_STMT_REG_FIELDS;
+  }
+
+  bool is_container_statement() const override {
+    return true;
+  }
+
+  std::unique_ptr<Stmt> clone() const override {
+    return std::make_unique<VertexForStmt>(body->clone());
+  }
+
+  TI_STMT_DEF_FIELDS(dummy);
+  TI_DEFINE_ACCEPT
+};
+
+class FragmentForStmt : public Stmt {
+ public:
+  std::unique_ptr<Block> body;
+  int dummy = 0;
+
+  FragmentForStmt(std::unique_ptr<Block> &&body) : body(std::move(body)) {
+    TI_STMT_REG_FIELDS;
+  }
+
+  bool is_container_statement() const override {
+    return true;
+  }
+
+  std::unique_ptr<Stmt> clone() const override {
+    return std::make_unique<FragmentForStmt>(body->clone());
+  }
+
+  TI_STMT_DEF_FIELDS(dummy);
+  TI_DEFINE_ACCEPT
+};
+
 /**
  * Call an inline Taichi function.
  */
@@ -932,6 +1000,44 @@ class ReturnStmt : public Stmt {
   }
 
   TI_STMT_DEF_FIELDS(values);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
+class VertexOutputStmt : public Stmt {
+ public:
+  int location;
+  Stmt *value;
+
+  explicit VertexOutputStmt(int location, Stmt *value)
+      : location(location), value(value) {
+    TI_STMT_REG_FIELDS;
+  }
+
+  TI_STMT_DEF_FIELDS(location, value);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
+class FragmentOutputStmt : public Stmt {
+ public:
+  int location;
+  std::vector<Stmt *> values;
+
+  explicit FragmentOutputStmt(int location, const std::vector<Stmt *> &values)
+      : location(location), values(values) {
+    TI_STMT_REG_FIELDS;
+  }
+
+  std::string values_raw_names() {
+    std::string names;
+    for (auto &x : values) {
+      names += x->raw_name() + ", ";
+    }
+    names.pop_back();
+    names.pop_back();
+    return names;
+  }
+
+  TI_STMT_DEF_FIELDS(location, values);
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
