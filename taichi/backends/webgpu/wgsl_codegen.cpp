@@ -400,7 +400,7 @@ class TaskCodegen : public IRVisitor {
       output_expr = type_name+"("+  stmt->values[0]->raw_name();
       for(int i = 1; i < num_components;++i){
         output_expr += ", ";
-        output_expr += stmt->values[1]->raw_name();
+        output_expr += stmt->values[i]->raw_name();
       }
       output_expr += ")";
     }
