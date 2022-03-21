@@ -101,11 +101,11 @@ class TaskCodegen : public IRVisitor {
       // struct_for is automatically lowered to ranged_for for dense snodes
       generate_range_for_kernel(task_ir_);
     } 
-    // else if (task_ir_->task_type == OffloadedTaskType::vertex_for) {
-    //   generate_vertex_for_kernel(task_ir_);
-    // } else if (task_ir_->task_type == OffloadedTaskType::fragment_for) {
-    //   generate_fragment_for_kernel(task_ir_);
-    // } 
+    else if (task_ir_->task_type == OffloadedTaskType::vertex_for) {
+      generate_vertex_for_kernel(task_ir_);
+    } else if (task_ir_->task_type == OffloadedTaskType::fragment_for) {
+      generate_fragment_for_kernel(task_ir_);
+    } 
     else {
       TI_ERROR("Unsupported offload type={} on WGSL codegen",
                task_ir_->task_name());
@@ -355,6 +355,70 @@ class TaskCodegen : public IRVisitor {
     stmt->body->accept(this);
     dedent();
     body_ << body_indent() << "}\n";
+  }
+
+  void visit(VertexInputStmt *stmt) override {
+    int loc = stmt->location;
+    std::string dt_name = get_primitive_type_name(stmt->element_type());
+    std::string input_name = std::string("in_")+std::to_string(loc)+"_"+dt_name;
+    ensure_stage_in_struct();
+    add_stage_in_member(input_name,dt_name, loc);
+    emit_let(stmt->raw_name(), dt_name);
+    body_<<body_indent()<<"stage_input."<<input_name<<";\n";
+  }
+
+  void visit(FragmentInputStmt *stmt) override {
+    int loc = stmt->location;
+    std::string dt_name = get_primitive_type_name(stmt->element_type());
+    std::string input_name = std::string("in_")+std::to_string(loc)+"_"+dt_name;
+    ensure_stage_in_struct();
+    add_stage_in_member(input_name,dt_name, loc);
+    emit_let(stmt->raw_name(), dt_name);
+    body_<<body_indent()<<"stage_input."<<input_name<<";\n";
+  }
+
+  void visit(VertexOutputStmt *stmt) override {
+    int loc = stmt->location;
+    std::string dt_name = get_primitive_type_name(stmt->value->element_type());
+    std::string output_name = std::string("out_")+std::to_string(loc)+"_"+dt_name;
+    ensure_stage_out_struct();
+    add_stage_out_member(output_name,dt_name, loc);
+     
+    body_<<body_indent()<<"stage_output."<<output_name<<"="<< stmt->value->raw_name()<<";\n";
+  }
+
+  void visit(BuiltInOutputStmt *stmt) override {
+    ensure_stage_out_struct();
+    std::string prim_name = get_primitive_type_name(stmt->values[0]->element_type());
+    int num_components = stmt->values.size();
+    std::string type_name = prim_name;
+    if(num_components > 1){
+      type_name = std::string("vec")+std::to_string(num_components)+"<"+prim_name+">";
+    }
+    std::string output_expr = stmt->values[0]->raw_name();
+    if(num_components > 1){
+      output_expr = type_name+"("+  stmt->values[0]->raw_name();
+      for(int i = 1; i < num_components;++i){
+        output_expr += ", ";
+        output_expr += stmt->values[1]->raw_name();
+      }
+      output_expr += ")";
+    }
+
+    std::string output_name;
+
+    if(stmt->built_in == BuiltInOutputStmt::BuiltIn::Color){
+      int loc = stmt->location;
+      output_name = std::string("color_")+std::to_string(loc);
+      add_stage_out_member(output_name,type_name, loc); 
+    } 
+    else if(stmt->built_in == BuiltInOutputStmt::BuiltIn::Position){
+      int loc = stmt->location;
+      output_name = std::string("position");
+      add_stage_out_builtin_member(output_name, type_name, "position");
+    } 
+     
+    body_<<body_indent()<<"stage_output."<<output_name<<"="<< output_expr <<";\n";
   }
 
   void visit(ArgLoadStmt *stmt) override {
@@ -640,7 +704,7 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
     if (dt->is_primitive(PrimitiveTypeID::i32)){
       return "i32";
     }
-    TI_ERROR("unsupported primitive type");
+    TI_ERROR("unsupported primitive type {}", dt->to_string());
     return "";
   }
 
@@ -727,7 +791,38 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
     body_ << body_indent() << "}\n";
   } 
 
+  void generate_vertex_for_kernel(OffloadedStmt *stmt) {
+    task_attribs_.name = task_name_;
+    task_attribs_.task_type = OffloadedTaskType::vertex_for;
+    // task_attribs_.buffer_binds = get_common_buffer_binds();
+    task_attribs_.advisory_total_num_threads = 1;
+    task_attribs_.advisory_num_threads_per_group = 1;
+
+    stmt->body->accept(this);
+    emit_graphics_function("vertex");
+  }
+
+  void generate_fragment_for_kernel(OffloadedStmt *stmt) {
+    task_attribs_.name = task_name_;
+    task_attribs_.task_type = OffloadedTaskType::fragment_for;
+    // task_attribs_.buffer_binds = get_common_buffer_binds();
+    task_attribs_.advisory_total_num_threads = 1;
+    task_attribs_.advisory_num_threads_per_group = 1;
+    
+    stmt->body->accept(this);
+    emit_graphics_function("fragment");
+  }
+
   StringBuilder global_decls_;
+
+  StringBuilder stage_in_struct_begin_;
+  StringBuilder stage_in_struct_body_;
+  StringBuilder stage_in_struct_end_;
+
+  StringBuilder stage_out_struct_begin_;
+  StringBuilder stage_out_struct_body_;
+  StringBuilder stage_out_struct_end_;
+
   StringBuilder function_signature_;
   StringBuilder function_body_prologue_;
   StringBuilder body_;
@@ -737,6 +832,15 @@ fn atomicAddFloat(dest: ptr<storage, atomic<i32>, read_write>, v: f32) -> f32 {
   std::string assemble_shader(){
     return 
     global_decls_.getString() +
+
+    stage_in_struct_begin_.getString()+
+    stage_in_struct_body_.getString()+
+    stage_in_struct_end_.getString()+
+
+    stage_out_struct_begin_.getString()+
+    stage_out_struct_body_.getString()+
+    stage_out_struct_end_.getString()+
+
     function_signature_.getString() +
     function_body_prologue_.getString() +
     body_ .getString()+
@@ -757,6 +861,90 @@ fn main(
 
 )";
     string_replace_all(signature_template,"BLOCK_SIZE_X",std::to_string(block_size_x));
+    function_signature_ << signature_template;
+    function_end_ << "\n}\n";
+  }
+
+  void emit_graphics_function(const std::string& stage_name){
+    TI_ASSERT(function_signature_.getString().size()==0);
+    std::string signature_template = 
+R"(
+
+@stage(STAGE_NAME)
+fn main(MAYBE_INPUT) MAYBE_OUTPUT 
+{
+
+)";
+    string_replace_all(signature_template,"STAGE_NAME",stage_name);
+    if(stage_in_struct_begin_.getString().size() > 0){
+      string_replace_all(signature_template,"MAYBE_INPUT","stage_input: StageInput");
+    }
+    else{
+      string_replace_all(signature_template,"MAYBE_INPUT","");
+    }
+    if(stage_out_struct_begin_.getString().size() > 0){
+      string_replace_all(signature_template,"MAYBE_OUTPUT","-> StageOutput");
+    }
+    else{
+      string_replace_all(signature_template,"MAYBE_OUTPUT","");
+    }
+    function_signature_ << signature_template;
+    function_end_ << "\n}\n";
+  }
+
+  void ensure_stage_in_struct(){
+    if(stage_in_struct_begin_.getString().size() > 0){
+      return;
+    }
+    stage_in_struct_begin_ << "struct StageInput {\n";
+    stage_in_struct_end_ << "};\n";
+  }
+
+  void ensure_stage_out_struct(){
+    if(stage_out_struct_begin_.getString().size() > 0){
+      return;
+    }
+    stage_out_struct_begin_ << "struct StageOutput {\n";
+    stage_out_struct_end_ << "};\n";
+
+    function_body_prologue_ << "  var stage_output: StageOutput;\n";
+    function_body_epilogue_ << "  return stage_output;\n";
+  }
+
+  std::unordered_set<std::string> stage_in_members_;
+  void add_stage_in_member(const std::string& name, const std::string& dt, int loc){
+    if(stage_in_members_.find(name)==stage_in_members_.end()){
+      stage_in_struct_body_<<"  @location("<< std::to_string(loc)<<") "<< name<<": "<<dt<<";\n";
+      stage_in_members_.insert(name);
+    }
+  }
+
+  std::unordered_set<std::string> stage_out_members_;
+  void add_stage_out_member(const std::string& name, const std::string& dt, int loc){
+    if(stage_out_members_.find(name)==stage_out_members_.end()){
+      stage_out_struct_body_<<"  @location("<< std::to_string(loc)<<") "<< name<<": "<<dt<<";\n";
+      stage_out_members_.insert(name);
+    }
+  }
+
+  std::unordered_set<std::string> stage_out_built_in_members_;
+  void add_stage_out_builtin_member(const std::string& name, const std::string& dt, const::std::string & builtin){
+    if(stage_out_built_in_members_.find(name)==stage_out_built_in_members_.end()){
+      stage_out_struct_body_<<"  @builtin("<< builtin <<") "<< name<<": "<<dt<<";\n";
+      stage_out_built_in_members_.insert(name);
+    }
+  }
+
+  void start_fragment_function(){
+    TI_ASSERT(function_signature_.getString().size()==0);
+    std::string signature_template = 
+R"(
+
+@stage(fragment)
+fn main(stage_in: StageInput) -> StageOutput 
+{
+
+)";
     function_signature_ << signature_template;
     function_end_ << "\n}\n";
   }
