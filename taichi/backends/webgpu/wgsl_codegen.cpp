@@ -430,12 +430,24 @@ class TaskCodegen : public IRVisitor {
     } else {
       const auto dt = arg_attribs.dt;
       std::string buffer_name = get_buffer_member_name(BufferInfo(BufferType::Args));
-      emit_let(stmt->raw_name(), get_primitive_type_name(dt));
-      body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << std::to_string(offset_in_mem/4) <<"]);\n";
+      if(!enforce_16bytes_alignment()){
+        emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+        body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << std::to_string(offset_in_mem / get_raw_data_type_size())  <<"]);\n";
+      }
+      else{
+        auto temp = get_temp();
+        emit_let(temp, "i32");
+        body_ << "find_vec4_component("<<buffer_name << "[" << std::to_string(offset_in_mem) << get_raw_data_index_shift() <<"], " << std::to_string(offset_in_mem) <<");\n";
+        emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+        body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" << temp <<");\n";
+      }
     }
   }
 
-  void visit(ReturnStmt *stmt) override {    
+  void visit(ReturnStmt *stmt) override {   
+    if(enforce_16bytes_alignment()){
+      TI_ERROR("Ret cannot be used while enforcing 16 bytes alignment")
+    }
     for (int i = 0; i < stmt->values.size(); i++) {
       body_ << body_indent() << get_buffer_member_name(BufferInfo(BufferType::Rets)) << "["<<std::to_string(i)<<"] = ";
       auto dt = stmt->element_types()[i];
@@ -520,6 +532,9 @@ class TaskCodegen : public IRVisitor {
   }
 
   void visit(GlobalStoreStmt *stmt) override {
+    if(enforce_16bytes_alignment()){
+      TI_ERROR("global store cannot be used while enforcing 16 bytes alignment")
+    }
     TI_ASSERT(stmt->width() == 1);
     PointerInfo info = pointer_infos_.at(stmt->dest->raw_name());
     std::string buffer_name;
@@ -545,12 +560,25 @@ class TaskCodegen : public IRVisitor {
     else{
       buffer_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
     }
-    emit_let(stmt->raw_name(), get_primitive_type_name(dt));
-    body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << stmt->src->raw_name() <<"]);\n";
+    if(!enforce_16bytes_alignment()){
+      emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+      body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" <<buffer_name << "[" << stmt->src->raw_name() <<"]);\n";
+    }
+    else{
+      auto temp = get_temp();
+      emit_let(temp, "i32");
+      body_ << "find_vec4_component("<<buffer_name << "[" << stmt->src->raw_name() << get_raw_data_index_shift() <<"], " << stmt->src->raw_name() <<");\n";
+      emit_let(stmt->raw_name(), get_primitive_type_name(dt));
+      body_ << "bitcast<" << get_primitive_type_name(dt)<<">(" << temp <<");\n";
+    }
+    
   }
 
   void visit(AtomicOpStmt *stmt) override {
     TI_ASSERT(stmt->width() == 1);
+    if(enforce_16bytes_alignment()){
+      TI_ERROR("atomics cannot be used while enforcing 16 bytes alignment")
+    }
     const auto dt = stmt->dest->element_type().ptr_removed();
     std::string dt_name = get_primitive_type_name(dt);
     std::string buffer_member_name;
@@ -890,6 +918,28 @@ fn main(MAYBE_INPUT) MAYBE_OUTPUT
     }
     function_signature_ << signature_template;
     function_end_ << "\n}\n";
+
+    if(enforce_16bytes_alignment()){
+      std::string helper = 
+R"(
+
+fn find_vec4_component(v: vec4<i32>, index: i32) -> i32 
+{
+  if((index & 3) == 0){
+    return v.x;
+  }
+  if((index & 3) == 1){
+    return v.y;
+  }
+  if((index & 3) == 2){
+    return v.z;
+  }
+  return v.w;
+}
+
+)";
+      global_decls_ << helper;
+    }
   }
 
   void ensure_stage_in_struct(){
@@ -935,20 +985,6 @@ fn main(MAYBE_INPUT) MAYBE_OUTPUT
     }
   }
 
-  void start_fragment_function(){
-    TI_ASSERT(function_signature_.getString().size()==0);
-    std::string signature_template = 
-R"(
-
-@stage(fragment)
-fn main(stage_in: StageInput) -> StageOutput 
-{
-
-)";
-    function_signature_ << signature_template;
-    function_end_ << "\n}\n";
-  }
-
   int body_indent_count_ = 1;
   void indent(){
     body_indent_count_++;
@@ -967,14 +1003,72 @@ fn main(stage_in: StageInput) -> StageOutput
 
   std::unordered_map<std::string, PointerInfo> pointer_infos_;
 
+  bool is_vertex_for(){
+    return task_ir_->task_type == OffloadedTaskType::vertex_for;
+  }
+
+  bool enforce_16bytes_alignment(){
+    // The issue here is that WebGPU doesn't allow vertex shaders to use storage buffers, and uniform buffer elements must be 16 bytes aligned
+    return is_vertex_for();
+  }
+
+  std::string get_raw_data_type_name(){
+    if(!enforce_16bytes_alignment()){
+      return "i32";
+    }
+    else{
+      return "vec4<i32>";
+    }
+  }
+
+  int get_raw_data_type_size(){
+    if(!enforce_16bytes_alignment()){
+      return 4;
+    }
+    else{
+      return 16;
+    }
+  }
+
+  std::string get_raw_data_index_shift(){
+    if(!enforce_16bytes_alignment()){
+      return "";
+    }
+    else{
+      return " >> 2u";
+    }
+  }
+
   std::string get_buffer_member_name(BufferInfo buffer){
     return get_buffer_name(buffer)+".member";
   }
 
+  int get_element_count(BufferInfo buffer){
+    switch(buffer.type){
+      case BufferType::RootNormal: {
+        return compiled_structs_[buffer.root_id].root_size / get_raw_data_type_size();
+      }
+      case BufferType::RootAtomicI32: {
+        return compiled_structs_[buffer.root_id].root_size / 4; // WGSL doesn't allow atomic<vec4<i32>>, so the type size is always 4
+      }
+      case BufferType::GlobalTemps: {
+        return 65536 / get_raw_data_type_size(); // maximum size allowed by WebGPU Chrome DX backend. matches Runtime.ts
+      }
+      case BufferType::RandStates: {
+        return 65536; // matches Runtime.ts // note that we have up to 65536 shader invocations
+      }
+      case BufferType::Args: {
+        return ctx_attribs_->args_bytes() / get_raw_data_type_size(); 
+      }
+      case BufferType::Rets: {
+        return ctx_attribs_->rets_bytes() / get_raw_data_type_size();
+      }
+    }
+  }
+
   std::string get_buffer_name(BufferInfo buffer){
     std::string name;
-    std::string element_type = "i32";
-    std::string stride = "4";
+    std::string element_type = get_raw_data_type_name();
     switch(buffer.type){
       case BufferType::RootNormal: {
         name = "root_buffer_"+std::to_string(buffer.root_id)+"_";
@@ -992,7 +1086,6 @@ fn main(stage_in: StageInput) -> StageOutput
       case BufferType::RandStates: {
         name = "rand_states_";
         element_type = "RandState";
-        stride = "16";
         break;
       }
       case BufferType::Args: {
@@ -1007,20 +1100,21 @@ fn main(stage_in: StageInput) -> StageOutput
     if(task_attribs_.buffer_bindings.find(buffer) == task_attribs_.buffer_bindings.end()){
       int binding = task_attribs_.buffer_bindings.size();
       task_attribs_.buffer_bindings[buffer] = binding;
-      declare_new_buffer(buffer,name,binding,stride, element_type);
+      int element_count = get_element_count(buffer);
+      declare_new_buffer(buffer,name,binding,element_type, element_count);
     }
     return name;
   }
 
-  void declare_new_buffer(BufferInfo buffer, std::string name, int binding,std::string stride, std::string element_type){
+  void declare_new_buffer(BufferInfo buffer, std::string name, int binding,std::string element_type, int element_count){
     std::string decl_template =
 R"(
 
 struct BUFFER_TYPE_NAME {
-    member: array<ELEMENT_TYPE>;
+    member: array<ELEMENT_TYPE, ELEMENT_COUNT>;
 };
 @group(0) @binding(BUFFER_BINDING)
-var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
+var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
 
 )"; 
 
@@ -1028,7 +1122,14 @@ var<storage, read_write> BUFFER_NAME: BUFFER_TYPE_NAME;
     string_replace_all(decl_template,"BUFFER_NAME", name);
     string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
     string_replace_all(decl_template,"ELEMENT_TYPE", element_type);
-    //string_replace_all(decl_template,"STRIDE", stride); // not needed anymore 
+    string_replace_all(decl_template,"ELEMENT_COUNT", std::to_string(element_count));
+    if(!is_vertex_for()){
+      string_replace_all(decl_template,"STORAGE_AND_ACCESS", "storage, read_write");
+    }
+    else{
+      // WGSL vertex shaders are not allowed to use storage buffers... (why?)
+      string_replace_all(decl_template,"STORAGE_AND_ACCESS", "uniform");
+    }
     global_decls_ << decl_template;
   }
 
@@ -1087,8 +1188,6 @@ fn rand_i32(id:u32) -> i32 {
     global_decls_ << rand_func_decl;
     rand_initiated_ = true;
   }
-
-   
 
   OffloadedStmt *const task_ir_;  // not owned
   std::vector<CompiledSNodeStructs> compiled_structs_;
