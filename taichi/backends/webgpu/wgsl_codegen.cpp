@@ -1003,13 +1003,14 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
 
   std::unordered_map<std::string, PointerInfo> pointer_infos_;
 
-  bool is_vertex_for(){
-    return task_ir_->task_type == OffloadedTaskType::vertex_for;
+  bool is_vertex_for_or_fragment_for(){
+    return task_ir_->task_type == OffloadedTaskType::vertex_for || task_ir_->task_type == OffloadedTaskType::fragment_for;
   }
 
   bool enforce_16bytes_alignment(){
     // The issue here is that WebGPU doesn't allow vertex shaders to use storage buffers, and uniform buffer elements must be 16 bytes aligned
-    return is_vertex_for();
+    // Also, the vertex shader buffer binding has to be "compatible" with the fragment buffer one, so the fragment must also use 16 bytes aligned uniform buffer
+    return is_vertex_for_or_fragment_for();
   }
 
   std::string get_raw_data_type_name(){
@@ -1123,7 +1124,7 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
     string_replace_all(decl_template,"BUFFER_BINDING", std::to_string(binding));
     string_replace_all(decl_template,"ELEMENT_TYPE", element_type);
     string_replace_all(decl_template,"ELEMENT_COUNT", std::to_string(element_count));
-    if(!is_vertex_for()){
+    if(!is_vertex_for_or_fragment_for()){
       string_replace_all(decl_template,"STORAGE_AND_ACCESS", "storage, read_write");
     }
     else{
