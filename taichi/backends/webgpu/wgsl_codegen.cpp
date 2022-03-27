@@ -1041,25 +1041,32 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
     return get_buffer_name(buffer)+".member";
   }
 
+  int divUp(size_t a, int b){
+    if(a % b == 0){
+      return a / b;
+    }
+    return (a/b) + 1;
+  }
+
   int get_element_count(BufferInfo buffer){
     switch(buffer.type){
       case BufferType::RootNormal: {
-        return compiled_structs_[buffer.root_id].root_size / get_raw_data_type_size();
+        return  divUp(compiled_structs_[buffer.root_id].root_size , get_raw_data_type_size());
       }
       case BufferType::RootAtomicI32: {
-        return compiled_structs_[buffer.root_id].root_size / 4; // WGSL doesn't allow atomic<vec4<i32>>, so the type size is always 4
+        return divUp(compiled_structs_[buffer.root_id].root_size , 4); // WGSL doesn't allow atomic<vec4<i32>>, so the type size is always 4
       }
       case BufferType::GlobalTemps: {
-        return 65536 / get_raw_data_type_size(); // maximum size allowed by WebGPU Chrome DX backend. matches Runtime.ts
+        return divUp(65536 , get_raw_data_type_size()); // maximum size allowed by WebGPU Chrome DX backend. matches Runtime.ts
       }
       case BufferType::RandStates: {
         return 65536; // matches Runtime.ts // note that we have up to 65536 shader invocations
       }
       case BufferType::Args: {
-        return ctx_attribs_->args_bytes() / get_raw_data_type_size(); 
+        return divUp(ctx_attribs_->args_bytes() , get_raw_data_type_size()); 
       }
       case BufferType::Rets: {
-        return ctx_attribs_->rets_bytes() / get_raw_data_type_size();
+        return divUp(ctx_attribs_->rets_bytes() , get_raw_data_type_size());
       }
     }
   }
