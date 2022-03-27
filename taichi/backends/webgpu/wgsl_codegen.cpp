@@ -576,9 +576,6 @@ class TaskCodegen : public IRVisitor {
 
   void visit(AtomicOpStmt *stmt) override {
     TI_ASSERT(stmt->width() == 1);
-    if(enforce_16bytes_alignment()){
-      TI_ERROR("atomics cannot be used while enforcing 16 bytes alignment")
-    }
     const auto dt = stmt->dest->element_type().ptr_removed();
     std::string dt_name = get_primitive_type_name(dt);
     std::string buffer_member_name;
