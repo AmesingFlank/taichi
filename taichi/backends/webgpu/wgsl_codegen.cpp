@@ -417,8 +417,17 @@ class TaskCodegen : public IRVisitor {
       output_name = std::string("position");
       add_stage_out_builtin_member(output_name, type_name, "position");
     } 
+    else if(stmt->built_in == BuiltInOutputStmt::BuiltIn::FragDepth){
+      int loc = stmt->location;
+      output_name = std::string("frag_depth");
+      add_stage_out_builtin_member(output_name, type_name, "frag_depth");
+    } 
      
     body_<<body_indent()<<"stage_output."<<output_name<<"="<< output_expr <<";\n";
+  }
+
+  void visit(DiscardStmt *stmt) override {
+    body_<<body_indent()<<"discard;\n";
   }
 
   void visit(ArgLoadStmt *stmt) override {

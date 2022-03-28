@@ -181,6 +181,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<VertexOutputStmt, base<Stmt>>("VertexOutputStmt");
   class_<FragmentInputStmt, base<Stmt>>("FragmentInputStmt");
   class_<BuiltInOutputStmt, base<Stmt>>("BuiltInOutputStmt");
+  class_<DiscardStmt, base<Stmt>>("DiscardStmt");
 
   class_<IRBuilder::LoopGuard>("LoopGuard");
   class_<IRBuilder::IfGuard>("IfGuard");
@@ -309,7 +310,10 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_fragment_input)
       .EXPORT_FUNCTION(create_color_output)
       .EXPORT_FUNCTION(create_vertex_for)
-      .EXPORT_FUNCTION(create_fragment_for);
+      .EXPORT_FUNCTION(create_fragment_for)
+      .EXPORT_FUNCTION(create_discard)
+      .EXPORT_FUNCTION(create_depth_output)
+      ;
 
 #undef EXPORT_FUNCTION
 }

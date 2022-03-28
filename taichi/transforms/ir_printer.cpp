@@ -454,6 +454,10 @@ class IRPrinter : public IRVisitor {
           stmt->values_raw_names());
   }
 
+  void visit(DiscardStmt *stmt) override {
+    print("{}{} = discard", stmt->type_hint(), stmt->name());
+  }
+
   void visit(FrontendReturnStmt *stmt) override {
     print("{}{} : return [{}]", stmt->type_hint(), stmt->name(),
           stmt->values.serialize());
