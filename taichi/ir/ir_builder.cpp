@@ -191,6 +191,9 @@ RandStmt *IRBuilder::create_rand(DataType value_type) {
   return insert(Stmt::make_typed<RandStmt>(value_type));
 }
 
+DiscardStmt *IRBuilder::create_discard() {
+  return insert(Stmt::make_typed<DiscardStmt>());
+}
 VertexInputStmt *IRBuilder::create_vertex_input(int location, DataType dt) {
   return insert(Stmt::make_typed<VertexInputStmt>(location, dt));
 }
@@ -205,6 +208,11 @@ BuiltInOutputStmt *IRBuilder::create_color_output(
     const std::vector<Stmt *> &values) {
   return insert(Stmt::make_typed<BuiltInOutputStmt>(
       BuiltInOutputStmt::BuiltIn::Color, location, values));
+}
+BuiltInOutputStmt *IRBuilder::create_depth_output(Stmt *value) {
+  std::vector<Stmt *> values = {value};
+  return insert(Stmt::make_typed<BuiltInOutputStmt>(
+      BuiltInOutputStmt::BuiltIn::FragDepth, -1, values));
 }
 
 BuiltInOutputStmt *IRBuilder::create_position_output(

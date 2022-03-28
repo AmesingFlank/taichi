@@ -45,6 +45,18 @@ class AllocaStmt : public Stmt {
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
+class DiscardStmt : public Stmt {
+ public:
+  int dummy = 0;
+  DiscardStmt() {
+    TI_STMT_REG_FIELDS;
+  }
+
+  TI_STMT_DEF_FIELDS(dummy);
+  TI_DEFINE_ACCEPT_AND_CLONE;
+};
+
+
 /**
  * Updates mask, break if all bits of the mask are 0.
  */
@@ -1019,7 +1031,7 @@ class VertexOutputStmt : public Stmt {
 
 class BuiltInOutputStmt : public Stmt {
  public:
-  enum class BuiltIn : int { Position = 0, Color = 1 };
+  enum class BuiltIn : int { Position = 0, Color = 1, FragDepth = 2};
 
   static std::string get_builtin_name(BuiltIn b) {
     switch (b) {
@@ -1027,6 +1039,8 @@ class BuiltInOutputStmt : public Stmt {
         return "position";
       case BuiltIn::Color:
         return "color";
+      case BuiltIn::FragDepth:
+        return "frag_depth";
       default:
         TI_ERROR("unrecognized builtin {}", static_cast<int>(b));
     }

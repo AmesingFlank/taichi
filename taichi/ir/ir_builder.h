@@ -160,6 +160,8 @@ class IRBuilder {
   BuiltInOutputStmt* create_position_output(const std::vector<Stmt *> &values);
   FragmentInputStmt* create_fragment_input(int location,  DataType dt);
   BuiltInOutputStmt* create_color_output(int location,  const std::vector<Stmt *> &values);
+  BuiltInOutputStmt* create_depth_output( Stmt * value);
+  DiscardStmt* create_discard();
 
   // The return value of the kernel.
   ReturnStmt *create_return(Stmt *value);
