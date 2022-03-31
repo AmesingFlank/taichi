@@ -9,6 +9,7 @@
 
 #include "taichi/aot/module_data.h"
 #include "taichi/aot/module_builder.h"
+#include "taichi/texture/texture.h"
 
 namespace taichi {
 namespace lang {
@@ -17,7 +18,7 @@ namespace webgpu {
 class AotModuleBuilderImpl : public AotModuleBuilder {
  public:
   explicit AotModuleBuilderImpl(
-      const std::vector<CompiledSNodeStructs> &compiled_structs);
+      const std::vector<CompiledSNodeStructs> &compiled_structs, const std::unordered_map<int, Texture*>& textures);
 
   void dump(const std::string &output_dir,
             const std::string &filename) const override;
@@ -41,6 +42,7 @@ class AotModuleBuilderImpl : public AotModuleBuilder {
                             Kernel *kernel) override;
  
   const std::vector<CompiledSNodeStructs> &compiled_structs_;
+  const std::unordered_map<int, Texture*>& textures_;
   TaichiAotData ti_aot_data_;
 };
 

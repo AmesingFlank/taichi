@@ -41,13 +41,17 @@ void WebgpuProgramImpl::materialize_snode_tree(
 }
 
 std::unique_ptr<AotModuleBuilder> WebgpuProgramImpl::make_aot_module_builder() {
-  return std::make_unique<AotModuleBuilderImpl>(aot_compiled_snode_structs_);
+  return std::make_unique<AotModuleBuilderImpl>(aot_compiled_snode_structs_, textures_);
 }
 
 DeviceAllocation WebgpuProgramImpl::allocate_memory_ndarray(
     std::size_t alloc_size,
     uint64 *result_buffer) {
       TI_NOT_IMPLEMENTED;
+}
+
+void WebgpuProgramImpl::compile_texture_type (Texture* texture) {
+    textures_[texture->id] = texture;
 }
 
 WebgpuProgramImpl::~WebgpuProgramImpl() {

@@ -8,6 +8,7 @@
 #include "taichi/program/snode_expr_utils.h"
 #include "taichi/program/kernel_profiler.h"
 #include "taichi/backends/device.h"
+#include "taichi/texture/texture.h"
 
 namespace taichi {
 namespace lang {
@@ -41,6 +42,9 @@ class ProgramImpl {
       SNodeTree *tree,
       std::vector<std::unique_ptr<SNodeTree>> &snode_trees);
 
+  virtual void compile_texture_type(Texture* texture){
+    TI_NOT_IMPLEMENTED;
+  }
   /**
    * Compiles the @param tree types and allocates runtime buffer for it.
    */

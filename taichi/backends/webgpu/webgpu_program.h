@@ -33,6 +33,8 @@ class WebgpuProgramImpl : public ProgramImpl {
       SNodeTree *tree,
       std::vector<std::unique_ptr<SNodeTree>> &snode_trees) override;
 
+  void compile_texture_type(Texture* texture) override;
+
   void materialize_runtime(MemoryPool *memory_pool,
                            KernelProfilerBase *profiler,
                            uint64 **result_buffer_ptr) override;
@@ -68,6 +70,7 @@ class WebgpuProgramImpl : public ProgramImpl {
 
  private: 
   std::vector<webgpu::CompiledSNodeStructs> aot_compiled_snode_structs_; 
+  std::unordered_map<int, Texture*> textures_;
 };
 }  // namespace lang
 }  // namespace taichi

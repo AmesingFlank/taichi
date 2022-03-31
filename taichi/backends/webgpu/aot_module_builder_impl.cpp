@@ -7,7 +7,6 @@
 #include "taichi/backends/webgpu/wgsl_codegen.h"
 #include "taichi/program/program.h"
 
-
 namespace taichi {
 namespace lang {
 namespace webgpu {
@@ -30,7 +29,7 @@ class AotDataConverter {
       auto val = visit(ker);
       for (int j = 0; j < ker.tasks_attribs.size(); ++j) {
         auto &code = in.wgsl_codes[i][j];
-        //printf("%s\n",code.c_str());
+        // printf("%s\n",code.c_str());
         size_t code_num_bytes = code.size();
         val.tasks[j].code = std::vector<unsigned char>(code_num_bytes);
         std::memcpy(val.tasks[j].code.data(), code.data(), code_num_bytes);
@@ -84,13 +83,13 @@ class AotDataConverter {
 
 }  // namespace
 AotModuleBuilderImpl::AotModuleBuilderImpl(
-    const std::vector<CompiledSNodeStructs> &compiled_structs)
-    : compiled_structs_(compiled_structs) {
+    const std::vector<CompiledSNodeStructs> &compiled_structs,
+    const std::unordered_map<int, Texture *> &textures)
+    : compiled_structs_(compiled_structs), textures_(textures) {
   if (!compiled_structs.empty()) {
     ti_aot_data_.root_buffer_size = compiled_structs[0].root_size;
   }
-} 
- 
+}
 
 aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(
     const std::string &name) const {
@@ -100,7 +99,6 @@ aot::CompiledTaichiKernel AotModuleBuilderImpl::get_compiled_kernel(
 
 void AotModuleBuilderImpl::dump(const std::string &output_dir,
                                 const std::string &filename) const {
-  
 }
 
 void AotModuleBuilderImpl::add_per_backend(const std::string &identifier,
@@ -114,12 +112,13 @@ void AotModuleBuilderImpl::add_per_backend(const std::string &identifier,
   params.ti_kernel_name = taichi_kernel_name;
   params.kernel = kernel;
   params.compiled_structs = compiled_structs_;
-  
+  params.textures = textures_;
+
   webgpu::KernelCodegen codegen(params);
   TaichiKernelAttributes kernel_attribs;
   std::vector<std::string> generated_wgsl;
-  codegen.run(kernel_attribs, generated_wgsl); 
-  
+  codegen.run(kernel_attribs, generated_wgsl);
+
   kernel_attribs.name = identifier;
   ti_aot_data_.kernels.push_back(kernel_attribs);
   ti_aot_data_.wgsl_codes.push_back(generated_wgsl);

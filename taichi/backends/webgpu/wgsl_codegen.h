@@ -4,7 +4,7 @@
 
 #include "taichi/backends/webgpu/snode_struct_compiler.h"
 #include "taichi/backends/webgpu/kernel_utils.h"
-
+#include "taichi/texture/texture.h"
   
 namespace taichi {
 namespace lang {
@@ -21,6 +21,7 @@ class KernelCodegen {
     std::string ti_kernel_name;
     Kernel *kernel;
     std::vector<CompiledSNodeStructs> compiled_structs;
+    std::unordered_map<int, Texture*> textures;
    };
 
   explicit KernelCodegen(const Params &params);

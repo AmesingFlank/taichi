@@ -37,8 +37,8 @@
 #include "taichi/backends/dx/dx_api.h"
 #endif
 #ifdef TI_WITH_WEBGPU
-#include "taichi/backends/webgpu/webgpu_program.h" 
-#include "taichi/backends/webgpu/aot_module_builder_impl.h" 
+#include "taichi/backends/webgpu/webgpu_program.h"
+#include "taichi/backends/webgpu/aot_module_builder_impl.h"
 #endif
 
 #if defined(TI_ARCH_x64)
@@ -174,7 +174,7 @@ Program::Program(Arch desired_arch)
 #if defined(TI_EMSCRIPTENED)
   config.constant_folding = false;
   config.packed = true;
-  //config.print_ir = true;
+  // config.print_ir = true;
 #endif
 }
 
@@ -579,7 +579,8 @@ std::unique_ptr<AotModuleBuilder> Program::make_aot_module_builder(Arch arch) {
 #endif
   }
   if (arch_uses_llvm(config.arch) || config.arch == Arch::metal ||
-      config.arch == Arch::vulkan || config.arch == Arch::opengl|| config.arch == Arch::webgpu) {
+      config.arch == Arch::vulkan || config.arch == Arch::opengl ||
+      config.arch == Arch::webgpu) {
     return program_impl_->make_aot_module_builder();
   }
   return nullptr;
@@ -601,6 +602,37 @@ int Program::allocate_snode_tree_id() {
     free_snode_tree_ids_.pop();
     return id;
   }
+}
+
+int Program::allocate_texture_id() {
+  if (free_texture_ids_.empty()) {
+    return textures_.size();
+  } else {
+    int id = free_texture_ids_.top();
+    free_texture_ids_.pop();
+    return id;
+  }
+}
+void Program::destroy_texture(Texture* texture) {
+  TI_NOT_IMPLEMENTED;
+}
+
+Texture *Program::add_texture(TextureParams params,
+                                   bool compile_only) {
+  const int id = allocate_texture_id(); 
+  auto texture = std::make_unique<Texture>( params, id);
+  if (compile_only) {
+    program_impl_->compile_texture_type(texture.get() );
+  } else {
+    TI_NOT_IMPLEMENTED;
+  }
+  if (id < textures_.size()) {
+    textures_[id] = std::move(texture);
+  } else {
+    TI_ASSERT(id == textures_.size());
+    textures_.push_back(std::move(texture));
+  }
+  return textures_[id].get();
 }
 
 }  // namespace lang

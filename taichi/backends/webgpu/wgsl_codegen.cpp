@@ -17,8 +17,8 @@ namespace taichi {
 namespace lang {
 namespace webgpu {
 
-using BufferInfo = TaskAttributes::BufferInfo;
-using BufferType = TaskAttributes::BufferType;
+using ResourceInfo = TaskAttributes::ResourceInfo;
+using ResourceType = TaskAttributes::ResourceType;
 namespace {
 
 class StringBuilder {
@@ -62,6 +62,7 @@ class TaskCodegen : public IRVisitor {
   struct Params {
     OffloadedStmt *task_ir;
     std::vector<CompiledSNodeStructs> compiled_structs;
+    std::unordered_map<int, Texture *> textures;
     const KernelContextAttributes *ctx_attribs;
     std::string ti_kernel_name;
     int task_id_in_kernel;
@@ -389,23 +390,13 @@ class TaskCodegen : public IRVisitor {
 
   void visit(BuiltInOutputStmt *stmt) override {
     ensure_stage_out_struct();
-    std::string prim_name =
-        get_primitive_type_name(stmt->values[0]->element_type());
     int num_components = stmt->values.size();
-    std::string type_name = prim_name;
-    if (num_components > 1) {
-      type_name = std::string("vec") + std::to_string(num_components) + "<" +
-                  prim_name + ">";
-    }
-    std::string output_expr = stmt->values[0]->raw_name();
-    if (num_components > 1) {
-      output_expr = type_name + "(" + stmt->values[0]->raw_name();
-      for (int i = 1; i < num_components; ++i) {
-        output_expr += ", ";
-        output_expr += stmt->values[i]->raw_name();
-      }
-      output_expr += ")";
-    }
+    DataType prim_type = stmt->values[0]->element_type();
+    std::string type_name =
+        get_scalar_or_vector_type_name(prim_type, num_components);
+
+    std::string output_expr =
+        get_scalar_or_vector_expr(stmt->values, type_name);
 
     std::string output_name;
 
@@ -431,6 +422,77 @@ class TaskCodegen : public IRVisitor {
     body_ << body_indent() << "discard;\n";
   }
 
+  void visit(TextureFunctionStmt *stmt) override {
+    Texture *texture = stmt->texture;
+    ResourceInfo texture_resource = {ResourceType::Texture, texture->id};
+    std::string texture_name = get_texture_name(texture_resource);
+    std::string texel_type_name = get_scalar_or_vector_type_name(
+        PrimitiveType::get(texture->params.primitive), 4);
+
+    bool requires_sampler;
+    std::string func_name;
+    switch (stmt->func) {
+      case TextureFunctionStmt::Function::Sample: {
+        requires_sampler = true;
+        func_name = "textureSample";
+        break;
+      }
+      default: {
+        TI_ERROR("unsupported texture fun")
+      }
+    }
+
+    ResourceInfo sampler_resource = {ResourceType::Sampler, texture->id};
+    std::string sampler_name;
+    if (requires_sampler) {
+      sampler_name = get_sampler_name(sampler_resource);
+    }
+
+    DataType operand_prim_type = stmt->operand_values[0]->element_type();
+    std::string operand_type_name = get_scalar_or_vector_type_name(
+        operand_prim_type, stmt->operand_values.size());
+    std::string operands_expr =
+        get_scalar_or_vector_expr(stmt->operand_values, operand_type_name);
+
+    switch (stmt->func) {
+      case TextureFunctionStmt::Function::Sample: {
+        emit_let(stmt->raw_name(), texel_type_name);
+        body_ << "textureSample(" << texture_name << ", " << sampler_name << ", "<< operands_expr<<");\n";
+      }
+      default: {
+        TI_ERROR("unsupported texture fun");
+      }
+    }
+  }
+
+  void visit(CompositeExtractStmt* stmt) override {
+    std::string type_name = get_primitive_type_name(stmt->element_type());
+    emit_let(stmt->raw_name(), type_name);
+    body_<< stmt->base->raw_name();
+    switch(stmt->element_index){
+      case 0:{
+        body_<<".x";
+        break;
+      }
+      case 1:{
+        body_<<".y";
+        break;
+      }
+      case 2:{
+        body_<<".z";
+        break;
+      }
+      case 3:{
+        body_<<".w";
+        break;
+      }
+      default:{
+        TI_ERROR("unsupported composite extract index: {}", stmt->element_index);
+      }
+    }
+    body_<<";\n";
+  }
+
   void visit(ArgLoadStmt *stmt) override {
     const auto arg_id = stmt->arg_id;
     const auto &arg_attribs = ctx_attribs_->args()[arg_id];
@@ -440,7 +502,7 @@ class TaskCodegen : public IRVisitor {
     } else {
       const auto dt = arg_attribs.dt;
       std::string buffer_name =
-          get_buffer_member_name(BufferInfo(BufferType::Args));
+          get_buffer_member_name(ResourceInfo(ResourceType::Args));
       if (!enforce_16bytes_alignment()) {
         emit_let(stmt->raw_name(), get_primitive_type_name(dt));
         body_ << "bitcast<" << get_primitive_type_name(dt) << ">("
@@ -466,7 +528,7 @@ class TaskCodegen : public IRVisitor {
     }
     for (int i = 0; i < stmt->values.size(); i++) {
       body_ << body_indent()
-            << get_buffer_member_name(BufferInfo(BufferType::Rets)) << "["
+            << get_buffer_member_name(ResourceInfo(ResourceType::Rets)) << "["
             << std::to_string(i) << "] = ";
       auto dt = stmt->element_types()[i];
       if (dt->is_primitive(PrimitiveTypeID::f32)) {
@@ -560,10 +622,11 @@ class TaskCodegen : public IRVisitor {
     std::string buffer_name;
     if (info.is_root) {
       int root_id = info.root_id;
-      buffer_name =
-          get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+      buffer_name = get_buffer_member_name(
+          ResourceInfo(ResourceType::RootNormal, root_id));
     } else {
-      buffer_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+      buffer_name =
+          get_buffer_member_name(ResourceInfo(ResourceType::GlobalTemps));
     }
     body_ << body_indent() << buffer_name << "[" << stmt->dest->raw_name()
           << "] = bitcast<i32>(" << (stmt->val->raw_name()) << ");\n";
@@ -576,10 +639,11 @@ class TaskCodegen : public IRVisitor {
     std::string buffer_name;
     if (info.is_root) {
       int root_id = info.root_id;
-      buffer_name =
-          get_buffer_member_name(BufferInfo(BufferType::RootNormal, root_id));
+      buffer_name = get_buffer_member_name(
+          ResourceInfo(ResourceType::RootNormal, root_id));
     } else {
-      buffer_name = get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+      buffer_name =
+          get_buffer_member_name(ResourceInfo(ResourceType::GlobalTemps));
     }
     if (!enforce_16bytes_alignment()) {
       emit_let(stmt->raw_name(), get_primitive_type_name(dt));
@@ -605,8 +669,8 @@ class TaskCodegen : public IRVisitor {
     PointerInfo info = pointer_infos_.at(stmt->dest->raw_name());
     TI_ASSERT(info.is_root);
     int root_id = info.root_id;
-    buffer_member_name =
-        get_buffer_member_name(BufferInfo(BufferType::RootAtomicI32, root_id));
+    buffer_member_name = get_buffer_member_name(
+        ResourceInfo(ResourceType::RootAtomicI32, root_id));
     std::string atomic_func_name;
     switch (stmt->op_type) {
       case AtomicOpType::add: {
@@ -758,6 +822,30 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
     return "";
   }
 
+  std::string get_scalar_or_vector_type_name(DataType dt, int num_components) {
+    std::string prim_name = get_primitive_type_name(dt);
+    std::string type_name = prim_name;
+    if (num_components > 1) {
+      type_name = std::string("vec") + std::to_string(num_components) + "<" +
+                  prim_name + ">";
+    }
+    return type_name;
+  }
+
+  std::string get_scalar_or_vector_expr(const std::vector<Stmt *> &values,
+                                        std::string type_name) {
+    std::string output_expr = values[0]->raw_name();
+    if (values.size() > 1) {
+      output_expr = type_name + "(" + values[0]->raw_name();
+      for (int i = 1; i < values.size(); ++i) {
+        output_expr += ", ";
+        output_expr += values[i]->raw_name();
+      }
+      output_expr += ")";
+    }
+    return output_expr;
+  }
+
   void generate_serial_kernel(OffloadedStmt *stmt) {
     task_attribs_.name = task_name_;
     task_attribs_.task_type = OffloadedTaskType::serial;
@@ -801,7 +889,7 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
         body_ << std::to_string(stmt->begin_offset / 4) << ";\n";
 
         std::string gtmps_buffer_member_name =
-            get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+            get_buffer_member_name(ResourceInfo(ResourceType::GlobalTemps));
         begin_expr_value = gtmps_buffer_member_name + "[begin_idx]";
       } else {
         begin_expr_value = std::to_string(stmt->begin_value);
@@ -811,7 +899,7 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
         emit_let("end_idx", "i32");
         body_ << std::to_string(stmt->end_offset / 4) << ";\n";
         std::string gtmps_buffer_member_name =
-            get_buffer_member_name(BufferInfo(BufferType::GlobalTemps));
+            get_buffer_member_name(ResourceInfo(ResourceType::GlobalTemps));
         end_expr_value = gtmps_buffer_member_name + "[end_idx]";
       } else {
         end_expr_value = std::to_string(stmt->end_value);
@@ -1072,7 +1160,7 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
     }
   }
 
-  std::string get_buffer_member_name(BufferInfo buffer) {
+  std::string get_buffer_member_name(ResourceInfo buffer) {
     return get_buffer_name(buffer) + ".member";
   }
 
@@ -1083,78 +1171,82 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
     return (a / b) + 1;
   }
 
-  int get_element_count(BufferInfo buffer) {
+  int get_element_count(ResourceInfo buffer) {
     switch (buffer.type) {
-      case BufferType::RootNormal: {
-        return divUp(compiled_structs_[buffer.root_id].root_size,
+      case ResourceType::RootNormal: {
+        return divUp(compiled_structs_[buffer.resource_id].root_size,
                      get_raw_data_type_size());
       }
-      case BufferType::RootAtomicI32: {
-        return divUp(compiled_structs_[buffer.root_id].root_size,
+      case ResourceType::RootAtomicI32: {
+        return divUp(compiled_structs_[buffer.resource_id].root_size,
                      4);  // WGSL doesn't allow atomic<vec4<i32>>, so the type
                           // size is always 4
       }
-      case BufferType::GlobalTemps: {
+      case ResourceType::GlobalTemps: {
         return divUp(
             65536,
             get_raw_data_type_size());  // maximum size allowed by WebGPU Chrome
                                         // DX backend. matches Runtime.ts
       }
-      case BufferType::RandStates: {
+      case ResourceType::RandStates: {
         return 65536;  // matches Runtime.ts // note that we have up to 65536
                        // shader invocations
       }
-      case BufferType::Args: {
+      case ResourceType::Args: {
         return divUp(ctx_attribs_->args_bytes(), get_raw_data_type_size());
       }
-      case BufferType::Rets: {
+      case ResourceType::Rets: {
         return divUp(ctx_attribs_->rets_bytes(), get_raw_data_type_size());
       }
     }
   }
 
-  std::string get_buffer_name(BufferInfo buffer) {
+  std::string get_buffer_name(ResourceInfo buffer) {
     std::string name;
     std::string element_type = get_raw_data_type_name();
     switch (buffer.type) {
-      case BufferType::RootNormal: {
-        name = "root_buffer_" + std::to_string(buffer.root_id) + "_";
+      case ResourceType::RootNormal: {
+        name = "root_buffer_" + std::to_string(buffer.resource_id) + "_";
         break;
       }
-      case BufferType::RootAtomicI32: {
-        name = "root_buffer_" + std::to_string(buffer.root_id) + "_atomic_";
+      case ResourceType::RootAtomicI32: {
+        name = "root_buffer_" + std::to_string(buffer.resource_id) + "_atomic_";
         element_type = "atomic<i32>";
         break;
       }
-      case BufferType::GlobalTemps: {
+      case ResourceType::GlobalTemps: {
         name = "global_tmps_";
         break;
       }
-      case BufferType::RandStates: {
+      case ResourceType::RandStates: {
         name = "rand_states_";
         element_type = "RandState";
         break;
       }
-      case BufferType::Args: {
+      case ResourceType::Args: {
         name = "args_";
         break;
       }
-      case BufferType::Rets: {
+      case ResourceType::Rets: {
         name = "rets_";
         break;
       }
+      default: {
+        TI_ERROR("not a buffer");
+      }
     }
-    if (task_attribs_.buffer_bindings.find(buffer) ==
-        task_attribs_.buffer_bindings.end()) {
-      int binding = binding_point_begin_ + task_attribs_.buffer_bindings.size();
-      task_attribs_.buffer_bindings[buffer] = binding;
+    if (task_attribs_.resource_bindings.find(buffer) ==
+        task_attribs_.resource_bindings.end()) {
+      int binding =
+          binding_point_begin_ + task_attribs_.resource_bindings.size();
+      task_attribs_.resource_bindings[buffer] = binding;
       int element_count = get_element_count(buffer);
       declare_new_buffer(buffer, name, binding, element_type, element_count);
     }
     return name;
   }
 
-  void declare_new_buffer(BufferInfo buffer,
+  void declare_new_buffer(ResourceInfo buffer,
                           std::string name,
                           int binding,
                           std::string element_type,
@@ -1187,6 +1279,101 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
     global_decls_ << decl_template;
   }
 
+  std::string get_texture_name(ResourceInfo texture_info) {
+    if (texture_info.type != ResourceType::Texture) {
+      TI_ERROR("not a texture");
+    }
+    Texture *texture = textures_.at(texture_info.resource_id);
+    std::string name = "texture_" + std::to_string(texture->id);
+    std::string element_type =
+        get_primitive_type_name(PrimitiveType::get(texture->params.primitive));
+    std::string type_name;
+    bool is_depth = texture->params.is_depth;
+    switch (texture->params.dimensionality) {
+      case TextureDimensionality::Dim2d: {
+        if (is_depth) {
+          type_name = "texture_2d";
+          break;
+        }
+        TI_ERROR("depth texture not supported");
+      }
+
+      default: {
+        TI_ERROR("unrecgnized dimensionality")
+        break;
+      }
+    }
+    if (task_attribs_.resource_bindings.find(texture_info) ==
+        task_attribs_.resource_bindings.end()) {
+      int binding =
+          binding_point_begin_ + task_attribs_.resource_bindings.size();
+      task_attribs_.resource_bindings[texture_info] = binding;
+      declare_new_texture(texture_info, name, type_name, element_type, binding);
+    }
+    return name;
+  }
+
+  void declare_new_texture(ResourceInfo texture,
+                           std::string name,
+                           std::string type_name,
+                           std::string element_type,
+                           int binding) {
+    std::string decl_template =
+        R"(
+
+@group(0) @binding(TEXTURE_BINDING)
+var TEXTURE_NAME: TYPE_NAME<ELEMENT_TYPE>;
+
+)";
+
+    string_replace_all(decl_template, "TYPE_NAME", type_name);
+    string_replace_all(decl_template, "TEXTURE_NAME", name);
+    string_replace_all(decl_template, "TEXTURE_BINDING",
+                       std::to_string(binding));
+    string_replace_all(decl_template, "ELEMENT_TYPE", element_type);
+    global_decls_ << decl_template;
+  }
+
+  std::string get_sampler_name(ResourceInfo sampler_info) {
+    if (sampler_info.type != ResourceType::Sampler) {
+      TI_ERROR("not a sampler");
+    }
+    Texture *texture = textures_.at(sampler_info.resource_id);
+    std::string name = "sampler_" + std::to_string(texture->id);
+    std::string type_name = "sampler";
+    bool is_depth = texture->params.is_depth;
+    if (is_depth) {
+      TI_ERROR("depth sampler not supported");
+    }
+    if (task_attribs_.resource_bindings.find(sampler_info) ==
+        task_attribs_.resource_bindings.end()) {
+      int binding =
+          binding_point_begin_ + task_attribs_.resource_bindings.size();
+      task_attribs_.resource_bindings[sampler_info] = binding;
+      declare_new_sampler(sampler_info, name, type_name, binding);
+    }
+    return name;
+  }
+
+  void declare_new_sampler(ResourceInfo sampler,
+                           std::string name,
+                           std::string type_name,
+                           int binding) {
+    std::string decl_template =
+        R"(
+
+@group(0) @binding(SAMPLER_BINDING)
+var SAMPLER_NAME: TYPE_NAME;
+
+)";
+
+    string_replace_all(decl_template, "TYPE_NAME", type_name);
+    string_replace_all(decl_template, "SAMPLER_NAME", name);
+    string_replace_all(decl_template, "SAMPLER_BINDING",
+                       std::to_string(binding));
+    global_decls_ << decl_template;
+  }
+
   bool rand_initiated_ = false;
   void init_rand() {
     if (rand_initiated_) {
@@ -1205,7 +1392,7 @@ struct RandState{
 )";
     global_decls_ << struct_decl;
     std::string rand_states_member_name =
-        get_buffer_member_name(BufferInfo(BufferType::RandStates));
+        get_buffer_member_name(ResourceInfo(ResourceType::RandStates));
     std::string rand_func_decl =
         R"(
 
@@ -1245,6 +1432,7 @@ fn rand_i32(id:u32) -> i32 {
 
   OffloadedStmt *const task_ir_;  // not owned
   std::vector<CompiledSNodeStructs> compiled_structs_;
+  std::unordered_map<int, Texture *> textures_;
   std::unordered_map<int, int> snode_to_root_;
   const KernelContextAttributes *const ctx_attribs_;  // not owned
   const std::string task_name_;
@@ -1278,6 +1466,7 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     tp.task_ir = tasks[i]->as<OffloadedStmt>();
     tp.task_id_in_kernel = i;
     tp.compiled_structs = params_.compiled_structs;
+    tp.textures = params_.textures;
     tp.ctx_attribs = &ctx_attribs_;
     tp.ti_kernel_name = params_.ti_kernel_name;
     tp.binding_point_begin = next_binding_point_begin;
@@ -1287,7 +1476,7 @@ void KernelCodegen::run(TaichiKernelAttributes &kernel_attribs,
     auto task_res = cgen.run();
 
     if (tp.task_ir->task_type == OffloadedTaskType::vertex_for) {
-      next_binding_point_begin = task_res.task_attribs.buffer_bindings.size();
+      next_binding_point_begin = task_res.task_attribs.resource_bindings.size();
     } else {
       next_binding_point_begin = 0;
     }

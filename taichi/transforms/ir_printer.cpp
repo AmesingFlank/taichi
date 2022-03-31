@@ -458,6 +458,18 @@ class IRPrinter : public IRVisitor {
     print("{}{} = discard", stmt->type_hint(), stmt->name());
   }
 
+  void visit(TextureFunctionStmt *stmt) override {
+    print("{}[] {} = texture {} of texture #{}, operands: ", stmt->type_hint(),
+          stmt->result_num_components, stmt->name(),
+          TextureFunctionStmt::get_function_name(stmt->func),
+          stmt->texture->id, stmt->operands_raw_names());
+  }
+
+  void visit(CompositeExtractStmt *stmt) override {
+    print("{}{} = extract component {} of {}", stmt->type_hint(), stmt->name(), stmt->element_index, stmt->base->name());
+  }
+
+
   void visit(FrontendReturnStmt *stmt) override {
     print("{}{} : return [{}]", stmt->type_hint(), stmt->name(),
           stmt->values.serialize());

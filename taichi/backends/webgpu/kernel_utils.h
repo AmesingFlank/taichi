@@ -7,6 +7,7 @@
 #include "taichi/ir/offloaded_task_type.h"
 #include "taichi/ir/type.h"
 #include "taichi/backends/device.h"
+#include "taichi/texture/texture.h"
 
 namespace taichi {
 namespace lang {
@@ -20,41 +21,45 @@ namespace webgpu {
  * Per offloaded task attributes.
  */
 struct TaskAttributes {
-  enum class BufferType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args, Rets };
+  enum class ResourceType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args, Rets, Texture, Sampler, };
 
-  struct BufferInfo {
-    BufferType type;
-    int root_id{-1};  // only used if type==Root or type==ExtArr
+  struct ResourceInfo {
+    ResourceType type;
+    int resource_id{-1};  // only used if type==Root or type==ExtArr
 
-    BufferInfo() = default;
+    ResourceInfo() = default;
 
-    BufferInfo(BufferType buffer_type) : type(buffer_type) {
+    ResourceInfo(ResourceType buffer_type) : type(buffer_type) {
     }
 
-    BufferInfo(BufferType buffer_type, int root_buffer_id)
-        : type(buffer_type), root_id(root_buffer_id) {
+    ResourceInfo(ResourceType buffer_type, int root_buffer_id)
+        : type(buffer_type), resource_id(root_buffer_id) {
     }
 
-    bool operator==(const BufferInfo &other) const {
+    bool operator==(const ResourceInfo &other) const {
       if (type != other.type) {
         return false;
       }
-      if (type == BufferType::RootNormal || type == BufferType::RootAtomicI32) {
-        return root_id == other.root_id;
+      if (type == ResourceType::RootNormal || type == ResourceType::RootAtomicI32) {
+        return resource_id == other.resource_id;
       }
       return true;
     }
 
-    TI_IO_DEF(type, root_id);
+    static bool resource_requires_id(ResourceType type){
+      return type == ResourceType::RootNormal || type == ResourceType::RootAtomicI32 || type == ResourceType::Texture || type == ResourceType::Sampler;
+    }
+
+    TI_IO_DEF(type, resource_id);
   };
 
-  struct BufferInfoHasher {
-    std::size_t operator()(const BufferInfo &buf) const {
+  struct ResourceInfoHasher {
+    std::size_t operator()(const ResourceInfo &buf) const {
       using std::hash;
       using std::size_t;
       using std::string;
 
-      return hash<BufferType>()(buf.type) ^ buf.root_id;
+      return hash<ResourceType>()(buf.type) ^ buf.resource_id;
     }
   }; 
 
@@ -86,18 +91,18 @@ struct TaskAttributes {
     TI_IO_DEF(begin, end, const_begin, const_end);
   };
 
-  std::unordered_map<BufferInfo, int, BufferInfoHasher> buffer_bindings;
+  std::unordered_map<ResourceInfo, int, ResourceInfoHasher> resource_bindings;
 
   // Only valid when |task_type| is range_for.
   std::optional<RangeForAttributes> range_for_attribs;
 
-  static std::string buffers_name(BufferInfo b);
+  static std::string buffers_name(ResourceInfo b);
 
   TI_IO_DEF(name,
             advisory_total_num_threads,
             advisory_num_threads_per_group,
             task_type,
-            buffer_bindings,
+            resource_bindings,
             range_for_attribs);
 };
 
