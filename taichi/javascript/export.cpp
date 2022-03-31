@@ -182,6 +182,8 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<FragmentInputStmt, base<Stmt>>("FragmentInputStmt");
   class_<BuiltInOutputStmt, base<Stmt>>("BuiltInOutputStmt");
   class_<DiscardStmt, base<Stmt>>("DiscardStmt");
+  class_<TextureFunctionStmt, base<Stmt>>("TextureFunctionStmt");
+  class_<CompositeExtractStmt, base<Stmt>>("CompositeExtractStmt");
 
   class_<IRBuilder::LoopGuard>("LoopGuard");
   class_<IRBuilder::IfGuard>("IfGuard");
@@ -313,6 +315,8 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_fragment_for)
       .EXPORT_FUNCTION(create_discard)
       .EXPORT_FUNCTION(create_depth_output)
+      .EXPORT_FUNCTION(create_texture_sample)
+      .EXPORT_FUNCTION(create_composite_extract)
       ;
 
 #undef EXPORT_FUNCTION

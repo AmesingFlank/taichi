@@ -25,6 +25,7 @@
 #include "taichi/program/context.h"
 #include "taichi/runtime/runtime.h"
 #include "taichi/struct/snode_tree.h"
+#include "taichi/texture/texture.h"
 #include "taichi/system/memory_pool.h"
 #include "taichi/system/threading.h"
 #include "taichi/system/unified_allocator.h"
@@ -285,6 +286,10 @@ class TI_DLL_EXPORT Program {
    */
   int allocate_snode_tree_id();
 
+  Texture *add_texture(TextureParams params, bool compile_only);
+  void destroy_texture(Texture *snode_tree);
+  int allocate_texture_id();
+
   /**
    * Gets the root of a SNode tree.
    *
@@ -339,6 +344,9 @@ class TI_DLL_EXPORT Program {
 
   std::vector<std::unique_ptr<SNodeTree>> snode_trees_;
   std::stack<int> free_snode_tree_ids_;
+
+  std::vector<std::unique_ptr<Texture>> textures_;
+  std::stack<int> free_texture_ids_;
 
   std::vector<std::unique_ptr<Function>> functions_;
   std::unordered_map<FunctionKey, Function *> function_map_;

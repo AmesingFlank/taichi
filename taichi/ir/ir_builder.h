@@ -2,6 +2,7 @@
 
 #include "taichi/ir/ir.h"
 #include "taichi/ir/mesh.h"
+#include "taichi/texture/texture.h"
 
 TLANG_NAMESPACE_BEGIN
 
@@ -162,6 +163,9 @@ class IRBuilder {
   BuiltInOutputStmt* create_color_output(int location,  const std::vector<Stmt *> &values);
   BuiltInOutputStmt* create_depth_output( Stmt * value);
   DiscardStmt* create_discard();
+
+  TextureFunctionStmt* create_texture_sample(Texture* texture, const std::vector<Stmt *> &coord_values);
+  CompositeExtractStmt* create_composite_extract(Stmt* base, int index);
 
   // The return value of the kernel.
   ReturnStmt *create_return(Stmt *value);

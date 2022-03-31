@@ -221,6 +221,16 @@ BuiltInOutputStmt *IRBuilder::create_position_output(
       BuiltInOutputStmt::BuiltIn::Position, -1, values));
 }
 
+TextureFunctionStmt *IRBuilder::create_texture_sample(Texture *texture, const std::vector<Stmt *> &coord_values) {
+  return insert(Stmt::make_typed<TextureFunctionStmt>(
+      texture, TextureFunctionStmt::Function::Sample, coord_values));
+}
+CompositeExtractStmt *IRBuilder::create_composite_extract(Stmt *base,
+                                                          int index) {
+  return insert(Stmt::make_typed<CompositeExtractStmt>(
+      base, index));
+}
+
 ArgLoadStmt *IRBuilder::create_arg_load(int arg_id, DataType dt, bool is_ptr) {
   return insert(Stmt::make_typed<ArgLoadStmt>(arg_id, dt, is_ptr));
 }

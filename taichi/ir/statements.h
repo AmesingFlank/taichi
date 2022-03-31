@@ -5,6 +5,7 @@
 #include "taichi/ir/stmt_op_types.h"
 #include "taichi/backends/arch.h"
 #include "taichi/ir/mesh.h"
+#include "taichi/texture/texture.h"
 
 #include <optional>
 
@@ -55,7 +56,6 @@ class DiscardStmt : public Stmt {
   TI_STMT_DEF_FIELDS(dummy);
   TI_DEFINE_ACCEPT_AND_CLONE;
 };
-
 
 /**
  * Updates mask, break if all bits of the mask are 0.
@@ -213,6 +213,71 @@ class FragmentInputStmt : public Stmt {
   }
 
   TI_STMT_DEF_FIELDS(ret_type, location);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
+class TextureFunctionStmt : public Stmt {
+ public:
+  Texture *texture;
+  enum class Function : int { Sample };
+
+  Function func;
+  int result_num_components;
+  std::vector<Stmt *> operand_values;
+
+  TextureFunctionStmt(Texture *texture,
+                      Function func,
+                      const std::vector<Stmt *> &operand_values)
+      : texture(texture), func(func), operand_values(operand_values) {
+    this->ret_type =
+        TextureFunctionStmt::get_result_primitive_type(func, texture->params);
+    this->result_num_components =
+        TextureFunctionStmt::get_result_num_components(func, texture->params);
+    TI_STMT_REG_FIELDS;
+  }
+
+  static DataType get_result_primitive_type(Function f, TextureParams params) {
+    return PrimitiveType::f32;
+  }
+
+  static int get_result_num_components(Function f, TextureParams params) {
+    return 4;
+  }
+
+  static std::string get_function_name(Function f) {
+    switch (f) {
+      case Function::Sample:
+        return "sample";
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(f));
+    }
+  }
+
+  std::string operands_raw_names() {
+    std::string names;
+    for (auto &x : operand_values) {
+      names += x->raw_name() + ", ";
+    }
+    names.pop_back();
+    names.pop_back();
+    return names;
+  }
+
+  TI_STMT_DEF_FIELDS(ret_type, func, result_num_components, operand_values);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
+class CompositeExtractStmt : public Stmt {
+ public:
+  Stmt *base;
+  int element_index;
+  CompositeExtractStmt(Stmt *base, int element_index)
+      : base(base), element_index(element_index) {
+    ret_type = base->element_type();
+    TI_STMT_REG_FIELDS;
+  }
+
+  TI_STMT_DEF_FIELDS(ret_type, element_index, base);
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
@@ -1031,7 +1096,7 @@ class VertexOutputStmt : public Stmt {
 
 class BuiltInOutputStmt : public Stmt {
  public:
-  enum class BuiltIn : int { Position = 0, Color = 1, FragDepth = 2};
+  enum class BuiltIn : int { Position = 0, Color = 1, FragDepth = 2 };
 
   static std::string get_builtin_name(BuiltIn b) {
     switch (b) {
