@@ -21,7 +21,17 @@ namespace webgpu {
  * Per offloaded task attributes.
  */
 struct TaskAttributes {
-  enum class ResourceType { RootNormal, RootAtomicI32, GlobalTemps, RandStates, Args, Rets, Texture, Sampler, };
+  enum class ResourceType {
+    RootNormal,
+    RootAtomicI32,
+    GlobalTemps,
+    RandStates,
+    Args,
+    Rets,
+    Texture,
+    StorageTexture,
+    Sampler,
+  };
 
   struct ResourceInfo {
     ResourceType type;
@@ -40,14 +50,19 @@ struct TaskAttributes {
       if (type != other.type) {
         return false;
       }
-      if (type == ResourceType::RootNormal || type == ResourceType::RootAtomicI32) {
+      if (type == ResourceType::RootNormal ||
+          type == ResourceType::RootAtomicI32) {
         return resource_id == other.resource_id;
       }
       return true;
     }
 
-    static bool resource_requires_id(ResourceType type){
-      return type == ResourceType::RootNormal || type == ResourceType::RootAtomicI32 || type == ResourceType::Texture || type == ResourceType::Sampler;
+    static bool resource_requires_id(ResourceType type) {
+      return type == ResourceType::RootNormal ||
+             type == ResourceType::RootAtomicI32 ||
+             type == ResourceType::Texture ||
+             type == ResourceType::StorageTexture ||
+             type == ResourceType::Sampler;
     }
 
     TI_IO_DEF(type, resource_id);
@@ -61,7 +76,7 @@ struct TaskAttributes {
 
       return hash<ResourceType>()(buf.type) ^ buf.resource_id;
     }
-  }; 
+  };
 
   std::string name;
   std::string source_path;
@@ -269,6 +284,6 @@ struct TaichiKernelAttributes {
   TI_IO_DEF(name, is_jit_evaluator, tasks_attribs, ctx_attribs);
 };
 
-}  // namespace spirv
+}  // namespace webgpu
 }  // namespace lang
 }  // namespace taichi

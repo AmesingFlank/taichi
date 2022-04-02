@@ -221,14 +221,32 @@ BuiltInOutputStmt *IRBuilder::create_position_output(
       BuiltInOutputStmt::BuiltIn::Position, -1, values));
 }
 
-TextureFunctionStmt *IRBuilder::create_texture_sample(Texture *texture, const std::vector<Stmt *> &coord_values) {
+TextureFunctionStmt *IRBuilder::create_texture_sample(
+    Texture *texture,
+    const std::vector<Stmt *> &coord) {
   return insert(Stmt::make_typed<TextureFunctionStmt>(
-      texture, TextureFunctionStmt::Function::Sample, coord_values));
+      texture, TextureFunctionStmt::Function::Sample, coord));
+}
+TextureFunctionStmt *IRBuilder::create_texture_load(
+    Texture *texture,
+    const std::vector<Stmt *> &coord) {
+  return insert(Stmt::make_typed<TextureFunctionStmt>(
+      texture, TextureFunctionStmt::Function::Load, coord));
+}
+TextureFunctionStmt *IRBuilder::create_texture_store(
+    Texture *texture,
+    const std::vector<Stmt *> &coord,
+    const std::vector<Stmt *> &value) {
+  std::vector<Stmt *> operand(coord.begin(), coord.end());
+  for (auto *stmt : value) {
+    operand.push_back(stmt);
+  }
+  return insert(Stmt::make_typed<TextureFunctionStmt>(
+      texture, TextureFunctionStmt::Function::Store, operand));
 }
 CompositeExtractStmt *IRBuilder::create_composite_extract(Stmt *base,
                                                           int index) {
-  return insert(Stmt::make_typed<CompositeExtractStmt>(
-      base, index));
+  return insert(Stmt::make_typed<CompositeExtractStmt>(base, index));
 }
 
 ArgLoadStmt *IRBuilder::create_arg_load(int arg_id, DataType dt, bool is_ptr) {

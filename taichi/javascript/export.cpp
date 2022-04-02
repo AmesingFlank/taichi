@@ -19,6 +19,7 @@
 #include <taichi/ir/ir_builder.h>
 #include <taichi/ir/ir.h>
 #include <taichi/ir/statements.h>
+#include <taichi/texture/texture.h>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -111,10 +112,17 @@ EMSCRIPTEN_BINDINGS(tint) {
       .value("dense", SNodeType::dense)
       .value("place", SNodeType::place);
 
+  enum_<TextureDimensionality>("TextureDimensionality")
+      .value("Dim2d", TextureDimensionality::Dim2d);
+
   class_<SNodeTree>("SNodeTree");
 
+  class_<TextureParams>("TextureParams")
+      .constructor<DataType, TextureDimensionality, bool, std::string>();
+
+  class_<Texture>("Texture");
+
   class_<AotModuleBuilder>("AotModuleBuilder")
-      .function("add_field", &AotModuleBuilder::add_field, allow_raw_pointers())
       .function("add", &AotModuleBuilder::add, allow_raw_pointers())
       .function("dump", &AotModuleBuilder::dump, allow_raw_pointers());
 
@@ -133,6 +141,7 @@ EMSCRIPTEN_BINDINGS(tint) {
       .constructor<Arch>()
       .function("add_snode_tree", &Program::add_snode_tree,
                 allow_raw_pointers())
+      .function("add_texture", &Program::add_texture, allow_raw_pointers())
       .function("make_aot_module_builder", &Program::make_aot_module_builder);
 
   class_<Axis>("Axis").constructor<int>();
@@ -316,8 +325,9 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_discard)
       .EXPORT_FUNCTION(create_depth_output)
       .EXPORT_FUNCTION(create_texture_sample)
-      .EXPORT_FUNCTION(create_composite_extract)
-      ;
+      .EXPORT_FUNCTION(create_texture_load)
+      .EXPORT_FUNCTION(create_texture_store)
+      .EXPORT_FUNCTION(create_composite_extract);
 
 #undef EXPORT_FUNCTION
 }
