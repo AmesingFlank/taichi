@@ -128,8 +128,8 @@ class IRBuilder {
                                int bit_vectorize = -1,
                                int num_cpu_threads = 0,
                                int block_dim = 0);
-  VertexForStmt* create_vertex_for();
-  FragmentForStmt* create_fragment_for();
+  VertexForStmt *create_vertex_for();
+  FragmentForStmt *create_fragment_for();
 
   WhileStmt *create_while_true();
   IfStmt *create_if(Stmt *cond);
@@ -156,20 +156,28 @@ class IRBuilder {
   // Load kernel arguments.
   ArgLoadStmt *create_arg_load(int arg_id, DataType dt, bool is_ptr);
 
-  VertexInputStmt* create_vertex_input(int location,  DataType dt);
-  VertexOutputStmt* create_vertex_output(int location,  Stmt* value);
-  BuiltInOutputStmt* create_position_output(const std::vector<Stmt *> &values);
-  FragmentInputStmt* create_fragment_input(int location,  DataType dt);
-  BuiltInOutputStmt* create_color_output(int location,  const std::vector<Stmt *> &values);
-  BuiltInOutputStmt* create_depth_output( Stmt * value);
-  DiscardStmt* create_discard();
+  VertexInputStmt *create_vertex_input(int location, DataType dt);
+  VertexOutputStmt *create_vertex_output(int location, Stmt *value);
+  BuiltInOutputStmt *create_position_output(const std::vector<Stmt *> &values);
+  FragmentInputStmt *create_fragment_input(int location, DataType dt);
+  BuiltInOutputStmt *create_color_output(int location,
+                                         const std::vector<Stmt *> &values);
+  BuiltInOutputStmt *create_depth_output(Stmt *value);
+  DiscardStmt *create_discard();
 
-  TextureFunctionStmt* create_texture_sample(Texture* texture, const std::vector<Stmt *> &coord_values);
-  CompositeExtractStmt* create_composite_extract(Stmt* base, int index);
+  TextureFunctionStmt *create_texture_sample(Texture *texture,
+                                             const std::vector<Stmt *> &coord);
+  TextureFunctionStmt *create_texture_load(Texture *texture,
+                                           const std::vector<Stmt *> &coord);
+  TextureFunctionStmt *create_texture_store(Texture *texture,
+                                            const std::vector<Stmt *> &coord,
+                                            const std::vector<Stmt *> &value);
+
+  CompositeExtractStmt *create_composite_extract(Stmt *base, int index);
 
   // The return value of the kernel.
   ReturnStmt *create_return(Stmt *value);
-  ReturnStmt *create_return_vec(const std::vector<Stmt *> &values) ;
+  ReturnStmt *create_return_vec(const std::vector<Stmt *> &values);
 
   // Unary operations. Returns the result.
   UnaryOpStmt *create_cast(Stmt *value, DataType output_type);  // cast by value
@@ -240,7 +248,7 @@ class IRBuilder {
 
   // Print values and strings. Arguments can be Stmt* or std::string.
   template <typename... Args>
-  PrintStmt *create_print(Args &&... args) {
+  PrintStmt *create_print(Args &&...args) {
     return insert(Stmt::make_typed<PrintStmt>(std::forward<Args>(args)...));
   }
 

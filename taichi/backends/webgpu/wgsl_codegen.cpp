@@ -81,7 +81,8 @@ class TaskCodegen : public IRVisitor {
         task_name_(fmt::format("{}_t{:02d}",
                                params.ti_kernel_name,
                                params.task_id_in_kernel)),
-        binding_point_begin_(params.binding_point_begin) {
+        binding_point_begin_(params.binding_point_begin),
+        textures_(params.textures) {
     allow_undefined_visitor = true;
     invoke_default_visitor = true;
 
@@ -425,10 +426,6 @@ class TaskCodegen : public IRVisitor {
   void visit(TextureFunctionStmt *stmt) override {
     Texture *texture = stmt->texture;
     ResourceInfo texture_resource = {ResourceType::Texture, texture->id};
-    std::string texture_name = get_texture_name(texture_resource);
-    std::string texel_type_name = get_scalar_or_vector_type_name(
-        PrimitiveType::get(texture->params.primitive), 4);
-
     bool requires_sampler;
     std::string func_name;
     switch (stmt->func) {
@@ -437,27 +434,66 @@ class TaskCodegen : public IRVisitor {
         func_name = "textureSample";
         break;
       }
+      case TextureFunctionStmt::Function::Load: {
+        requires_sampler = false;
+        func_name = "textureLoad";
+        break;
+      }
+      case TextureFunctionStmt::Function::Store: {
+        requires_sampler = false;
+        texture_resource.type = ResourceType::StorageTexture;
+        func_name = "textureStore";
+        break;
+      }
       default: {
         TI_ERROR("unsupported texture fun")
       }
     }
+    std::string texture_name = get_texture_name(texture_resource);
+    std::string texel_type_name =
+        get_scalar_or_vector_type_name(texture->params.primitive, 4);
 
     ResourceInfo sampler_resource = {ResourceType::Sampler, texture->id};
     std::string sampler_name;
     if (requires_sampler) {
       sampler_name = get_sampler_name(sampler_resource);
     }
-
-    DataType operand_prim_type = stmt->operand_values[0]->element_type();
-    std::string operand_type_name = get_scalar_or_vector_type_name(
-        operand_prim_type, stmt->operand_values.size());
-    std::string operands_expr =
-        get_scalar_or_vector_expr(stmt->operand_values, operand_type_name);
-
+    DataType coords_prim_type = stmt->operand_values[0]->element_type();
+    int coords_component_count =
+        get_texture_coords_num_components(texture->params.dimensionality);
+    std::string coords_type_name = get_scalar_or_vector_type_name(
+        coords_prim_type, coords_component_count);
+    auto coords_stmts = std::vector<Stmt *>(
+        stmt->operand_values.begin(),
+        stmt->operand_values.begin() + coords_component_count);
+    std::string coords_expr =
+        get_scalar_or_vector_expr(coords_stmts, coords_type_name);
+    auto non_coords_stmts = std::vector<Stmt *>(
+        stmt->operand_values.begin() + coords_component_count,
+        stmt->operand_values.end());
     switch (stmt->func) {
       case TextureFunctionStmt::Function::Sample: {
         emit_let(stmt->raw_name(), texel_type_name);
-        body_ << "textureSample(" << texture_name << ", " << sampler_name << ", "<< operands_expr<<");\n";
+        body_ << "textureSample(" << texture_name << ", " << sampler_name
+              << ", " << coords_expr << ");\n";
+        break;
+      }
+      case TextureFunctionStmt::Function::Load: {
+        emit_let(stmt->raw_name(), texel_type_name);
+        body_ << "textureLoad(" << texture_name << ", " << coords_expr
+              << ", 0);\n";
+        break;
+      }
+      case TextureFunctionStmt::Function::Store: {
+        auto &value_stmts = non_coords_stmts;
+        DataType value_prim_type = value_stmts[0]->element_type();
+        std::string value_type_name =
+            get_scalar_or_vector_type_name(value_prim_type, value_stmts.size());
+        std::string value_expr =
+            get_scalar_or_vector_expr(value_stmts, value_type_name);
+        body_ << body_indent() << "textureStore(" << texture_name << ", "
+              << coords_expr << ", " << value_expr << ");\n";
+        break;
       }
       default: {
         TI_ERROR("unsupported texture fun");
@@ -465,32 +501,33 @@ class TaskCodegen : public IRVisitor {
     }
   }
 
-  void visit(CompositeExtractStmt* stmt) override {
+  void visit(CompositeExtractStmt *stmt) override {
     std::string type_name = get_primitive_type_name(stmt->element_type());
     emit_let(stmt->raw_name(), type_name);
-    body_<< stmt->base->raw_name();
-    switch(stmt->element_index){
-      case 0:{
-        body_<<".x";
+    body_ << stmt->base->raw_name();
+    switch (stmt->element_index) {
+      case 0: {
+        body_ << ".x";
         break;
       }
-      case 1:{
-        body_<<".y";
+      case 1: {
+        body_ << ".y";
         break;
       }
-      case 2:{
-        body_<<".z";
+      case 2: {
+        body_ << ".z";
         break;
       }
-      case 3:{
-        body_<<".w";
+      case 3: {
+        body_ << ".w";
         break;
       }
-      default:{
-        TI_ERROR("unsupported composite extract index: {}", stmt->element_index);
+      default: {
+        TI_ERROR("unsupported composite extract index: {}",
+                 stmt->element_index);
       }
     }
-    body_<<";\n";
+    body_ << ";\n";
   }
 
   void visit(ArgLoadStmt *stmt) override {
@@ -1280,19 +1317,28 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
   }
 
   std::string get_texture_name(ResourceInfo texture_info) {
-    if (texture_info.type != ResourceType::Texture) {
+    if (texture_info.type != ResourceType::Texture &&
+        texture_info.type != ResourceType::StorageTexture) {
       TI_ERROR("not a texture");
     }
+    bool is_storage_texture = texture_info.type == ResourceType::StorageTexture;
     Texture *texture = textures_.at(texture_info.resource_id);
-    std::string name = "texture_" + std::to_string(texture->id);
+    std::string name = "texture_" + std::to_string(texture->id) + "_";
+    if (is_storage_texture) {
+      name += "storage_";
+    }
     std::string element_type =
-        get_primitive_type_name(PrimitiveType::get(texture->params.primitive));
+        get_primitive_type_name(texture->params.primitive);
     std::string type_name;
     bool is_depth = texture->params.is_depth;
     switch (texture->params.dimensionality) {
       case TextureDimensionality::Dim2d: {
-        if (is_depth) {
-          type_name = "texture_2d";
+        if (!is_depth) {
+          if (is_storage_texture) {
+            type_name = "texture_storage_2d";
+          } else {
+            type_name = "texture_2d";
+          }
           break;
         }
         TI_ERROR("depth texture not supported");
@@ -1308,7 +1354,14 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
       int binding =
           binding_point_begin_ + task_attribs_.resource_bindings.size();
       task_attribs_.resource_bindings[texture_info] = binding;
-      declare_new_texture(texture_info, name, type_name, element_type, binding);
+      std::string template_args;
+      if (is_storage_texture) {
+        template_args = "<" + texture->params.format + ", write>";
+      } else {
+        template_args = "<" + element_type + ">";
+      }
+      declare_new_texture(texture_info, name, type_name, template_args,
+                          binding);
     }
     return name;
   }
@@ -1316,13 +1369,13 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
   void declare_new_texture(ResourceInfo texture,
                            std::string name,
                            std::string type_name,
-                           std::string element_type,
+                           std::string template_args,
                            int binding) {
     std::string decl_template =
         R"(
 
 @group(0) @binding(TEXTURE_BINDING)
-var TEXTURE_NAME: TYPE_NAME<ELEMENT_TYPE>;
+var TEXTURE_NAME: TYPE_NAME TEMPLATE_ARGS;
 
 )";
 
@@ -1330,7 +1383,7 @@ var TEXTURE_NAME: TYPE_NAME<ELEMENT_TYPE>;
     string_replace_all(decl_template, "TEXTURE_NAME", name);
     string_replace_all(decl_template, "TEXTURE_BINDING",
                        std::to_string(binding));
-    string_replace_all(decl_template, "ELEMENT_TYPE", element_type);
+    string_replace_all(decl_template, "TEMPLATE_ARGS", template_args);
     global_decls_ << decl_template;
   }
 
@@ -1339,7 +1392,7 @@ var TEXTURE_NAME: TYPE_NAME<ELEMENT_TYPE>;
       TI_ERROR("not a sampler");
     }
     Texture *texture = textures_.at(sampler_info.resource_id);
-    std::string name = "sampler_" + std::to_string(texture->id);
+    std::string name = "sampler_" + std::to_string(texture->id) + "_";
     std::string type_name = "sampler";
     bool is_depth = texture->params.is_depth;
     if (is_depth) {

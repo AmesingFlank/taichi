@@ -219,7 +219,7 @@ class FragmentInputStmt : public Stmt {
 class TextureFunctionStmt : public Stmt {
  public:
   Texture *texture;
-  enum class Function : int { Sample };
+  enum class Function : int { Sample, Load, Store };
 
   Function func;
   int result_num_components;
@@ -237,17 +237,39 @@ class TextureFunctionStmt : public Stmt {
   }
 
   static DataType get_result_primitive_type(Function f, TextureParams params) {
-    return PrimitiveType::f32;
+    switch (f) {
+      case Function::Sample:
+      case Function::Load:
+        return params.primitive;
+      case Function::Store:
+        return DataType();
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(f));
+        return PrimitiveType::f32;
+    }
   }
 
   static int get_result_num_components(Function f, TextureParams params) {
-    return 4;
+    switch (f) {
+      case Function::Sample:
+      case Function::Load:
+        return 4;
+      case Function::Store:
+        return 0;
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(f));
+        return 4;
+    }
   }
 
   static std::string get_function_name(Function f) {
     switch (f) {
       case Function::Sample:
         return "sample";
+      case Function::Load:
+        return "load";
+      case Function::Store:
+        return "store";
       default:
         TI_ERROR("unrecognized builtin {}", static_cast<int>(f));
     }
