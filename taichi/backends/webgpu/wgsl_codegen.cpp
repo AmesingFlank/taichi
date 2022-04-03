@@ -361,7 +361,8 @@ class TaskCodegen : public IRVisitor {
     std::string input_name =
         std::string("in_") + std::to_string(loc) + "_" + dt_name;
     ensure_stage_in_struct();
-    add_stage_in_member(input_name, dt_name, loc);
+    bool flat = stmt->element_type()->is_primitive(PrimitiveTypeID::i32);
+    add_stage_in_member(input_name, dt_name, loc, flat);
     emit_let(stmt->raw_name(), dt_name);
     body_ << body_indent() << "stage_input." << input_name << ";\n";
   }
@@ -372,7 +373,8 @@ class TaskCodegen : public IRVisitor {
     std::string input_name =
         std::string("in_") + std::to_string(loc) + "_" + dt_name;
     ensure_stage_in_struct();
-    add_stage_in_member(input_name, dt_name, loc);
+    bool flat = stmt->element_type()->is_primitive(PrimitiveTypeID::i32);
+    add_stage_in_member(input_name, dt_name, loc, flat);
     emit_let(stmt->raw_name(), dt_name);
     body_ << body_indent() << "stage_input." << input_name << ";\n";
   }
@@ -383,7 +385,8 @@ class TaskCodegen : public IRVisitor {
     std::string output_name =
         std::string("out_") + std::to_string(loc) + "_" + dt_name;
     ensure_stage_out_struct();
-    add_stage_out_member(output_name, dt_name, loc);
+    bool flat = stmt->value->element_type()->is_primitive(PrimitiveTypeID::i32);
+    add_stage_out_member(output_name, dt_name, loc, flat);
 
     body_ << body_indent() << "stage_output." << output_name << "="
           << stmt->value->raw_name() << ";\n";
@@ -404,7 +407,7 @@ class TaskCodegen : public IRVisitor {
     if (stmt->built_in == BuiltInOutputStmt::BuiltIn::Color) {
       int loc = stmt->location;
       output_name = std::string("color_") + std::to_string(loc);
-      add_stage_out_member(output_name, type_name, loc);
+      add_stage_out_member(output_name, type_name, loc, false);
     } else if (stmt->built_in == BuiltInOutputStmt::BuiltIn::Position) {
       int loc = stmt->location;
       output_name = std::string("position");
@@ -1110,10 +1113,14 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
   std::unordered_set<std::string> stage_in_members_;
   void add_stage_in_member(const std::string &name,
                            const std::string &dt,
-                           int loc) {
+                           int loc,
+                           bool flat) {
     if (stage_in_members_.find(name) == stage_in_members_.end()) {
-      stage_in_struct_body_ << "  @location(" << std::to_string(loc) << ") "
-                            << name << ": " << dt << ";\n";
+      stage_in_struct_body_ << "  @location(" << std::to_string(loc) << ") ";
+      if (flat) {
+        stage_in_struct_body_ << "@interpolate(flat)";
+      }
+      stage_in_struct_body_ << name << ": " << dt << ";\n";
       stage_in_members_.insert(name);
     }
   }
@@ -1121,10 +1128,14 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
   std::unordered_set<std::string> stage_out_members_;
   void add_stage_out_member(const std::string &name,
                             const std::string &dt,
-                            int loc) {
+                            int loc,
+                            bool flat) {
     if (stage_out_members_.find(name) == stage_out_members_.end()) {
-      stage_out_struct_body_ << "  @location(" << std::to_string(loc) << ") "
-                             << name << ": " << dt << ";\n";
+      stage_out_struct_body_ << "  @location(" << std::to_string(loc) << ") ";
+      if (flat) {
+        stage_out_struct_body_ << "@interpolate(flat)";
+      }
+      stage_out_struct_body_ << name << ": " << dt << ";\n";
       stage_out_members_.insert(name);
     }
   }
