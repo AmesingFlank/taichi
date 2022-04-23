@@ -173,8 +173,11 @@ Program::Program(Arch desired_arch)
            arch_name(config.arch));
 #if defined(TI_EMSCRIPTENED)
   config.constant_folding = false;
+  // config.cfg_optimization = false;
+  // config.advanced_optimization = false;
+  // config.opt_level = 0;
   config.packed = true;
-  // config.print_ir = true;
+  //config.print_ir = true;
 #endif
 }
 

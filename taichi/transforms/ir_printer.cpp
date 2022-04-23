@@ -394,7 +394,7 @@ class IRPrinter : public IRVisitor {
   }
 
   void visit(FragmentForStmt *for_stmt) override {
-    print("{} : for each vertex{{", for_stmt->name());
+    print("{} : for each fragment{{", for_stmt->name());
     for_stmt->body->accept(this);
     print("}}");
   }

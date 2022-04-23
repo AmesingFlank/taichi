@@ -1353,8 +1353,20 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
           break;
         }
         TI_ERROR("depth texture not supported");
+        break;
       }
-
+      case TextureDimensionality::DimCube: {
+        if (!is_depth) {
+          if (is_storage_texture) {
+            TI_ERROR("cube storage texture not supported");
+          } else {
+            type_name = "texture_cube";
+          }
+          break;
+        }
+        TI_ERROR("depth texture not supported");
+        break;
+      }
       default: {
         TI_ERROR("unrecgnized dimensionality")
         break;

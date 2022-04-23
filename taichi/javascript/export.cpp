@@ -113,7 +113,8 @@ EMSCRIPTEN_BINDINGS(tint) {
       .value("place", SNodeType::place);
 
   enum_<TextureDimensionality>("TextureDimensionality")
-      .value("Dim2d", TextureDimensionality::Dim2d);
+      .value("Dim2d", TextureDimensionality::Dim2d)
+      .value("DimCube", TextureDimensionality::DimCube);
 
   class_<SNodeTree>("SNodeTree");
 
