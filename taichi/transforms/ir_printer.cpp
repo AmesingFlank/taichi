@@ -461,6 +461,11 @@ class IRPrinter : public IRVisitor {
           stmt->values_raw_names());
   }
 
+  void visit(BuiltInInputStmt *stmt) override {
+    print("{}{} = built-in input {}", stmt->type_hint(), stmt->name(),
+          BuiltInInputStmt::get_builtin_name(stmt->built_in));
+  }
+
   void visit(DiscardStmt *stmt) override {
     print("{}{} = discard", stmt->type_hint(), stmt->name());
   }

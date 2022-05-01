@@ -177,7 +177,7 @@ Program::Program(Arch desired_arch)
   // config.advanced_optimization = false;
   // config.opt_level = 0;
   config.packed = true;
-  //config.print_ir = true;
+  // config.print_ir = true;
 #endif
 }
 

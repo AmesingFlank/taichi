@@ -364,7 +364,7 @@ class TaskCodegen : public IRVisitor {
     bool flat = stmt->element_type()->is_primitive(PrimitiveTypeID::i32);
     add_stage_in_member(input_name, dt_name, loc, flat);
     emit_let(stmt->raw_name(), dt_name);
-    body_ << body_indent() << "stage_input." << input_name << ";\n";
+    body_ << "stage_input." << input_name << ";\n";
   }
 
   void visit(FragmentInputStmt *stmt) override {
@@ -376,7 +376,7 @@ class TaskCodegen : public IRVisitor {
     bool flat = stmt->element_type()->is_primitive(PrimitiveTypeID::i32);
     add_stage_in_member(input_name, dt_name, loc, flat);
     emit_let(stmt->raw_name(), dt_name);
-    body_ << body_indent() << "stage_input." << input_name << ";\n";
+    body_ << "stage_input." << input_name << ";\n";
   }
 
   void visit(VertexOutputStmt *stmt) override {
@@ -420,6 +420,24 @@ class TaskCodegen : public IRVisitor {
 
     body_ << body_indent() << "stage_output." << output_name << "="
           << output_expr << ";\n";
+  }
+
+  void visit(BuiltInInputStmt *stmt) override {
+    std::string dt_name = get_primitive_type_name(stmt->element_type());
+    emit_let(stmt->raw_name(), dt_name);
+    body_ << dt_name << "(";
+    switch (stmt->built_in) {
+      case BuiltInInputStmt::BuiltIn::VertexIndex:
+        body_ << "vertex_index";
+        break;
+      case BuiltInInputStmt::BuiltIn::InstanceIndex:
+        body_ << "instance_index";
+        break;
+      default:
+        TI_ERROR("unrecognized builtin input {}", (int)(stmt->built_in));
+        break;
+    }
+    body_ << ");\n";
   }
 
   void visit(DiscardStmt *stmt) override {
@@ -979,7 +997,7 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
     task_attribs_.advisory_num_threads_per_group = 1;
 
     stmt->body->accept(this);
-    emit_graphics_function("vertex");
+    emit_graphics_function();
   }
 
   void generate_fragment_for_kernel(OffloadedStmt *stmt) {
@@ -990,7 +1008,7 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
     task_attribs_.advisory_num_threads_per_group = 1;
 
     stmt->body->accept(this);
-    emit_graphics_function("fragment");
+    emit_graphics_function();
   }
 
   StringBuilder global_decls_;
@@ -1043,23 +1061,41 @@ fn main(
     function_end_ << "\n}\n";
   }
 
-  void emit_graphics_function(const std::string &stage_name) {
+  void emit_graphics_function() {
     TI_ASSERT(function_signature_.getString().size() == 0);
     std::string signature_template =
         R"(
 
 @stage(STAGE_NAME)
-fn main(MAYBE_INPUT) MAYBE_OUTPUT 
+fn main(BUILTIN_INPUT STAGE_INPUT) MAYBE_OUTPUT 
 {
 
 )";
-    string_replace_all(signature_template, "STAGE_NAME", stage_name);
+
+    if (is_vertex_for()) {
+      string_replace_all(signature_template, "STAGE_NAME", "vertex");
+      std::string builtin_inputs =
+          "@builtin(vertex_index) vertex_index : u32, "
+          "@builtin(instance_index) instance_index : u32";
+      if (stage_in_struct_begin_.getString().size() > 0) {
+        // also need stage input
+        builtin_inputs += ", ";
+      }
+      string_replace_all(signature_template, "BUILTIN_INPUT", builtin_inputs);
+    } else if (is_fragment_for()) {
+      string_replace_all(signature_template, "STAGE_NAME", "fragment");
+      string_replace_all(signature_template, "BUILTIN_INPUT", "");
+    } else {
+      TI_ERROR("emit_graphics_function called, but we're not in vert/frag for");
+    }
+
     if (stage_in_struct_begin_.getString().size() > 0) {
-      string_replace_all(signature_template, "MAYBE_INPUT",
+      string_replace_all(signature_template, "STAGE_INPUT",
                          "stage_input: StageInput");
     } else {
-      string_replace_all(signature_template, "MAYBE_INPUT", "");
+      string_replace_all(signature_template, "STAGE_INPUT", "");
     }
+
     if (stage_out_struct_begin_.getString().size() > 0) {
       string_replace_all(signature_template, "MAYBE_OUTPUT", "-> StageOutput");
     } else {
@@ -1170,6 +1206,14 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
   }
 
   std::unordered_map<std::string, PointerInfo> pointer_infos_;
+
+  bool is_vertex_for() {
+    return task_ir_->task_type == OffloadedTaskType::vertex_for;
+  }
+
+  bool is_fragment_for() {
+    return task_ir_->task_type == OffloadedTaskType::fragment_for;
+  }
 
   bool is_vertex_for_or_fragment_for() {
     return task_ir_->task_type == OffloadedTaskType::vertex_for ||

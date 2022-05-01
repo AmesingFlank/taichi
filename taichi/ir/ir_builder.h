@@ -163,6 +163,8 @@ class IRBuilder {
   BuiltInOutputStmt *create_color_output(int location,
                                          const std::vector<Stmt *> &values);
   BuiltInOutputStmt *create_depth_output(Stmt *value);
+  BuiltInInputStmt *create_vertex_index_input();
+  BuiltInInputStmt *create_instance_index_input();
   DiscardStmt *create_discard();
 
   TextureFunctionStmt *create_texture_sample(Texture *texture,

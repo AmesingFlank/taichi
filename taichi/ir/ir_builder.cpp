@@ -220,7 +220,14 @@ BuiltInOutputStmt *IRBuilder::create_position_output(
   return insert(Stmt::make_typed<BuiltInOutputStmt>(
       BuiltInOutputStmt::BuiltIn::Position, -1, values));
 }
-
+BuiltInInputStmt *IRBuilder::create_vertex_index_input() {
+  return insert(Stmt::make_typed<BuiltInInputStmt>(
+      BuiltInInputStmt::BuiltIn::VertexIndex));
+}
+BuiltInInputStmt *IRBuilder::create_instance_index_input() {
+  return insert(Stmt::make_typed<BuiltInInputStmt>(
+      BuiltInInputStmt::BuiltIn::InstanceIndex));
+}
 TextureFunctionStmt *IRBuilder::create_texture_sample(
     Texture *texture,
     const std::vector<Stmt *> &coord) {

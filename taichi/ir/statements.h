@@ -1158,6 +1158,44 @@ class BuiltInOutputStmt : public Stmt {
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
+class BuiltInInputStmt : public Stmt {
+ public:
+  enum class BuiltIn : int { VertexIndex = 0, InstanceIndex = 1 };
+
+  static std::string get_builtin_name(BuiltIn b) {
+    switch (b) {
+      case BuiltIn::VertexIndex:
+        return "vertex_index";
+      case BuiltIn::InstanceIndex:
+        return "instance_index";
+        return "frag_depth";
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(b));
+    }
+  }
+
+  static DataType get_builtin_type(BuiltIn b) {
+    switch (b) {
+      case BuiltIn::VertexIndex:
+        return PrimitiveType::i32;
+      case BuiltIn::InstanceIndex:
+        return PrimitiveType::i32;
+      default:
+        TI_ERROR("unrecognized builtin {}", static_cast<int>(b));
+    }
+  }
+
+  BuiltIn built_in;
+
+  explicit BuiltInInputStmt(BuiltIn built_in) : built_in(built_in) {
+    TI_STMT_REG_FIELDS;
+    this->ret_type = get_builtin_type(built_in);
+  }
+
+  TI_STMT_DEF_FIELDS(built_in);
+  TI_DEFINE_ACCEPT_AND_CLONE
+};
+
 /**
  * A serial while-true loop. |mask| is to support vectorization.
  */
