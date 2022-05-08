@@ -166,6 +166,8 @@ class IRBuilder {
   BuiltInInputStmt *create_vertex_index_input();
   BuiltInInputStmt *create_instance_index_input();
   DiscardStmt *create_discard();
+  FragmentDerivativeStmt *create_dpdx(Stmt *value);
+  FragmentDerivativeStmt *create_dpdy(Stmt *value);
 
   TextureFunctionStmt *create_texture_sample(Texture *texture,
                                              const std::vector<Stmt *> &coord);

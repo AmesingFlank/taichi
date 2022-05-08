@@ -192,6 +192,7 @@ EMSCRIPTEN_BINDINGS(tint) {
   class_<FragmentInputStmt, base<Stmt>>("FragmentInputStmt");
   class_<BuiltInOutputStmt, base<Stmt>>("BuiltInOutputStmt");
   class_<BuiltInInputStmt, base<Stmt>>("BuiltInInputStmt");
+  class_<FragmentDerivativeStmt, base<Stmt>>("FragmentDerivativeStmt");
   class_<DiscardStmt, base<Stmt>>("DiscardStmt");
   class_<TextureFunctionStmt, base<Stmt>>("TextureFunctionStmt");
   class_<CompositeExtractStmt, base<Stmt>>("CompositeExtractStmt");
@@ -331,7 +332,9 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_texture_store)
       .EXPORT_FUNCTION(create_composite_extract)
       .EXPORT_FUNCTION(create_vertex_index_input)
-      .EXPORT_FUNCTION(create_instance_index_input);
+      .EXPORT_FUNCTION(create_instance_index_input)
+      .EXPORT_FUNCTION(create_dpdx)
+      .EXPORT_FUNCTION(create_dpdy);
 
 #undef EXPORT_FUNCTION
 }

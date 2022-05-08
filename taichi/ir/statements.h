@@ -1196,6 +1196,22 @@ class BuiltInInputStmt : public Stmt {
   TI_DEFINE_ACCEPT_AND_CLONE
 };
 
+class FragmentDerivativeStmt : public Stmt {
+ public:
+  enum class Direction { dx, dy };
+  Direction direction;
+  Stmt *value;
+
+  FragmentDerivativeStmt(Direction direction, Stmt *value)
+      : direction(direction), value(value) {
+    TI_STMT_REG_FIELDS;
+    this->ret_type = PrimitiveType::f32;
+  }
+
+  TI_STMT_DEF_FIELDS(direction, value);
+  TI_DEFINE_ACCEPT_AND_CLONE;
+};
+
 /**
  * A serial while-true loop. |mask| is to support vectorization.
  */

@@ -466,6 +466,12 @@ class IRPrinter : public IRVisitor {
           BuiltInInputStmt::get_builtin_name(stmt->built_in));
   }
 
+  void visit(FragmentDerivativeStmt *stmt) override {
+    print("{}{} = fragment derivative: d({})/d{}", stmt->type_hint(),
+          stmt->name(), stmt->value->name(),
+          stmt->direction == FragmentDerivativeStmt::Direction::dx ? "x" : "y");
+  }
+
   void visit(DiscardStmt *stmt) override {
     print("{}{} = discard", stmt->type_hint(), stmt->name());
   }

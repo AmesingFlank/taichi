@@ -440,6 +440,26 @@ class TaskCodegen : public IRVisitor {
     body_ << ");\n";
   }
 
+  void visit(FragmentDerivativeStmt *stmt) override {
+    std::string dt_name = get_primitive_type_name(stmt->element_type());
+    emit_let(stmt->raw_name(), dt_name);
+    switch (stmt->direction) {
+      case FragmentDerivativeStmt::Direction::dx: {
+        body_ << "dpdxFine";
+        break;
+      }
+      case FragmentDerivativeStmt::Direction::dy: {
+        body_ << "dpdyFine";
+        break;
+      }
+      default:
+        TI_ERROR("unrecognized derivative direction {}",
+                 (int)(stmt->direction));
+        break;
+    }
+    body_ << "(" << stmt->value->raw_name() << ");\n";
+  }
+
   void visit(DiscardStmt *stmt) override {
     body_ << body_indent() << "discard;\n";
   }

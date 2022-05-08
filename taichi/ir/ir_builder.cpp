@@ -228,6 +228,14 @@ BuiltInInputStmt *IRBuilder::create_instance_index_input() {
   return insert(Stmt::make_typed<BuiltInInputStmt>(
       BuiltInInputStmt::BuiltIn::InstanceIndex));
 }
+FragmentDerivativeStmt *IRBuilder::create_dpdx(Stmt *value) {
+  return insert(Stmt::make_typed<FragmentDerivativeStmt>(
+      FragmentDerivativeStmt::Direction::dx, value));
+}
+FragmentDerivativeStmt *IRBuilder::create_dpdy(Stmt *value) {
+  return insert(Stmt::make_typed<FragmentDerivativeStmt>(
+      FragmentDerivativeStmt::Direction::dy, value));
+}
 TextureFunctionStmt *IRBuilder::create_texture_sample(
     Texture *texture,
     const std::vector<Stmt *> &coord) {
