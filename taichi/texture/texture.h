@@ -5,6 +5,7 @@ namespace lang {
 
 enum class TextureDimensionality {
   Dim2d,
+  Dim3d,
   DimCube,
 };
 
@@ -40,6 +41,9 @@ inline int get_texture_coords_num_components(TextureDimensionality dim) {
       return 2;
     }
     case TextureDimensionality::DimCube: {
+      return 3;
+    }
+    case TextureDimensionality::Dim3d: {
       return 3;
     }
     default: {

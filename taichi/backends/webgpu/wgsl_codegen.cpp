@@ -1428,7 +1428,19 @@ var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
           }
           break;
         }
-        TI_ERROR("depth texture not supported");
+        TI_ERROR("depth cube texture not supported");
+        break;
+      }
+      case TextureDimensionality::Dim3d: {
+        if (!is_depth) {
+          if (is_storage_texture) {
+            type_name = "texture_storage_3d";
+          } else {
+            type_name = "texture_3d";
+          }
+          break;
+        }
+        TI_ERROR("depth 3d texture not supported");
         break;
       }
       default: {
