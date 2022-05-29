@@ -242,6 +242,15 @@ TextureFunctionStmt *IRBuilder::create_texture_sample(
   return insert(Stmt::make_typed<TextureFunctionStmt>(
       texture, TextureFunctionStmt::Function::Sample, coord));
 }
+TextureFunctionStmt *IRBuilder::create_texture_sample_lod(
+    Texture *texture,
+    const std::vector<Stmt *> &coord,
+    Stmt *lod) {
+  std::vector<Stmt *> operand(coord.begin(), coord.end());
+  operand.push_back(lod);
+  return insert(Stmt::make_typed<TextureFunctionStmt>(
+      texture, TextureFunctionStmt::Function::SampleLod, operand));
+}
 TextureFunctionStmt *IRBuilder::create_texture_load(
     Texture *texture,
     const std::vector<Stmt *> &coord) {

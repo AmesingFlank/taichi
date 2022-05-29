@@ -300,6 +300,10 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_exp)
       .EXPORT_FUNCTION(create_log)
 
+      .EXPORT_FUNCTION(create_shl)
+      .EXPORT_FUNCTION(create_shr)
+      .EXPORT_FUNCTION(create_sar)
+
       .EXPORT_FUNCTION(create_while_true)
       .EXPORT_FUNCTION(create_if)
       .EXPORT_FUNCTION(create_break)
@@ -329,6 +333,7 @@ EMSCRIPTEN_BINDINGS(tint) {
       .EXPORT_FUNCTION(create_discard)
       .EXPORT_FUNCTION(create_depth_output)
       .EXPORT_FUNCTION(create_texture_sample)
+      .EXPORT_FUNCTION(create_texture_sample_lod)
       .EXPORT_FUNCTION(create_texture_load)
       .EXPORT_FUNCTION(create_texture_store)
       .EXPORT_FUNCTION(create_composite_extract)

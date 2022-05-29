@@ -140,7 +140,14 @@ class TaskCodegen : public IRVisitor {
     emit_let(stmt->raw_name(), get_primitive_type_name(dt));
     if (dt->is_primitive(PrimitiveTypeID::f32)) {
       float f = const_val.val_float32();
-      body_ << std::to_string(f) << "f";
+      const int precision = 8;
+      std::ostringstream os;
+      os << std::setprecision(precision) << f;
+      std::string s = os.str();
+      if (s.find_first_of(".eE") == std::string::npos) {
+        s += ".0f";
+      }
+      body_ << s;
     } else if (dt->is_primitive(PrimitiveTypeID::i32)) {
       int i = const_val.val_int32();
       body_ << i;
@@ -242,10 +249,6 @@ class TaskCodegen : public IRVisitor {
   else if (op == BinaryOpType::op_name) {        \
     value = lhs + " " + infix_token + " " + rhs; \
   }
-#define HANDLE_INFIX_OP_U32(op_name, infix_token)          \
-  else if (op == BinaryOpType::op_name) {                  \
-    value = lhs + " " + infix_token + " u32(" + rhs + ")"; \
-  }
 #define HANDLE_FUNC_OP(op_name, func)                         \
   else if (op == BinaryOpType::op_name) {                     \
     value = std::string(func) + "(" + lhs + ", " + rhs + ")"; \
@@ -257,9 +260,6 @@ class TaskCodegen : public IRVisitor {
     HANDLE_INFIX_OP(bit_and, "&")
     HANDLE_INFIX_OP(bit_or, "|")
     HANDLE_INFIX_OP(bit_xor, "^")
-    HANDLE_INFIX_OP_U32(bit_shl, "<<")
-    HANDLE_INFIX_OP_U32(bit_shr, ">>")  // TODO: fix
-    HANDLE_INFIX_OP_U32(bit_sar, ">>")  // TODO: fix
     HANDLE_INFIX_OP(cmp_lt, "<")
     HANDLE_INFIX_OP(cmp_le, "<=")
     HANDLE_INFIX_OP(cmp_gt, ">")
@@ -280,6 +280,15 @@ class TaskCodegen : public IRVisitor {
     }
     else if (op == BinaryOpType ::floordiv) {
       value = "floor(1.0 * " + lhs + " / " + rhs + ")";
+    }
+    else if (op == BinaryOpType ::bit_shl) {
+      value = lhs + " << u32(" + rhs + ")";
+    }
+    else if (op == BinaryOpType ::bit_shr) {
+      value = lhs + " >> u32(" + rhs + ")";
+    }
+    else if (op == BinaryOpType ::bit_sar) {
+      value = lhs + " >> u32(" + rhs + ")";
     }
 
     value = std::string(get_primitive_type_name(dt)) + "(" + value + ")";
@@ -475,6 +484,11 @@ class TaskCodegen : public IRVisitor {
         func_name = "textureSample";
         break;
       }
+      case TextureFunctionStmt::Function::SampleLod: {
+        requires_sampler = true;
+        func_name = "textureSampleLevel";
+        break;
+      }
       case TextureFunctionStmt::Function::Load: {
         requires_sampler = false;
         func_name = "textureLoad";
@@ -517,6 +531,18 @@ class TaskCodegen : public IRVisitor {
         emit_let(stmt->raw_name(), texel_type_name);
         body_ << "textureSample(" << texture_name << ", " << sampler_name
               << ", " << coords_expr << ");\n";
+        break;
+      }
+      case TextureFunctionStmt::Function::SampleLod: {
+        auto &lod_stmts = non_coords_stmts;
+        DataType lod_prim_type = lod_stmts[0]->element_type();
+        std::string lod_type_name =
+            get_scalar_or_vector_type_name(lod_prim_type, lod_stmts.size());
+        std::string lod_expr =
+            get_scalar_or_vector_expr(lod_stmts, lod_type_name);
+        emit_let(stmt->raw_name(), texel_type_name);
+        body_ << "textureSampleLevel(" << texture_name << ", " << sampler_name
+              << ", " << coords_expr << ", " << lod_expr << ");\n";
         break;
       }
       case TextureFunctionStmt::Function::Load: {
@@ -895,6 +921,9 @@ bitcast<i32>(new_val)).y != 0){ return old_val;
     }
     if (dt->is_primitive(PrimitiveTypeID::i32)) {
       return "i32";
+    }
+    if (dt->is_primitive(PrimitiveTypeID::u32)) {
+      return "u32";
     }
     TI_ERROR("unsupported primitive type {}", dt->to_string());
     return "";

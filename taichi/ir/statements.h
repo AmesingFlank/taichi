@@ -219,7 +219,7 @@ class FragmentInputStmt : public Stmt {
 class TextureFunctionStmt : public Stmt {
  public:
   Texture *texture;
-  enum class Function : int { Sample, Load, Store };
+  enum class Function : int { Sample, SampleLod, Load, Store };
 
   Function func;
   int result_num_components;
@@ -239,6 +239,7 @@ class TextureFunctionStmt : public Stmt {
   static DataType get_result_primitive_type(Function f, TextureParams params) {
     switch (f) {
       case Function::Sample:
+      case Function::SampleLod:
       case Function::Load:
         return params.primitive;
       case Function::Store:
@@ -252,6 +253,7 @@ class TextureFunctionStmt : public Stmt {
   static int get_result_num_components(Function f, TextureParams params) {
     switch (f) {
       case Function::Sample:
+      case Function::SampleLod:
       case Function::Load:
         return 4;
       case Function::Store:
@@ -266,6 +268,8 @@ class TextureFunctionStmt : public Stmt {
     switch (f) {
       case Function::Sample:
         return "sample";
+      case Function::SampleLod:
+        return "sample explicit lod";
       case Function::Load:
         return "load";
       case Function::Store:

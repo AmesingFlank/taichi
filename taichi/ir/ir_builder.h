@@ -171,6 +171,10 @@ class IRBuilder {
 
   TextureFunctionStmt *create_texture_sample(Texture *texture,
                                              const std::vector<Stmt *> &coord);
+  TextureFunctionStmt *create_texture_sample_lod(
+      Texture *texture,
+      const std::vector<Stmt *> &coord,
+      Stmt *lod);
   TextureFunctionStmt *create_texture_load(Texture *texture,
                                            const std::vector<Stmt *> &coord);
   TextureFunctionStmt *create_texture_store(Texture *texture,
