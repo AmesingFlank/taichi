@@ -1205,7 +1205,7 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
       if (flat) {
         stage_in_struct_body_ << "@interpolate(flat)";
       }
-      stage_in_struct_body_ << name << ": " << dt << ";\n";
+      stage_in_struct_body_ << name << ": " << dt << ",\n";
       stage_in_members_.insert(name);
     }
   }
@@ -1220,7 +1220,7 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
       if (flat) {
         stage_out_struct_body_ << "@interpolate(flat)";
       }
-      stage_out_struct_body_ << name << ": " << dt << ";\n";
+      stage_out_struct_body_ << name << ": " << dt << ",\n";
       stage_out_members_.insert(name);
     }
   }
@@ -1232,7 +1232,7 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
     if (stage_out_built_in_members_.find(name) ==
         stage_out_built_in_members_.end()) {
       stage_out_struct_body_ << "  @builtin(" << builtin << ") " << name << ": "
-                             << dt << ";\n";
+                             << dt << ",\n";
       stage_out_built_in_members_.insert(name);
     }
   }
@@ -1396,7 +1396,7 @@ fn find_vec4_component(v: vec4<i32>, index: i32) -> i32
         R"(
 
 struct BUFFER_TYPE_NAME {
-    member: array<ELEMENT_TYPE, ELEMENT_COUNT>;
+    member: array<ELEMENT_TYPE, ELEMENT_COUNT>,
 };
 @group(0) @binding(BUFFER_BINDING)
 var<STORAGE_AND_ACCESS> BUFFER_NAME: BUFFER_TYPE_NAME;
@@ -1564,10 +1564,10 @@ var SAMPLER_NAME: TYPE_NAME;
         R"(
 
 struct RandState{
-  x: u32;
-  y: u32;
-  z: u32;
-  w: u32;
+  x: u32,
+  y: u32,
+  z: u32,
+  w: u32,
 };
 
 )";
