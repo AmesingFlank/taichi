@@ -50,8 +50,7 @@ struct TaskAttributes {
       if (type != other.type) {
         return false;
       }
-      if (type == ResourceType::RootNormal ||
-          type == ResourceType::RootAtomicI32) {
+      if (ResourceInfo::resource_requires_id(type)) {
         return resource_id == other.resource_id;
       }
       return true;
